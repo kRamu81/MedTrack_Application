@@ -67,40 +67,51 @@ export default function LandingPage({ onNavigate }) {
     <div className="bg-white">
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-          <div className="max-w-3xl">
-            <span className="inline-block bg-white/10 border border-white/20 text-blue-100 text-xs font-semibold px-3 py-1 rounded-full mb-5 tracking-wide uppercase">
-              Medical Equipment Management Platform
-            </span>
+      <section className="relative bg-white text-gray-900 overflow-hidden">
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-              Keep your equipment <span className="text-blue-200">always ready.</span>
-            </h1>
+  {/* Grid background */}
+  <div className="absolute inset-0 opacity-30 
+  bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)]
+  bg-[size:60px_60px]"></div>
 
-            <p className="text-lg text-blue-100 mb-8 leading-relaxed max-w-xl">
-              MedTrack connects hospitals, technicians, and suppliers in one unified platform — ensuring zero downtime, complete traceability, and optimized equipment lifecycles.
-            </p>
+  <div className="relative max-w-7xl mx-auto px-6 py-28">
 
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={() => onNavigate("register")}
-                className="px-6 py-3.5 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg text-sm"
-              >
-                Get Started Free
-              </button>
+    <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
+      Medical Equipment Management Platform
+    </span>
 
-              <button
-                onClick={() => onNavigate("login")}
-                className="px-6 py-3.5 bg-transparent border-2 border-white/40 text-white font-bold rounded-xl hover:bg-white/10 transition-colors text-sm"
-              >
-                Sign In →
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+    <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+      Keep your equipment <br />
+      <span className="text-blue-600">always ready.</span>
+    </h1>
 
+    <p className="text-gray-600 text-lg max-w-xl mb-10 leading-relaxed">
+      MedTrack connects hospitals, technicians, and suppliers in one unified
+      platform — ensuring zero downtime, complete traceability, and optimized
+      equipment lifecycles.
+    </p>
+
+    <div className="flex gap-4">
+
+      <button
+        onClick={() => onNavigate("register")}
+        className="px-6 py-3.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-md"
+      >
+        Get Started Free
+      </button>
+
+      <button
+        onClick={() => onNavigate("login")}
+        className="px-6 py-3.5 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition"
+      >
+        Sign In →
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
       {/* Stats */}
       <section className="bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -116,39 +127,51 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Features */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative py-20 overflow-hidden">
 
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Everything your facility needs
-            </h2>
-            <p className="text-gray-500 max-w-xl mx-auto">
-              A complete toolkit for managing the full lifecycle of medical equipment — from procurement to disposal.
-            </p>
-          </div>
+  {/* Gradient Background */}
+  <div className="absolute inset-0 bg-gradient-to-r from-[#1f3a6d] via-[#1e4f73] to-[#1f7a74]"></div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {/* Grid Pattern */}
+  <div className="absolute inset-0 opacity-20 
+  bg-[linear-gradient(to_right,#ffffff30_1px,transparent_1px),linear-gradient(to_bottom,#ffffff30_1px,transparent_1px)]
+  bg-[size:80px_80px]"></div>
 
-            {features.map((f) => (
-              <div key={f.title} className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all">
+  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                <img
-                  src={f.img}
-                  alt={f.title}
-                  className="w-14 h-14 object-cover rounded-lg mb-3"
-                />
+    <div className="text-center mb-12">
+      <h2 className="text-3xl font-bold text-white mb-3">
+        Everything your facility needs
+      </h2>
+      <p className="text-blue-100 max-w-xl mx-auto">
+        A complete toolkit for managing the full lifecycle of medical equipment — from procurement to disposal.
+      </p>
+    </div>
 
-                <h3 className="font-bold text-gray-900 mt-3 mb-2">{f.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-              </div>
-            ))}
+      {features.map((f) => (
+        <div
+          key={f.title}
+          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all"
+        >
 
-          </div>
+          <img
+            src={f.img}
+            alt={f.title}
+            className="w-14 h-14 object-cover rounded-lg mb-3"
+          />
+
+          <h3 className="font-bold text-gray-900 mt-3 mb-2">{f.title}</h3>
+          <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+
         </div>
-      </section>
+      ))}
 
+    </div>
+
+  </div>
+</section>
       {/* Role Cards */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -194,26 +217,36 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* CTA */}
-      <section className="bg-blue-600 text-white py-16">
-        <div className="max-w-3xl mx-auto px-4 text-center">
+      <section className="relative py-16 text-white overflow-hidden">
 
-          <h2 className="text-3xl font-bold mb-4">
-            Start managing smarter today
-          </h2>
+  {/* Gradient Background */}
+  <div className="absolute inset-0 bg-gradient-to-r from-[#1f3a6d] via-[#1e4f73] to-[#1f7a74]"></div>
 
-          <p className="text-blue-100 mb-8 text-lg">
-            Join hundreds of hospitals already using MedTrack to reduce equipment downtime and cut maintenance costs.
-          </p>
+  {/* Grid Pattern */}
+  <div className="absolute inset-0 opacity-20
+  bg-[linear-gradient(to_right,#ffffff30_1px,transparent_1px),linear-gradient(to_bottom,#ffffff30_1px,transparent_1px)]
+  bg-[size:80px_80px]"></div>
 
-          <button
-            onClick={() => onNavigate("register")}
-            className="px-8 py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg text-sm"
-          >
-            Create Free Account
-          </button>
+  <div className="relative max-w-3xl mx-auto px-4 text-center">
 
-        </div>
-      </section>
+    <h2 className="text-3xl font-bold mb-4">
+      Start managing smarter today
+    </h2>
+
+    <p className="text-blue-100 mb-8 text-lg">
+      Join hundreds of hospitals already using MedTrack to reduce equipment downtime and cut maintenance costs.
+    </p>
+
+    <button
+      onClick={() => onNavigate("register")}
+      className="px-8 py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg text-sm"
+    >
+      Create Free Account
+    </button>
+
+  </div>
+
+</section>
 
     </div>
   );
