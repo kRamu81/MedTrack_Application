@@ -48,21 +48,37 @@ export default function RegisterForm({ onNavigate }) {
   };
 
   const fields = [
-    { key: "name", label: "Full Name / Organization", type: "text", placeholder: "City General Hospital" },
-    { key: "email", label: "Email Address", type: "email", placeholder: "admin@hospital.com" },
-    { key: "password", label: "Password", type: "password", placeholder: "Min. 6 characters" },
-    { key: "confirm", label: "Confirm Password", type: "password", placeholder: "Re-enter password" },
+    {
+      key: "name",
+      label: "Full Name / Organization",
+      type: "text",
+      placeholder: "City General Hospital",
+    },
+    {
+      key: "email",
+      label: "Email Address",
+      type: "email",
+      placeholder: "admin@hospital.com",
+    },
+    {
+      key: "password",
+      label: "Password",
+      type: "password",
+      placeholder: "Min. 6 characters",
+    },
+    {
+      key: "confirm",
+      label: "Confirm Password",
+      type: "password",
+      placeholder: "Re-enter password",
+    },
   ];
 
   return (
     <div>
-      {/* Logo under heading */}
+      {/* Logo */}
       <div className="flex justify-center mb-6">
-        <img
-          src={logo}
-          alt="MedTrack Logo"
-          className="h-10"
-        />
+        <img src={logo} alt="MedTrack Logo" className="h-10" />
       </div>
 
       {/* Heading */}
@@ -76,8 +92,6 @@ export default function RegisterForm({ onNavigate }) {
         </p>
       </div>
 
-      
-
       <form onSubmit={handleSubmit} className="space-y-5">
 
         {error && (
@@ -86,28 +100,23 @@ export default function RegisterForm({ onNavigate }) {
           </div>
         )}
 
-        {/* Register Role */}
+        {/* Register Role Dropdown */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Register As
           </label>
 
-          <div className="grid grid-cols-3 gap-2">
-            {["hospital", "technician", "supplier"].map((role) => (
-              <button
-                type="button"
-                key={role}
-                onClick={() => setForm({ ...form, role })}
-                className={`py-2.5 text-xs font-semibold rounded-lg border-2 capitalize transition-all ${
-                  form.role === role
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600"
-                }`}
-              >
-                {role}
-              </button>
-            ))}
-          </div>
+          <select
+            value={form.role}
+            onChange={(e) =>
+              setForm({ ...form, role: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="hospital">Hospital Admin</option>
+            <option value="technician">Technician</option>
+            <option value="supplier">Supplier</option>
+          </select>
         </div>
 
         {/* Inputs */}
@@ -124,7 +133,7 @@ export default function RegisterForm({ onNavigate }) {
                 setForm({ ...form, [key]: e.target.value })
               }
               placeholder={placeholder}
-              className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -158,7 +167,6 @@ export default function RegisterForm({ onNavigate }) {
         </p>
 
       </form>
-
     </div>
   );
 }

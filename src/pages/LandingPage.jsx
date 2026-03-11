@@ -172,6 +172,92 @@ export default function LandingPage({ onNavigate }) {
 
   </div>
 </section>
+
+<section className="relative py-28 bg-white overflow-hidden">
+
+  {/* grid background */}
+  <div className="absolute inset-0 opacity-30
+  bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)]
+  bg-[size:60px_60px]"></div>
+
+  <div className="relative max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+
+    {/* LEFT SIDE CARDS */}
+    <div className="grid grid-cols-2 gap-6">
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <p className="text-gray-400 text-sm">Policy makers</p>
+      </div>
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <p className="text-gray-400 text-sm">Diagnostics</p>
+      </div>
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            className="w-8 h-8 rounded-full"
+          />
+          <div>
+            <p className="text-sm font-semibold">Henry Cooper</p>
+            <p className="text-xs text-green-600">In-Patient</p>
+          </div>
+        </div>
+        <p className="text-gray-400 text-xs">
+          order_type: medication_OPD
+        </p>
+      </div>
+
+      {/* highlighted card */}
+      <div className="bg-gradient-to-br from-blue-700 to-teal-600 text-white rounded-xl p-6 shadow-lg">
+
+        <h3 className="font-semibold mb-2">
+          Health centers
+        </h3>
+
+        <p className="text-sm text-blue-100">
+          Connects patients data to relevant point-of-care services
+        </p>
+
+      </div>
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <p className="text-gray-400 text-sm">Pharmacies</p>
+      </div>
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <p className="text-gray-400 text-sm">Clinicians</p>
+      </div>
+
+    </div>
+
+
+    {/* RIGHT SIDE TEXT */}
+    <div className="text-center md:text-left">
+
+      <p className="text-sm text-blue-500 mb-3">
+        A connected solution
+      </p>
+
+      <h2 className="text-4xl font-bold text-gray-900 mb-6 leading-tight">
+        Built on a unified infrastructure to connect physicians
+        to all point of care services
+      </h2>
+
+      <p className="text-gray-600 leading-relaxed max-w-lg">
+        Our cutting-edge health information system is built to transform
+        collaboration across multiple care providers and facilities.
+        Unlock the potential of seamless information exchange and
+        coordinated care for better health outcomes across the continent.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
       {/* Role Cards */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
