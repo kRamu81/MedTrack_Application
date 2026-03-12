@@ -153,3 +153,8 @@ export default function EquipmentList({ onNavigate }) {
     </div>
   );
 }
+
+
+
+
+
