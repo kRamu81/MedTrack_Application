@@ -74,7 +74,7 @@ export default function AboutPage() {
             />
 
             <img
-              src="https://images.unsplash.com/photo-1576765607924-b8c7f62c3f37"
+              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef"
               className="rounded-xl object-cover w-full h-56"
             />
 
