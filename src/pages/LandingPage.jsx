@@ -41,23 +41,23 @@ export default function LandingPage({ onNavigate }) {
 
   const roles = [
     {
-      img: "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc",
+      img: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=900&q=80",
       role: "Hospital Admin",
-      desc: "Get a bird's-eye view of your entire equipment fleet. Manage maintenance schedules and supplier orders.",
+      desc: "Monitor hospital equipment, schedule maintenance, and manage supplier orders from a central dashboard.",
       color: "blue",
       page: "login",
     },
     {
-      img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b",
+      img: "https://images.unsplash.com/photo-1581092335397-9583eb92d232?auto=format&fit=crop&w=900&q=80",
       role: "Technician",
-      desc: "Access your assigned maintenance tasks, update job status, and log detailed service reports.",
+      desc: "Access maintenance assignments, update task status, and record service details for efficient equipment support.",
       color: "purple",
       page: "login",
     },
     {
-      img: "https://images.unsplash.com/photo-1581092335397-9583eb92d232",
+      img: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=80",
       role: "Supplier",
-      desc: "Process incoming equipment orders, manage inventory, and track shipment status for hospitals.",
+      desc: "Process equipment orders, manage inventory levels, and coordinate deliveries to healthcare facilities.",
       color: "emerald",
       page: "login",
     },
