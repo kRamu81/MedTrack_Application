@@ -1,7 +1,7 @@
 export default function LandingPage({ onNavigate }) {
   const features = [
     { 
-      img: "https://images.unsplash.com/photo-1580281658629-8e7e8b1d3c8d",
+      img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b",
       title: "Hospital Management", 
       desc: "Track equipment, schedule maintenance, and monitor operational status across all departments." 
     },
@@ -11,7 +11,7 @@ export default function LandingPage({ onNavigate }) {
       desc: "Manage repair tasks, log work progress, and submit maintenance reports in real-time." 
     },
     { 
-      img: "https://images.unsplash.com/photo-1581091215367-59ab6a84a5c6",
+      img: "https://images.unsplash.com/photo-1581595219315-a187dd40c322",
       title: "Supplier Integration", 
       desc: "Process orders, track deliveries, and manage spare parts inventory seamlessly." 
     },
@@ -21,12 +21,12 @@ export default function LandingPage({ onNavigate }) {
       desc: "Visual dashboards showing equipment health, maintenance trends, and operational KPIs." 
     },
     { 
-      img: "https://images.unsplash.com/photo-1588776814546-ec7e1e6e6e26",
+      img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b",
       title: "Smart Alerts", 
       desc: "Automated notifications for overdue maintenance, low inventory, and equipment failures." 
     },
     { 
-      img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b",
+      img: "https://images.unsplash.com/photo-1563986768609-322da13575f3",
       title: "HIPAA Compliant", 
       desc: "Enterprise-grade security with role-based access control and full audit trails." 
     },
