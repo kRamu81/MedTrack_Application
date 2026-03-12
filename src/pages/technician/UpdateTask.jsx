@@ -286,7 +286,7 @@ export default function UpdateTask({ onNavigate }) {
             </h2>
 
             <img
-              src="https://images.unsplash.com/photo-1581093588401-22e4e9a0d5f9"
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4dHObC-h6vXeiZ8wmxl0eJAqAlDcSbD_8Jg&s"
               alt="equipment"
               className="w-full h-40 object-cover rounded-lg mb-4"
             />
