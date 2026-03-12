@@ -33,7 +33,7 @@ export default function ContactPage() {
               </p>
 
               <p className="text-blue-600 mt-2">
-                info@medtrack.africa
+                medtrack.contact@gmail.com
               </p>
             </div>
 
@@ -48,25 +48,24 @@ export default function ContactPage() {
               </p>
 
               <p className="text-blue-600 mt-2">
-                support@medtrack.africa
+                support.medtrack@gmail.com
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-900">Phone</h3>
-              <p className="text-gray-600 mt-2">(+233) 594 40 0814</p>
+              <p className="text-gray-600 mt-2">(+91) 9392861225</p>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-900">Address</h3>
 
               <p className="text-gray-600 text-sm mt-2">
-                Ghana : 10 Paradise Road Asylum Down, Accra
+                MedTrack Technologies YV Street,
               </p>
 
               <p className="text-gray-600 text-sm">
-                United States : 271 US Route 46, Suite E102,
-                Fairfield, NJ 07004 US
+                Kadapa, Andhra Pradesh-516001.
               </p>
             </div>
 
