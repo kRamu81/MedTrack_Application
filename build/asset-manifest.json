@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/MedTrack_Application/static/css/main.9845dd92.css",
+    "main.js": "/MedTrack_Application/static/js/main.90a1c7a1.js",
+    "static/media/logo.png": "/MedTrack_Application/static/media/logo.92204abc884c51846c27.png",
+    "index.html": "/MedTrack_Application/index.html",
+    "main.9845dd92.css.map": "/MedTrack_Application/static/css/main.9845dd92.css.map",
+    "main.90a1c7a1.js.map": "/MedTrack_Application/static/js/main.90a1c7a1.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.9845dd92.css",
+    "static/js/main.90a1c7a1.js"
+  ]
+}
