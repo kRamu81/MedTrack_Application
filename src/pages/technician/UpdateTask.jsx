@@ -1,116 +1,319 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function UpdateTask({ onNavigate }) {
-  const [form, setForm] = useState({ taskId: "T-002", status: "In Progress", notes: "", partsUsed: "", hoursSpent: "" });
+
+  const [form, setForm] = useState({
+    taskId: "T-002",
+    status: "In Progress",
+    notes: "",
+    partsUsed: [],
+    hoursSpent: "",
+    image: null
+  });
+
+  const [newPart, setNewPart] = useState("");
+  const [draftSaved, setDraftSaved] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const steps = ["Inspection", "Repair", "Testing", "Completed"];
+
+  const getStep = () => {
+    if (form.status === "Completed") return 4;
+    if (form.status === "In Progress") return 2;
+    if (form.status === "Needs Part") return 1;
+    return 1;
+  };
+
+  const step = getStep();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem("taskDraft", JSON.stringify(form));
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 1500);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [form]);
+
+  const addPart = () => {
+    if (newPart.trim() === "") return;
+
+    setForm({
+      ...form,
+      partsUsed: [...form.partsUsed, newPart]
+    });
+
+    setNewPart("");
+  };
+
+  const removePart = (index) => {
+    setForm({
+      ...form,
+      partsUsed: form.partsUsed.filter((_, i) => i !== index)
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
+
     setTimeout(() => {
-      setSubmitted(false);
       onNavigate("tasks");
     }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-        <button onClick={() => onNavigate("tasks")} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Tasks
+
+    /* 🌈 NEW GRADIENT BACKGROUND */
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+
+        {/* BACK BUTTON */}
+
+        <button
+          onClick={() => onNavigate("tasks")}
+          className="text-sm text-gray-600 hover:text-gray-900 mb-6"
+        >
+          ← Back to Tasks
         </button>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Update Task</h1>
-          <p className="text-gray-500 text-sm mb-6">Submit progress report for assigned maintenance task</p>
+        <div className="grid lg:grid-cols-3 gap-6">
 
-          {/* Task Info */}
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">🔧</span>
-              <div>
-                <p className="font-semibold text-blue-900">Ventilator #B05 — Alarm Malfunction</p>
-                <p className="text-sm text-blue-700 mt-0.5">Apollo Medical Center · Task ID: T-002</p>
-                <p className="text-xs text-blue-600 mt-1 bg-red-100 text-red-600 px-2 py-0.5 rounded-full inline-block font-semibold">Critical Priority</p>
-              </div>
+          {/* LEFT FORM */}
+
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+
+            <h1 className="text-2xl font-bold text-gray-900">
+              Update Maintenance Task
+            </h1>
+
+            <p className="text-sm text-gray-500 mb-6">
+              Submit repair progress and technician report
+            </p>
+
+            {/* STEP PROGRESS */}
+
+            <div className="flex justify-between mb-8">
+
+              {steps.map((s, i) => (
+                <div key={i} className="flex flex-col items-center w-full">
+
+                  <div
+                    className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold
+                    ${i + 1 <= step ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"}`}
+                  >
+                    {i + 1}
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">{s}</p>
+
+                </div>
+              ))}
+
             </div>
-          </div>
 
-          {submitted ? (
-            <div className="text-center py-10">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="font-bold text-gray-900 text-lg">Update Submitted!</p>
-              <p className="text-gray-500 text-sm mt-1">Redirecting to task list...</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Task Status</label>
-                <select
-                  value={form.status}
-                  onChange={e => setForm({ ...form, status: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option>In Progress</option>
-                  <option>Completed</option>
-                  <option>Needs Part</option>
-                  <option>On Hold</option>
-                </select>
+            {submitted ? (
+
+              <div className="text-center py-16">
+
+                <div className="text-5xl mb-4">✅</div>
+
+                <p className="text-xl font-bold">Update Submitted</p>
+
+                <p className="text-gray-500 text-sm">
+                  Returning to task list...
+                </p>
+
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Work Notes</label>
-                <textarea
-                  value={form.notes}
-                  onChange={e => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Describe what was done, findings, issues encountered..."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  required
-                />
-              </div>
+            ) : (
 
-              <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* STATUS */}
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Parts Used</label>
-                  <input
-                    value={form.partsUsed}
-                    onChange={e => setForm({ ...form, partsUsed: e.target.value })}
-                    placeholder="e.g., Alarm Module, Fuse"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="text-sm font-medium text-gray-700">
+                    Task Status
+                  </label>
+
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      setForm({ ...form, status: e.target.value })
+                    }
+                    className="w-full mt-1 px-4 py-3 border rounded-lg"
+                  >
+                    <option>In Progress</option>
+                    <option>Needs Part</option>
+                    <option>On Hold</option>
+                    <option>Completed</option>
+                  </select>
+                </div>
+
+                {/* NOTES */}
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Work Notes
+                  </label>
+
+                  <textarea
+                    rows={4}
+                    value={form.notes}
+                    onChange={(e) =>
+                      setForm({ ...form, notes: e.target.value })
+                    }
+                    className="w-full mt-1 px-4 py-3 border rounded-lg"
+                    placeholder="Describe repair work performed..."
                   />
                 </div>
+
+                {/* PARTS */}
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Hours Spent</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Parts Used
+                  </label>
+
+                  <div className="flex gap-2 mt-1">
+
+                    <input
+                      value={newPart}
+                      onChange={(e) => setNewPart(e.target.value)}
+                      className="flex-1 px-4 py-3 border rounded-lg"
+                      placeholder="Add part name"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={addPart}
+                      className="px-4 py-3 bg-blue-600 text-white rounded-lg"
+                    >
+                      Add
+                    </button>
+
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-3">
+
+                    {form.partsUsed.map((p, i) => (
+                      <div
+                        key={i}
+                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs flex items-center gap-2"
+                      >
+                        {p}
+
+                        <button
+                          onClick={() => removePart(i)}
+                          type="button"
+                          className="text-red-500"
+                        >
+                          ✕
+                        </button>
+
+                      </div>
+                    ))}
+
+                  </div>
+
+                </div>
+
+                {/* HOURS */}
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Hours Spent
+                  </label>
+
                   <input
                     type="number"
-                    min="0"
                     step="0.5"
                     value={form.hoursSpent}
-                    onChange={e => setForm({ ...form, hoursSpent: e.target.value })}
-                    placeholder="e.g., 2.5"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    onChange={(e) =>
+                      setForm({ ...form, hoursSpent: e.target.value })
+                    }
+                    className="w-full mt-1 px-4 py-3 border rounded-lg"
+                    placeholder="2.5"
                   />
                 </div>
-              </div>
 
-              <button type="submit"
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-sm"
-              >
-                Submit Update
-              </button>
-            </form>
-          )}
+                {/* IMAGE */}
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Upload Repair Image
+                  </label>
+
+                  <input
+                    type="file"
+                    onChange={(e) =>
+                      setForm({ ...form, image: e.target.files[0] })
+                    }
+                    className="w-full mt-1"
+                  />
+                </div>
+
+                {/* SUBMIT */}
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+                >
+                  Submit Update
+                </button>
+
+                {draftSaved && (
+                  <p className="text-xs text-green-600">
+                    Draft auto-saved
+                  </p>
+                )}
+
+              </form>
+
+            )}
+
+          </div>
+
+          {/* RIGHT PANEL */}
+
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 h-fit">
+
+            <h2 className="font-bold text-gray-900 mb-4">
+              Equipment Preview
+            </h2>
+
+            <img
+              src="https://images.unsplash.com/photo-1581093588401-22e4e9a0d5f9"
+              alt="equipment"
+              className="w-full h-40 object-cover rounded-lg mb-4"
+            />
+
+            <p className="text-sm text-gray-500 mb-1">Equipment</p>
+            <p className="font-semibold">Ventilator #B05</p>
+
+            <p className="text-sm text-gray-500 mt-3">Hospital</p>
+            <p className="font-semibold">Apollo Medical Center</p>
+
+            <p className="text-sm text-gray-500 mt-3">Priority</p>
+
+            <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">
+              Critical
+            </span>
+
+            <div className="mt-6">
+              <p className="text-sm text-gray-500">Current Status</p>
+              <p className="font-semibold mt-1">{form.status}</p>
+            </div>
+
+          </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
