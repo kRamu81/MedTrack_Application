@@ -33,7 +33,9 @@ Backend API: *(Add backend deployment link here)*
 
 Example:
 
-Frontend → https://medtrack-app.vercel.app
+Frontend → https://kramu81.github.io/MedTrack_Application/
+
+
 Backend → https://medtrack-api.onrender.com
 
 ---
