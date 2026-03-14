@@ -64,9 +64,7 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-sm">© 2024 MedTrack. All rights reserved.</p>
-
           <p className="text-xs bg-gray-800 text-gray-500 px-3 py-1 rounded-full">
-            College Project — For Educational Use
           </p>
         </div>
 
