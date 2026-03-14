@@ -117,10 +117,9 @@ export default function OrdersPage() {
             <div className="rounded-lg px-3 py-1.5" style={{ background: "linear-gradient(135deg,#1e3a8a,#2563eb)" }}>
               <span className="text-white font-bold text-sm">Med<span className="text-blue-300">Track</span></span>
             </div>
-            <span className="text-slate-400 text-xs">Equipment Orders</span>
           </div>
           <div className="bg-blue-50 rounded-full px-3 py-1">
-            <span className="text-blue-800 text-xs font-bold">🏭 MedSupply Corp</span>
+            <span className="text-blue-800 text-xs font-bold"> MedSupply Corp</span>
           </div>
         </div>
       </div>
@@ -176,9 +175,9 @@ export default function OrdersPage() {
                   <div className="absolute inset-0 flex items-center justify-between px-4">
                     <div>
                       <p className="text-blue-300 font-bold uppercase tracking-widest" style={{ fontSize: "8px" }}>
-                        🏭 {order.supplierName} &nbsp;→&nbsp; Supplying to
+                         {order.supplierName} &nbsp;→&nbsp; Supplying to
                       </p>
-                      <p className="text-white font-extrabold text-base mt-0.5">🏥 {order.hospital}</p>
+                      <p className="text-white font-extrabold text-base mt-0.5"> {order.hospital}</p>
                     </div>
                     <div className={`${sc.bg} ${sc.border} border rounded-full px-3 py-1 flex items-center gap-1.5`}>
                       <span className="text-xs">{sc.icon}</span>
@@ -218,9 +217,9 @@ export default function OrdersPage() {
 
                     <div className="grid grid-cols-3 gap-2 bg-slate-50 border border-slate-100 rounded-xl p-2.5">
                       {[
-                        { label: "Ordered Date", icon: "📅", value: order.orderedDate },
-                        { label: "Est. Delivery", icon: "🗓", value: order.estimatedDelivery },
-                        { label: "Tracking No.", icon: "📦", value: order.trackingNo, mono: true },
+                        { label: "Ordered Date", value: order.orderedDate },
+                        { label: "Est. Delivery", value: order.estimatedDelivery },
+                        { label: "Tracking No.", value: order.trackingNo, mono: true },
                       ].map(item => (
                         <div key={item.label}>
                           <p className="text-slate-400 font-bold uppercase tracking-wide mb-0.5" style={{ fontSize: "8px" }}>{item.label}</p>
