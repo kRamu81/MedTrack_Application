@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { registerUser } from "../../services/AuthService";
 import logo from "../../assets/logo.png";
 
 export default function RegisterForm({ onNavigate }) {
+
   const { login } = useAuth();
 
   const [form, setForm] = useState({
@@ -16,15 +18,18 @@ export default function RegisterForm({ onNavigate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  // Handle form submit
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    // Password match validation
     if (form.password !== form.confirm) {
       setError("Passwords do not match.");
       return;
     }
 
+    // Password length validation
     if (form.password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -32,21 +37,37 @@ export default function RegisterForm({ onNavigate }) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      login({ name: form.name, email: form.email, role: form.role });
+    try {
 
-      onNavigate(
-        form.role === "hospital"
-          ? "dashboard"
-          : form.role === "technician"
-          ? "tasks"
-          : "orders"
-      );
+      const user = await registerUser({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
 
-      setLoading(false);
-    }, 1000);
+      // Save user in context
+      login(user);
+
+      // Navigate to login page
+      onNavigate("login");
+
+    } catch (err) {
+
+      console.error("Registration error:", err);
+
+      if (err.response) {
+        setError(err.response.data.message || "Registration failed.");
+      } else {
+        setError("Server not responding.");
+      }
+
+    }
+
+    setLoading(false);
   };
 
+  // Input fields
   const fields = [
     {
       key: "name",
@@ -64,7 +85,7 @@ export default function RegisterForm({ onNavigate }) {
       key: "password",
       label: "Password",
       type: "password",
-      placeholder: "Min. 6 characters",
+      placeholder: "Minimum 6 characters",
     },
     {
       key: "confirm",
@@ -76,6 +97,7 @@ export default function RegisterForm({ onNavigate }) {
 
   return (
     <div>
+
       {/* Logo */}
       <div className="flex justify-center mb-6">
         <img src={logo} alt="MedTrack Logo" className="h-10" />
@@ -94,13 +116,14 @@ export default function RegisterForm({ onNavigate }) {
 
       <form onSubmit={handleSubmit} className="space-y-5">
 
+        {/* Error message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Register Role Dropdown */}
+        {/* Role selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Register As
@@ -111,7 +134,7 @@ export default function RegisterForm({ onNavigate }) {
             onChange={(e) =>
               setForm({ ...form, role: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
           >
             <option value="hospital">Hospital Admin</option>
             <option value="technician">Technician</option>
@@ -119,7 +142,7 @@ export default function RegisterForm({ onNavigate }) {
           </select>
         </div>
 
-        {/* Inputs */}
+        {/* Dynamic Input Fields */}
         {fields.map(({ key, label, type, placeholder }) => (
           <div key={key}>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -133,28 +156,22 @@ export default function RegisterForm({ onNavigate }) {
                 setForm({ ...form, [key]: e.target.value })
               }
               placeholder={placeholder}
-              className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
         ))}
 
-        {/* Button */}
+        {/* Submit button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2"
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
         >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create Account"
-          )}
+          {loading ? "Creating account..." : "Create Account"}
         </button>
 
+        {/* Login link */}
         <p className="text-center text-sm text-gray-500">
           Already registered?{" "}
           <button

@@ -1,61 +1,59 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { loginUser } from "../../services/AuthService";
 import logo from "../../assets/logo.png";
 
 export default function LoginForm({ onNavigate }) {
+
   const { login } = useAuth();
 
   const [form, setForm] = useState({
     email: "",
     password: "",
-    role: "hospital",
+    role: "hospital"
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const DEMO_USERS = {
-    hospital: {
-      name: "City General Hospital",
-      email: "hospital@demo.com",
-      role: "hospital",
-    },
-    technician: {
-      name: "Alex Technician",
-      email: "tech@demo.com",
-      role: "technician",
-    },
-    supplier: {
-      name: "MedSupply Corp",
-      email: "supplier@demo.com",
-      role: "supplier",
-    },
-  };
-
-  const handleSubmit = (e) => {
+  // Handle Login
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      const demo = DEMO_USERS[form.role];
+    try {
 
-      if (form.email && form.password.length >= 4) {
-        login({ ...demo, email: form.email });
+      const user = await loginUser({
+        email: form.email,
+        password: form.password
+      });
 
-        onNavigate(
-          form.role === "hospital"
-            ? "dashboard"
-            : form.role === "technician"
-            ? "tasks"
-            : "orders"
-        );
+      // Save user in context
+      login(user);
+
+      // Navigate based on role
+      onNavigate(
+        user.role === "hospital"
+          ? "dashboard"
+          : user.role === "technician"
+          ? "tasks"
+          : "orders"
+      );
+
+    } catch (err) {
+
+      console.error("Login error:", err);
+
+      if (err.response) {
+        setError(err.response.data.message || "Invalid credentials.");
       } else {
-        setError("Please enter a valid email and password.");
+        setError("Server not responding.");
       }
 
-      setLoading(false);
-    }, 1000);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -76,15 +74,18 @@ export default function LoginForm({ onNavigate }) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
 
+        {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Role Select */}
+        {/* Role Selection */}
         <div>
-          <label className="text-sm text-gray-600">Select Role</label>
+          <label className="text-sm text-gray-600">
+            Select Role
+          </label>
 
           <select
             value={form.role}
@@ -101,7 +102,9 @@ export default function LoginForm({ onNavigate }) {
 
         {/* Email */}
         <div>
-          <label className="text-sm text-gray-600">Email</label>
+          <label className="text-sm text-gray-600">
+            Email
+          </label>
 
           <input
             type="email"
@@ -117,7 +120,9 @@ export default function LoginForm({ onNavigate }) {
 
         {/* Password */}
         <div>
-          <label className="text-sm text-gray-600">Password</label>
+          <label className="text-sm text-gray-600">
+            Password
+          </label>
 
           <input
             type="password"
