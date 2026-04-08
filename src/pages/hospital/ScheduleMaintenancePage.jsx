@@ -1,58 +1,76 @@
 import React, { useState, useEffect } from 'react';
+import { getAllEquipment } from '../../services/EquipmentService';
+import { scheduleTask } from '../../services/MaintenanceService';
 
 export default function ScheduleMaintenancePage({ onNavigate }) {
   const [equipmentList, setEquipmentList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     equipmentId: '',
-    equipmentName: '',
+    equipment: '', // name
     maintenanceType: 'Preventive',
-    scheduledDate: '',
+    deadline: '', // mapped from scheduledDate
     assignedTechnician: '',
-    description: ''
+    description: '',
+    priority: 'Normal'
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem("medtrack_equipment");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setEquipmentList(parsed);
-      if (parsed.length > 0) {
-        setFormData(prev => ({ ...prev, equipmentId: parsed[0].id, equipmentName: parsed[0].name }));
-      }
-    }
+    fetchEquipment();
   }, []);
+
+  const fetchEquipment = async () => {
+    try {
+      const data = await getAllEquipment();
+      setEquipmentList(data);
+      if (data.length > 0) {
+        setFormData(prev => ({ 
+          ...prev, 
+          equipmentId: data[0].deviceCode || data[0].id, 
+          equipment: data[0].name 
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching equipment:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onChange = (e) => {
     const { name, value } = e.target;
     if (name === "equipmentId") {
-      const selected = equipmentList.find(eq => eq.id === value);
+      const selected = equipmentList.find(eq => (eq.deviceCode || eq.id.toString()) === value);
       setFormData({
         ...formData,
         equipmentId: value,
-        equipmentName: selected ? selected.name : ''
+        equipment: selected ? selected.name : ''
       });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    const newTask = {
-      id: `MNT-${Date.now().toString().slice(-4)}`,
-      ...formData,
-      status: 'Scheduled',
-      createdAt: new Date().toISOString()
-    };
+    try {
+      const newTask = {
+        ...formData,
+        taskCode: `MNT-${Date.now().toString().slice(-4)}`,
+        status: 'Scheduled',
+        hospital: 'City General Hospital' // Default for now
+      };
 
-    const storedTasks = localStorage.getItem("medtrack_maintenance");
-    const existingTasks = storedTasks ? JSON.parse(storedTasks) : [];
-    existingTasks.push(newTask);
-    localStorage.setItem("medtrack_maintenance", JSON.stringify(existingTasks));
-
-    alert('Maintenance scheduled successfully!');
-    onNavigate('maintenance');
+      await scheduleTask(newTask);
+      alert('Maintenance scheduled successfully!');
+      onNavigate('maintenance');
+    } catch (err) {
+      console.error("Error scheduling maintenance:", err);
+      alert('Failed to schedule maintenance.');
+    }
   };
+
+  if (loading) return <div className="p-8 text-center">Loading equipment list...</div>;
 
   return (
     <div className="min-h-screen bg-blue-50 p-6">
@@ -74,16 +92,16 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {equipmentList.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} ({item.id})
+                  <option key={item.id} value={item.deviceCode || item.id}>
+                    {item.name} ({item.deviceCode || item.id})
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select 
                   name="maintenanceType" 
                   value={formData.maintenanceType} 
@@ -93,14 +111,28 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
                   <option value="Preventive">Preventive</option>
                   <option value="Corrective">Corrective</option>
                   <option value="Inspection">Inspection</option>
+                  <option value="Calibration">Calibration</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <select 
+                  name="priority" 
+                  value={formData.priority} 
+                  onChange={onChange} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
                 <input 
                   type="date" 
-                  name="scheduledDate" 
-                  value={formData.scheduledDate} 
+                  name="deadline" 
+                  value={formData.deadline} 
                   onChange={onChange} 
                   required 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
@@ -120,11 +152,22 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes / Description</label>
+              <textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={onChange} 
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button type="button" onClick={() => onNavigate('maintenance')} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
                 Cancel
               </button>
-              <button type="submit" className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
+              <button type="submit" className="px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
                 Schedule Task
               </button>
             </div>

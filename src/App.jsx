@@ -8,8 +8,12 @@ import ContactPage from "./pages/ContactPage";
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState("landing");
+  const [pageData, setPageData] = useState(null);
 
-  const handleNavigate = (page) => setCurrentPage(page);
+  const handleNavigate = (page, data = null) => {
+    setCurrentPage(page);
+    setPageData(data);
+  };
 
   const noLayoutPages = ["login", "register"];
   const isAuthPage = noLayoutPages.includes(currentPage);
@@ -29,7 +33,11 @@ function AppContent() {
         ) : currentPage === "contact" ? (
           <ContactPage />
         ) : (
-          <AppRoutes currentPage={currentPage} onNavigate={handleNavigate} />
+          <AppRoutes 
+            currentPage={currentPage} 
+            onNavigate={handleNavigate} 
+            pageData={pageData} 
+          />
         )}
       </main>
 

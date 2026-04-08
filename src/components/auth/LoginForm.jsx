@@ -8,54 +8,53 @@ export default function LoginForm({ onNavigate }) {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    role: "hospital",
+    role: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const DEMO_USERS = {
-    hospital: {
-      name: "City General Hospital",
-      email: "hospital@demo.com",
-      role: "hospital",
-    },
-    technician: {
-      name: "Alex Technician",
-      email: "tech@demo.com",
-      role: "technician",
-    },
-    supplier: {
-      name: "MedSupply Corp",
-      email: "supplier@demo.com",
-      role: "supplier",
-    },
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      const demo = DEMO_USERS[form.role];
+    try {
+      const response = await fetch(
+        "http://localhost:8081/api/user/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+          }),
+        }
+      );
 
-      if (form.email && form.password.length >= 4) {
-        login({ ...demo, email: form.email });
-
-        onNavigate(
-          form.role === "hospital"
-            ? "dashboard"
-            : form.role === "technician"
-            ? "tasks"
-            : "orders"
-        );
-      } else {
-        setError("Please enter a valid email and password.");
+      if (!response.ok) {
+        throw new Error("Invalid login credentials");
       }
 
-      setLoading(false);
-    }, 1000);
+      const user = await response.json();
+
+      login(user);
+
+      onNavigate(
+        user.role === "hospital"
+          ? "dashboard"
+          : user.role === "technician"
+          ? "tasks"
+          : "orders"
+      );
+
+    } catch (err) {
+      setError("Login failed. Check email or password.");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -82,7 +81,7 @@ export default function LoginForm({ onNavigate }) {
           </div>
         )}
 
-        {/* Role Select */}
+        {/* Role */}
         <div>
           <label className="text-sm text-gray-600">Select Role</label>
 
@@ -131,7 +130,7 @@ export default function LoginForm({ onNavigate }) {
           />
         </div>
 
-        {/* Login Button */}
+        {/* Button */}
         <button
           type="submit"
           disabled={loading}

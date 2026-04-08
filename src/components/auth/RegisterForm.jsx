@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { registerUser } from "../../services/AuthService";
 import logo from "../../assets/logo.png";
 
 export default function RegisterForm({ onNavigate }) {
+
   const { login } = useAuth();
 
   const [form, setForm] = useState({
@@ -10,21 +12,23 @@ export default function RegisterForm({ onNavigate }) {
     email: "",
     password: "",
     confirm: "",
-    role: "hospital",
+    role: "hospital"
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    // password match check
     if (form.password !== form.confirm) {
       setError("Passwords do not match.");
       return;
     }
 
+    // password length check
     if (form.password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -32,19 +36,34 @@ export default function RegisterForm({ onNavigate }) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      login({ name: form.name, email: form.email, role: form.role });
+    try {
 
-      onNavigate(
-        form.role === "hospital"
-          ? "dashboard"
-          : form.role === "technician"
-          ? "tasks"
-          : "orders"
-      );
+      const user = await registerUser({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role
+      });
 
-      setLoading(false);
-    }, 1000);
+      // save user
+      login(user);
+
+      // navigate to login page
+      onNavigate("login");
+
+    } catch (err) {
+
+      console.error("Registration error:", err);
+
+      if (err.response) {
+        setError(err.response.data.message || "Registration failed.");
+      } else {
+        setError("Server not responding.");
+      }
+
+    }
+
+    setLoading(false);
   };
 
   const fields = [
@@ -52,30 +71,31 @@ export default function RegisterForm({ onNavigate }) {
       key: "name",
       label: "Full Name / Organization",
       type: "text",
-      placeholder: "City General Hospital",
+      placeholder: "City General Hospital"
     },
     {
       key: "email",
       label: "Email Address",
       type: "email",
-      placeholder: "admin@hospital.com",
+      placeholder: "admin@hospital.com"
     },
     {
       key: "password",
       label: "Password",
       type: "password",
-      placeholder: "Min. 6 characters",
+      placeholder: "Min. 6 characters"
     },
     {
       key: "confirm",
       label: "Confirm Password",
       type: "password",
-      placeholder: "Re-enter password",
-    },
+      placeholder: "Re-enter password"
+    }
   ];
 
   return (
     <div>
+
       {/* Logo */}
       <div className="flex justify-center mb-6">
         <img src={logo} alt="MedTrack Logo" className="h-10" />
@@ -100,7 +120,7 @@ export default function RegisterForm({ onNavigate }) {
           </div>
         )}
 
-        {/* Register Role Dropdown */}
+        {/* Role */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Register As
@@ -111,7 +131,7 @@ export default function RegisterForm({ onNavigate }) {
             onChange={(e) =>
               setForm({ ...form, role: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
           >
             <option value="hospital">Hospital Admin</option>
             <option value="technician">Technician</option>
@@ -133,7 +153,7 @@ export default function RegisterForm({ onNavigate }) {
                 setForm({ ...form, [key]: e.target.value })
               }
               placeholder={placeholder}
-              className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -143,16 +163,9 @@ export default function RegisterForm({ onNavigate }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2"
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
         >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create Account"
-          )}
+          {loading ? "Creating account..." : "Create Account"}
         </button>
 
         <p className="text-center text-sm text-gray-500">

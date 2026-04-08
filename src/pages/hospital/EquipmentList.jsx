@@ -182,29 +182,38 @@ const styles = {
   },
 };
 
+import { getAllEquipment, deleteEquipment } from "../../services/EquipmentService";
+
 export default function EquipmentList({ onNavigate }) {
   const [equipment, setEquipment] = useState([]);
   const [search, setSearch] = useState("");
-  // State for hover effect (optional, kept simple with CSS via JS events)
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("medtrack_equipment")) || [];
-    const merged = [...PUBLIC_EQUIPMENT, ...stored];
-    setEquipment(merged);
+    fetchEquipment();
   }, []);
 
-  const handleDelete = (id) => {
-    if (id.startsWith("EQ-00")) {
-      alert("Default equipment cannot be deleted");
-      return;
+  const fetchEquipment = async () => {
+    try {
+      setLoading(false);
+      const data = await getAllEquipment();
+      setEquipment(data);
+    } catch (error) {
+      console.error("Failed to fetch equipment", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
-      const stored = JSON.parse(localStorage.getItem("medtrack_equipment")) || [];
-      const updated = stored.filter((item) => item.id !== id);
-      localStorage.setItem("medtrack_equipment", JSON.stringify(updated));
-      setEquipment([...PUBLIC_EQUIPMENT, ...updated]);
+      try {
+        await deleteEquipment(id);
+        fetchEquipment();
+      } catch (error) {
+        alert("Failed to delete equipment. It might be linked to maintenance tasks.");
+      }
     }
   };
 
