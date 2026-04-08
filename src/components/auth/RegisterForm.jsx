@@ -18,17 +18,18 @@ export default function RegisterForm({ onNavigate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // password match check
+    // Password match validation
     if (form.password !== form.confirm) {
       setError("Passwords do not match.");
       return;
     }
 
-    // password length check
+    // Password length validation
     if (form.password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -42,13 +43,13 @@ export default function RegisterForm({ onNavigate }) {
         name: form.name,
         email: form.email,
         password: form.password,
-        role: form.role
+        role: form.role,
       });
 
-      // save user
+      // Save user in context
       login(user);
 
-      // navigate to login page
+      // Navigate to login page
       onNavigate("login");
 
     } catch (err) {
@@ -66,6 +67,7 @@ export default function RegisterForm({ onNavigate }) {
     setLoading(false);
   };
 
+  // Input fields
   const fields = [
     {
       key: "name",
@@ -83,7 +85,7 @@ export default function RegisterForm({ onNavigate }) {
       key: "password",
       label: "Password",
       type: "password",
-      placeholder: "Min. 6 characters"
+      placeholder: "Minimum 6 characters",
     },
     {
       key: "confirm",
@@ -114,13 +116,14 @@ export default function RegisterForm({ onNavigate }) {
 
       <form onSubmit={handleSubmit} className="space-y-5">
 
+        {/* Error message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Role */}
+        {/* Role selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Register As
@@ -139,7 +142,7 @@ export default function RegisterForm({ onNavigate }) {
           </select>
         </div>
 
-        {/* Inputs */}
+        {/* Dynamic Input Fields */}
         {fields.map(({ key, label, type, placeholder }) => (
           <div key={key}>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -159,7 +162,7 @@ export default function RegisterForm({ onNavigate }) {
           </div>
         ))}
 
-        {/* Button */}
+        {/* Submit button */}
         <button
           type="submit"
           disabled={loading}
@@ -168,6 +171,7 @@ export default function RegisterForm({ onNavigate }) {
           {loading ? "Creating account..." : "Create Account"}
         </button>
 
+        {/* Login link */}
         <p className="text-center text-sm text-gray-500">
           Already registered?{" "}
           <button
