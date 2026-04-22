@@ -30,7 +30,7 @@ public class MaintenanceService {
         
         task.setStatus(taskDetails.getStatus());
         task.setNotes(taskDetails.getNotes());
-        task.setHoursSpent(taskDetails.getHoursSpent());
+        task.setHoursWorked(taskDetails.getHoursWorked());
         task.setAssignedTechnician(taskDetails.getAssignedTechnician());
         
         return taskRepository.save(task);

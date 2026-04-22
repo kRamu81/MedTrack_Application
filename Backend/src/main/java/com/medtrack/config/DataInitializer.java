@@ -29,8 +29,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("Admin User")
                 .email("hospital@medtrack.com")
                 .password("admin123")
-                .role("Hospital Admin")
-                .hospitalName("City General Hospital")
+                .role("hospital")
                 .build());
 
             userRepository.save(User.builder()
@@ -52,7 +51,7 @@ public class DataInitializer implements CommandLineRunner {
         if (equipmentRepository.count() == 0) {
             equipmentRepository.save(Equipment.builder()
                 .name("MRI Scanner X100")
-                .deviceCode("EQ-1001")
+                .equipmentCode("EQ-1001")
                 .model("Siemens Healthcare")
                 .serialNumber("SN-9921-A")
                 .department("Radiology")
@@ -63,7 +62,7 @@ public class DataInitializer implements CommandLineRunner {
 
             equipmentRepository.save(Equipment.builder()
                 .name("Portable Ventilator")
-                .deviceCode("EQ-1002")
+                .equipmentCode("EQ-1002")
                 .model("Philips V60")
                 .serialNumber("SN-1102-B")
                 .department("ICU")
@@ -101,12 +100,11 @@ public class DataInitializer implements CommandLineRunner {
         // 4. Seed Orders
         if (equipmentOrderRepository.count() == 0) {
             equipmentOrderRepository.save(EquipmentOrder.builder()
+                .orderCode("ORD-1001")
                 .equipmentName("Defibrillator Pads (Box of 10)")
-                .hospital("City General Hospital")
-                .orderedDate(LocalDate.now().minusDays(2))
-                .shippingStatus("Processing")
-                .price("₹15,000")
-                .category("Emergency")
+                .createdBy("Admin User")
+                .orderDate(LocalDate.now().minusDays(2).atStartOfDay())
+                .status("PENDING")
                 .build());
         }
 

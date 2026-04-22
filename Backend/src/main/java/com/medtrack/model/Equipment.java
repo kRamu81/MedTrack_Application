@@ -55,5 +55,7 @@ public class Equipment {
     @Builder.Default
     private String status = "Operational";
 
+    private String category;
+
     private LocalDate purchaseDate;
 }
