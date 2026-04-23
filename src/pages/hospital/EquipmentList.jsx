@@ -196,7 +196,7 @@ export default function EquipmentList({ onNavigate }) {
 
   const fetchEquipment = async () => {
     try {
-      setLoading(false);
+      setLoading(true);
       const data = await getAllEquipment();
       setEquipment(data);
     } catch (error) {
@@ -236,7 +236,7 @@ export default function EquipmentList({ onNavigate }) {
   const filtered = equipment.filter(
     (item) =>
       item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.id.toLowerCase().includes(search.toLowerCase())
+      String(item.id).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -294,17 +294,17 @@ export default function EquipmentList({ onNavigate }) {
               <h3 style={styles.cardTitle}>{item.name}</h3>
               
               <div style={styles.cardInfo}>
-                <span style={styles.iconSpan}>🏷️</span>
+                <span style={styles.iconSpan}></span>
                 <span><strong>ID:</strong> {item.id}</span>
               </div>
               
               <div style={styles.cardInfo}>
-                <span style={styles.iconSpan}>🏥</span>
+                <span style={styles.iconSpan}></span>
                 <span>{item.department}</span>
               </div>
               
               <div style={styles.cardInfo}>
-                <span style={styles.iconSpan}>🔧</span>
+                <span style={styles.iconSpan}></span>
                 <span>{item.model}</span>
               </div>
 
@@ -317,7 +317,7 @@ export default function EquipmentList({ onNavigate }) {
                 </button>
 
                 {/* Hide delete button for default items */}
-                {!item.id.startsWith("EQ-00") && (
+                {!(String(item.id).startsWith("EQ-00")) && (
                   <button
                     onClick={() => handleDelete(item.id)}
                     style={styles.deleteBtn}
