@@ -5,6 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Data Transfer Object (DTO) for authentication responses.
+ * Returns authenticated user details along with the issued JWT token.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -14,4 +18,7 @@ public class AuthResponse {
     private String name;
     private String email;
     private String role;
+    
+    // JWT access token for subsequent authenticated API requests
+    private String token;
 }
