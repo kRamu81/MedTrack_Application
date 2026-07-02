@@ -21,6 +21,11 @@ public class MaintenanceController {
         return ResponseEntity.ok(maintenanceService.getAllTasks());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<MaintenanceTask> getTaskById(@PathVariable Long id) {
+        return ResponseEntity.ok(maintenanceService.getTaskById(id));
+    }
+
     @PostMapping
     public ResponseEntity<MaintenanceTask> scheduleTask(@RequestBody MaintenanceTask task) {
         return ResponseEntity.ok(maintenanceService.scheduleTask(task));

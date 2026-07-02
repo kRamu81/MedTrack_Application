@@ -17,6 +17,11 @@ public class MaintenanceService {
         return taskRepository.findAll();
     }
 
+    public MaintenanceTask getTaskById(Long id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Maintenance task not found with id: " + id));
+    }
+
     public MaintenanceTask scheduleTask(MaintenanceTask task) {
         if (task.getTaskCode() == null) {
             task.setTaskCode("MNT-" + System.currentTimeMillis() % 10000);

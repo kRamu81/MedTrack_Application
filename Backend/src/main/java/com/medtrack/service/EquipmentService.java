@@ -17,6 +17,11 @@ public class EquipmentService {
         return equipmentRepository.findAll();
     }
 
+    public Equipment getEquipmentById(Long id) {
+        return equipmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Equipment not found with id: " + id));
+    }
+
     public Equipment addEquipment(Equipment equipment) {
         // Generate a simple code if not provided
         if (equipment.getEquipmentCode() == null) {

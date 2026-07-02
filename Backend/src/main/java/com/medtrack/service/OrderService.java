@@ -18,6 +18,11 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
+    public EquipmentOrder getOrderById(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+    }
+
     public EquipmentOrder placeOrder(EquipmentOrder order) {
         if (order.getOrderCode() == null) {
             order.setOrderCode("ORD-" + System.currentTimeMillis() % 10000);

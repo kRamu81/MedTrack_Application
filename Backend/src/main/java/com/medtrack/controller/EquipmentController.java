@@ -21,6 +21,11 @@ public class EquipmentController {
         return ResponseEntity.ok(equipmentService.getAllEquipment());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Equipment> getEquipmentById(@PathVariable Long id) {
+        return ResponseEntity.ok(equipmentService.getEquipmentById(id));
+    }
+
     @PostMapping
     public ResponseEntity<Equipment> addEquipment(@RequestBody Equipment equipment) {
         return ResponseEntity.ok(equipmentService.addEquipment(equipment));
