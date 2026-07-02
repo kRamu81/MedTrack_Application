@@ -89,5 +89,35 @@ npm start
 
 ---
 
+---
+
+# 🤝 Contributing
+
+We welcome contributions from the community! 🚀
+
+Before starting work on an issue:
+
+1. ⭐ Star this repository.
+2. 🍴 Fork the repository.
+3. 💬 Join our Discord community for discussions and issue assignments.
+4. 📌 Comment on the issue you'd like to work on and wait for assignment.
+5. 🌿 Create a new branch for your changes.
+6. ✅ Submit a Pull Request with the required `ECSoc26` label.
+
+> Please do not start working on an issue until it has been assigned to you.
+
+---
+
+## 💬 Join Our Discord Community
+
+Need help? Want to discuss features or get assigned an issue?
+
+👉 **Join our Discord Server:**  
+https://discord.gg/F7TUpgPzJ
+
+We'd love to have you in our community! ❤️
+
+---
+
 ## 📄 License
 This project was developed for the **MedTrack Case Study 06**.
