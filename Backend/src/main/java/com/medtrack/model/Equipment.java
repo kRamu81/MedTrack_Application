@@ -58,4 +58,11 @@ public class Equipment {
     private String category;
 
     private LocalDate purchaseDate;
+
+    /**
+     * Many Equipment items belong to one Hospital.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospital_id", insertable = false, updatable = false)
+    private Hospital hospital;
 }

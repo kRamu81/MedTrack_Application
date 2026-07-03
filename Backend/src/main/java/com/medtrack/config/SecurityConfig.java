@@ -4,6 +4,7 @@ import com.medtrack.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -55,11 +56,32 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // Define access control rules for endpoints
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints accessible without authentication
                 .requestMatchers(
                     "/api/user/login",
                     "/api/user/register",
                     "/h2-console/**"
                 ).permitAll()
+
+                // Equipment: Viewable by authenticated users; managed only by Hospital accounts
+                .requestMatchers(HttpMethod.GET, "/api/equipment/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/equipment/**").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.PUT, "/api/equipment/**").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.DELETE, "/api/equipment/**").hasRole("HOSPITAL")
+
+                // Orders: Viewable by authenticated users; created/deleted by Hospital; status updated by Supplier
+                .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("SUPPLIER")
+                .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("HOSPITAL")
+
+                // Maintenance: Viewable by authenticated users; created/deleted by Hospital; completed/updated by Technician
+                .requestMatchers(HttpMethod.GET, "/api/maintenance/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/maintenance/**").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.PUT, "/api/maintenance/**").hasRole("TECHNICIAN")
+                .requestMatchers(HttpMethod.DELETE, "/api/maintenance/**").hasRole("HOSPITAL")
+
+                // All other requests require authentication
                 .anyRequest().authenticated()
             )
             // Inject JWT filter before the standard username-password authentication filter

@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Runs on port 8081 to match frontend HttpService.js
  */
 @SpringBootApplication
-public class MedTrackApplication {
+public class    MedTrackApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(MedTrackApplication.class, args);
