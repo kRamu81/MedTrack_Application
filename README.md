@@ -1,123 +1,187 @@
-# 🏥 MedTrack — Medical Equipment Management & Tracking System
+<a id="readme-top"></a>
 
-MedTrack is a **Full-Stack Medical Equipment Management Platform** that helps hospitals manage their **equipment inventory, maintenance schedules, and equipment orders** efficiently.
+<!-- PROJECT SHIELDS -->
+<div align="center">
+  
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
 
-The system supports **three major roles**:
+</div>
+
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/kRamu81/MedTrack_Application">
+    <!-- Replace with your actual logo -->
+    <img src="https://raw.githubusercontent.com/othneildrew/Best-README-Template/master/images/logo.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">🏥 MedTrack</h3>
+
+  <p align="center">
+    <strong>A Full-Stack Medical Equipment Management & Tracking System</strong>
+    <br />
+    <a href="https://github.com/kRamu81/MedTrack_Application"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://discord.gg/F7TUpgPzJ">Join Discord</a>
+    ·
+    <a href="https://github.com/kRamu81/MedTrack_Application/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/kRamu81/MedTrack_Application/issues">Request Feature</a>
+  </p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#core-features">Core Features</a></li>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage & Test Accounts</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+MedTrack is a **Full-Stack Medical Equipment Management Platform** that helps hospitals manage their equipment inventory, maintenance schedules, and equipment orders efficiently.
+
+The system is designed with a microservice-oriented backend and a responsive React frontend, created specifically for the **MedTrack Case Study 06** during the Elite Summer of Code (ECSoc).
+
+### Core Features
+The system supports three major roles:
 * 🏥 **Hospital**: Manage inventory, schedule maintenance, and order equipment.
 * 🔧 **Technician**: View and complete assigned maintenance tasks.
 * 🚚 **Supplier**: Fulfill equipment orders and update delivery status.
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🚀 Recent Updates
-- ✅ **Full-Stack Integration**: Frontend (Port 3000) is now fully connected to the Backend (Port 8081).
-- ✅ **Fixed Registration**: Resolved critical backend compilation errors and "404 Not Found" API issues.
-- ✅ **SPA Routing**: Fixed Single Page Application routing for Spring Boot 3.
+### Built With
 
----
+* [![React][React.js]][React-url]
+* [![Tailwind][Tailwind.css]][Tailwind-url]
+* [![Spring][Spring.io]][Spring-url]
+* [![Java][Java.com]][Java-url]
 
-## ⚙️ Technology Stack
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Frontend
-- **React.js** with **Tailwind CSS**
-- **Axios** (Configured for Port 8081)
-- **Context API** for Authentication
+<!-- GETTING STARTED -->
+## Getting Started
 
-### Backend
-- **Spring Boot 3.2.4**
-- **Spring Data JPA** & **Spring Security**
-- **H2 In-Memory Database** (Perfect for development)
-- **Maven** for build management
+To get a local copy up and running, follow these simple steps.
 
----
+### Prerequisites
 
-## 🏗️ Project Structure
+* Java 17 or higher
+* Node.js (v16+)
+* npm (v8+)
+* Maven
 
-```
-MedTrack_Application/
-├── src/                      # React Frontend
-│   ├── components/           # Reusable UI components
-│   ├── pages/                # Role-based dashboards & Auth pages
-│   └── services/             # API communication (HttpService.js)
-│
-└── Backend/                  # Spring Boot Backend
-    ├── src/main/java/com/medtrack/
-    │   ├── config/           # Security & Data Seeding
-    │   ├── controller/       # REST API Endpoints
-    │   ├── model/            # JPA Entities
-    │   ├── service/          # Business Logic
-    │   └── repository/       # Database Access
-    └── pom.xml               # Dependencies
-```
+### Installation
 
----
+1. Clone the repo
+   ```sh
+   git clone https://github.com/kRamu81/MedTrack_Application.git
+   ```
+2. **Start the Backend**
+   ```sh
+   cd Backend
+   mvn spring-boot:run
+   ```
+   * **API URL**: `http://localhost:8081`
+   * **H2 Console**: `http://localhost:8081/h2-console` (JDBC: `jdbc:h2:mem:medtrackdb`, User: `sa`)
 
-## 🚥 Getting Started
+3. **Start the Frontend**
+   ```sh
+   # Open a new terminal in the root directory
+   npm install
+   npm start
+   ```
+   * **App URL**: `http://localhost:3000/MedTrack_Application`
 
-### 1. Start the Backend (Java 17+)
-Navigate to the Backend directory and run using Maven:
-```bash
-cd Backend
-mvn spring-boot:run
-```
-- **API URL**: `http://localhost:8081`
-- **H2 Console**: `http://localhost:8081/h2-console` (JDBC: `jdbc:h2:mem:medtrackdb`, User: `sa`)
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### 2. Start the Frontend (Node.js)
-Navigate to the root directory and run:
-```bash
-npm install
-npm start
-```
-- **App URL**: `http://localhost:3000/MedTrack_Application`
+<!-- USAGE EXAMPLES -->
+## Usage & Test Accounts
 
----
+Use the following default accounts to test the different role dashboards:
 
-## 🔐 Default Test Accounts
 | Role | Email | Password |
 |------|-------|----------|
 | Hospital Admin | `hospital@medtrack.com` | `admin123` |
 | Technician | `tech@medtrack.com` | `tech123` |
 | Supplier | `supplier@medtrack.com` | `supply123` |
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 📊 Core Features
-- **Hospital**: Add equipment, track inventory, and schedule maintenance tasks.
-- **Technician**: Real-time maintenance task list with status updates.
-- **Supplier**: Order tracking from `PENDING` to `DELIVERED`.
+<!-- CONTRIBUTING -->
+## Contributing
 
----
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
----
+Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for full details on how to get started, assign yourself an issue, and submit a Pull Request.
 
-# 🤝 Contributing
+**Quick Steps:**
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-We welcome contributions from the community! 🚀
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-Before starting work on an issue:
+<!-- LICENSE -->
+## License
 
-1. ⭐ Star this repository.
-2. 🍴 Fork the repository.
-3. 💬 Join our Discord community for discussions and issue assignments.
-4. 📌 Comment on the issue you'd like to work on and wait for assignment.
-5. 🌿 Create a new branch for your changes.
-6. ✅ Submit a Pull Request with the required `ECSoc26` label.
+Distributed under the MIT License. See `LICENSE` for more information.
 
-> Please do not start working on an issue until it has been assigned to you.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
+<!-- CONTACT -->
+## Contact
 
-## 💬 Join Our Discord Community
+Project Link: [https://github.com/kRamu81/MedTrack_Application](https://github.com/kRamu81/MedTrack_Application)
 
-Need help? Want to discuss features or get assigned an issue?
+💬 **Join our Discord Community:** [https://discord.gg/F7TUpgPzJ](https://discord.gg/F7TUpgPzJ)
 
-👉 **Join our Discord Server:**  
-https://discord.gg/F7TUpgPzJ
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-We'd love to have you in our community! ❤️
 
----
-
-## 📄 License
-This project was developed for the **MedTrack Case Study 06**.
+<!-- MARKDOWN LINKS & IMAGES -->
+[contributors-shield]: https://img.shields.io/github/contributors/kRamu81/MedTrack_Application.svg?style=for-the-badge
+[contributors-url]: https://github.com/kRamu81/MedTrack_Application/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/kRamu81/MedTrack_Application.svg?style=for-the-badge
+[forks-url]: https://github.com/kRamu81/MedTrack_Application/network/members
+[stars-shield]: https://img.shields.io/github/stars/kRamu81/MedTrack_Application.svg?style=for-the-badge
+[stars-url]: https://github.com/kRamu81/MedTrack_Application/stargazers
+[issues-shield]: https://img.shields.io/github/issues/kRamu81/MedTrack_Application.svg?style=for-the-badge
+[issues-url]: https://github.com/kRamu81/MedTrack_Application/issues
+[license-shield]: https://img.shields.io/github/license/kRamu81/MedTrack_Application.svg?style=for-the-badge
+[license-url]: https://github.com/kRamu81/MedTrack_Application/blob/master/LICENSE
+[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
+[React-url]: https://reactjs.org/
+[Tailwind.css]: https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white
+[Tailwind-url]: https://tailwindcss.com/
+[Spring.io]: https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white
+[Spring-url]: https://spring.io/projects/spring-boot
+[Java.com]: https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white
+[Java-url]: https://java.com/
