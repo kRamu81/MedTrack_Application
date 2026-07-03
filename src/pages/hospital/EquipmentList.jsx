@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getAllEquipment, deleteEquipment, getEquipmentById } from "../../services/EquipmentService";
-
+import { useAuth } from "../../context/AuthContext";
 /* ===========================
    DEFAULT PUBLIC EQUIPMENT
    Visible to ALL users
@@ -31,7 +31,7 @@ const EQUIPMENT_IMAGES = {
 /* ===========================
    STYLES OBJECT
    Centralized styling for clean code
-
+*/
 const styles = {
   page: {
     backgroundColor: "#f4f7f6", // Light medical grey background
@@ -231,9 +231,6 @@ const styles = {
     padding: 0,
   },
 };
-
-import { getAllEquipment, deleteEquipment, getEquipmentById } from "../../services/EquipmentService";
-import { useAuth } from "../../context/AuthContext";
 
 export default function EquipmentList({ onNavigate }) {
   const { user } = useAuth();

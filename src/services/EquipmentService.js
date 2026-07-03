@@ -23,8 +23,3 @@ export const deleteEquipment = async (id) => {
   const response = await API.delete(`/api/equipment/${id}`);
   return response.data;
 };
-
-export const getEquipmentById = async (id) => {
-  const response = await API.get(`/api/equipment/${id}`);
-  return response.data;
-};

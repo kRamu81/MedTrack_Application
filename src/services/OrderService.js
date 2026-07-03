@@ -19,12 +19,12 @@ export const placeOrder = async (data) => {
 };
 
 // Update status of an order
-export const updateOrderStatus = async (id, status, notes) => {
-  const response = await API.put(`/api/orders/${id}?status=${status}&notes=${notes}`);
-  return response.data;
-};
+export const updateOrderStatus = async (id, status, notes = "") => {
+  const response = await API.put(
+    `/api/orders/${id}/status?status=${encodeURIComponent(
+      status
+    )}&notes=${encodeURIComponent(notes)}`
+  );
 
-export const getOrderById = async (id) => {
-  const response = await API.get(`/api/orders/${id}`);
   return response.data;
 };
