@@ -21,4 +21,7 @@ public class AuthResponse {
     
     // JWT access token for subsequent authenticated API requests
     private String token;
+
+    // Token validity duration in milliseconds, so frontend can schedule auto-logout
+    private Long expiresIn;
 }
