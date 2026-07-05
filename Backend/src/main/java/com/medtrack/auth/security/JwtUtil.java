@@ -10,22 +10,34 @@ import java.util.Date;
 import java.util.function.Function;
 
 /**
- * Utility class for generating, parsing, and validating JSON Web Tokens (JWT).
- * Handles token creation with custom claims (such as user roles) and expiration checks.
+ * JwtUtil is a helper utility component responsible for handling JSON Web Tokens (JWT).
+ * It provides methods to construct/generate tokens, parse and extract payload claims 
+ * (such as user email, roles, and expiration date), and validate token integrity and lifetime.
+ *
+ * <p>Annotations used:
+ * <ul>
+ *   <li>{@code @Component}: Marks this class as a Spring-managed utility component for easy autowiring dependency injection.</li>
+ * </ul>
+ * </p>
  */
 @Component
 public class JwtUtil {
 
-    // Strong signing key (must be at least 256 bits). 
-    // In production, this must be loaded from configuration/env variables instead of being hardcoded.
+    // Strong cryptographic signing key (must be at least 256 bits).
+    // WARNING: In production environments, this key must be loaded from external configuration (e.g., system env vars)
+    // rather than being hardcoded inside the class codebase to prevent source code exposure vulnerabilities.
     private static final String SECRET = "medtrack-super-secret-key-change-this-in-production-1234567890";
     private static final SecretKey SIGNING_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    // Token validity period set to 24 hours
+    // Token validity period set to 24 hours (in milliseconds)
     private static final long EXPIRATION_MS = 1000 * 60 * 60 * 24;
 
     /**
-     * Generates a JWT token for the authenticated user containing their email and role.
+     * Generates a new JSON Web Token (JWT) signed with HMAC-SHA containing the user's email and role.
+     *
+     * @param email user email address to be set as the subject claim
+     * @param role user role (e.g., "hospital", "technician", "supplier") to be set as a custom claim
+     * @return the compacted, cryptographically signed JWT string
      */
     public String generateToken(String email, String role) {
         return Jwts.builder()
@@ -38,40 +50,65 @@ public class JwtUtil {
     }
 
     /**
-     * Extracts the subject (email) from the token.
+     * Helper to extract the subject (representing user email) from the JWT claims payload.
+     *
+     * @param token the JWT string to parse
+     * @return the extracted email address
      */
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     /**
-     * Extracts the custom role claim from the token.
+     * Helper to extract the custom 'role' claim from the JWT claims payload.
+     *
+     * @param token the JWT string to parse
+     * @return the custom role string stored in the claims
      */
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     /**
-     * Extracts the expiration date of the token.
+     * Helper to extract the expiration timestamp of the token.
+     *
+     * @param token the JWT string to parse
+     * @return the {@link Date} object representing token expiration time
      */
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
     /**
-     * Validates if the token belongs to the given user and has not expired.
+     * Validates the integrity of the JWT token by checking if it matches the expected user email
+     * and ensuring it has not exceeded its expiration date.
+     *
+     * @param token the JWT string to validate
+     * @param email the expected email address of the authenticated user
+     * @return {@code true} if the token is valid and unexpired, {@code false} otherwise
      */
     public boolean isTokenValid(String token, String email) {
         final String extractedEmail = extractEmail(token);
         return extractedEmail.equals(email) && !isTokenExpired(token);
     }
 
+    /**
+     * Internal helper to verify if the token's expiration date has passed the current system time.
+     *
+     * @param token the JWT string to check
+     * @return {@code true} if the token has expired, {@code false} otherwise
+     */
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
     /**
-     * Helper method to extract a specific claim using a resolver function.
+     * Generic helper method to parse the token and extract a specific claim using a resolver function.
+     *
+     * @param <T> the type of the claim property being resolved
+     * @param token the JWT string to extract from
+     * @param claimsResolver a functional interface mapping the parsed {@link Claims} payload to target type {@code T}
+     * @return the resolved claim value
      */
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -79,7 +116,11 @@ public class JwtUtil {
     }
 
     /**
-     * Parses and verifies the JWT token using the signing key to extract its claims payload.
+     * Parses and cryptographically verifies the token using the HMAC signing key,
+     * returning the full claims body payload.
+     *
+     * @param token the JWT string to verify and parse
+     * @return the validated {@link Claims} payload
      */
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
