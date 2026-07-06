@@ -45,12 +45,14 @@ public class RefreshTokenService {
      */
     @Transactional
     public RefreshToken createRefreshToken(Long userId) {
+        // Build the new RefreshToken using Lombok builder with a random UUID token and configured expiration duration
         RefreshToken refreshToken = RefreshToken.builder()
                 .userId(userId)
                 .token(UUID.randomUUID().toString())
                 .expiryDate(LocalDateTime.now().plusDays(refreshExpirationDays))
                 .revoked(false)
                 .build();
+        // Persist the token entity to database storage and return the saved instance
         return refreshTokenRepository.save(refreshToken);
     }
 
@@ -63,13 +65,16 @@ public class RefreshTokenService {
      * @throws BadCredentialsException if the token is invalid, revoked, or expired
      */
     public RefreshToken verifyToken(String token) {
+        // Retrieve the token from database or throw a BadCredentialsException if not found
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
 
+        // Check if the token has been manually marked as revoked
         if (refreshToken.isRevoked()) {
             throw new BadCredentialsException("Refresh token has been revoked. Please log in again.");
         }
 
+        // Check if the current timestamp is past the token's expiration date
         if (refreshToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new BadCredentialsException("Refresh token has expired. Please log in again.");
         }
@@ -84,6 +89,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public void revokeToken(String token) {
+        // Look up the token in the database; if present, set revoked to true and save changes
         refreshTokenRepository.findByToken(token).ifPresent(rt -> {
             rt.setRevoked(true);
             refreshTokenRepository.save(rt);
@@ -97,6 +103,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public void revokeAllForUser(Long userId) {
+        // Delete all tokens mapped to the user ID in a single database transaction
         refreshTokenRepository.deleteByUserId(userId);
     }
 }
