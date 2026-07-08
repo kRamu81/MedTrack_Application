@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 
 // Page Imports
 import LandingPage from "../pages/LandingPage";
+import Blog from "../pages/Blog";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import Dashboard from "../pages/hospital/Dashboard";
@@ -49,10 +50,15 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
 
   switch (currentPage) {
     // --- Public Routes ---
-    case "landing": 
+    case "landing":
       return <LandingPage onNavigate={onNavigate} />;
-    case "login": 
+
+    case "blog":
+      return <Blog onNavigate={onNavigate} />;
+
+    case "login":
       return <LoginPage onNavigate={onNavigate} />;
+      
     case "register": 
       return <RegisterPage onNavigate={onNavigate} />;
     

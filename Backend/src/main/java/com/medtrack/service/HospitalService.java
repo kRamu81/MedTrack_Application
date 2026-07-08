@@ -4,21 +4,16 @@ import com.medtrack.model.Hospital;
 import com.medtrack.auth.model.User;
 import com.medtrack.repository.HospitalRepository;
 import com.medtrack.auth.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class HospitalService {
 
     private final HospitalRepository hospitalRepository;
     private final UserRepository userRepository;
-
-    @Autowired
-    public HospitalService(HospitalRepository hospitalRepository, UserRepository userRepository) {
-        this.hospitalRepository = hospitalRepository;
-        this.userRepository = userRepository;
-    }
 
     /**
      * Create a new hospital profile and link it to the authenticated user.
