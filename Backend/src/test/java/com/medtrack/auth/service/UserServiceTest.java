@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -41,6 +42,9 @@ public class UserServiceTest {
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Mock
+    private AuthenticationManager authenticationManager;
+
     private final JwtUtil jwtUtil = new JwtUtil();
 
     private RefreshTokenService refreshTokenService;
@@ -50,7 +54,7 @@ public class UserServiceTest {
     void setUp() {
         refreshTokenService = new RefreshTokenService(refreshTokenRepository);
         ReflectionTestUtils.setField(refreshTokenService, "refreshExpirationDays", 7L);
-        userService = new UserService(userRepository, passwordEncoder, jwtUtil, refreshTokenService);
+        userService = new UserService(userRepository, passwordEncoder, jwtUtil, refreshTokenService, authenticationManager);
     }
 
     @Test
@@ -209,8 +213,8 @@ public class UserServiceTest {
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
+        when(authenticationManager.authenticate(any())).thenReturn(null);
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
 
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> {
             RefreshToken rt = invocation.getArgument(0);
@@ -230,7 +234,7 @@ public class UserServiceTest {
     void login_UserNotFound_ThrowsException() {
         LoginRequest request = new LoginRequest("test@example.com", "password123");
 
-        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid email or password"));
 
         assertThrows(BadCredentialsException.class, () -> userService.login(request));
     }
@@ -246,8 +250,7 @@ public class UserServiceTest {
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
-        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(false);
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid email or password"));
 
         assertThrows(BadCredentialsException.class, () -> userService.login(request));
     }

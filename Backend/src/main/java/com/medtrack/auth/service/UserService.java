@@ -8,7 +8,10 @@ import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -70,6 +73,7 @@ public class UserService {
      * Service responsible for managing database-backed refresh tokens.
      */
     private final RefreshTokenService refreshTokenService;
+    private final AuthenticationManager authenticationManager;
 
     /**
      * Registers a new user account in the application database.
@@ -125,14 +129,14 @@ public class UserService {
      */
     @Transactional
     public AuthResponse login(LoginRequest loginRequest) {
-        // Retrieve user by email or throw a BadCredentialsException to protect system metadata details
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+        // Authenticate credentials using Spring Security's AuthenticationManager
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+        );
 
-        // Match the submitted password against the encrypted hash stored in database
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid email or password");
-        }
+        // Retrieve user by email (after successful authentication) to generate token
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + loginRequest.getEmail()));
 
         // Generate response payload containing user info and a new JWT token
         return mapToAuthResponse(user);
