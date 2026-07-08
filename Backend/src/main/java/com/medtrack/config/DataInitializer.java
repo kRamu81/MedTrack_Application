@@ -1,6 +1,7 @@
 package com.medtrack.config;
 
 import com.medtrack.auth.model.User;
+import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.model.*;
 import com.medtrack.repository.*;
@@ -31,23 +32,29 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.count() == 0) {
             userRepository.save(User.builder()
                 .name("Admin User")
+                .username("admin")
                 .email("hospital@medtrack.com")
                 .password(passwordEncoder.encode("admin123"))
                 .role("hospital")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build());
 
             userRepository.save(User.builder()
                 .name("John Tech")
+                .username("technician")
                 .email("tech@medtrack.com")
                 .password(passwordEncoder.encode("tech123"))
                 .role("Technician")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build());
 
             userRepository.save(User.builder()
                 .name("Global Supplies")
+                .username("supplier")
                 .email("supplier@medtrack.com")
                 .password(passwordEncoder.encode("supply123"))
                 .role("Supplier")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build());
         }
 

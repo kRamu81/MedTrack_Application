@@ -38,6 +38,11 @@ public class AuthResponse {
     private String name;
 
     /**
+     * The unique username of the user.
+     */
+    private String username;
+
+    /**
      * The registered email address of the user, which also serves as their login identifier.
      */
     private String email;

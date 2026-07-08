@@ -5,6 +5,7 @@ import com.medtrack.auth.dto.LoginRequest;
 import com.medtrack.auth.dto.RegisterRequest;
 import com.medtrack.auth.model.RefreshToken;
 import com.medtrack.auth.model.User;
+import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.repository.RefreshTokenRepository;
 import com.medtrack.auth.security.JwtUtil;
@@ -56,6 +57,7 @@ public class UserServiceTest {
     void register_Success() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("password123")
                 .role("HOSPITAL")
@@ -64,11 +66,14 @@ public class UserServiceTest {
         User savedUser = User.builder()
                 .id(1L)
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("hashed_password")
                 .role("HOSPITAL")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
+        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("hashed_password");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
@@ -84,12 +89,14 @@ public class UserServiceTest {
         assertNotNull(response);
         assertEquals(1L, response.getId());
         assertEquals("Test User", response.getName());
+        assertEquals("testuser", response.getUsername());
         assertEquals("test@example.com", response.getEmail());
         assertEquals("HOSPITAL", response.getRole());
         assertNotNull(response.getToken());
         assertFalse(response.getToken().isEmpty());
         assertNotNull(response.getRefreshToken());
 
+        verify(userRepository).existsByUsername(request.getUsername());
         verify(userRepository).existsByEmail(request.getEmail());
         verify(passwordEncoder).encode(request.getPassword());
         verify(userRepository).save(any(User.class));
@@ -100,6 +107,7 @@ public class UserServiceTest {
     void register_Success_DefaultRole() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("password123")
                 .role(null) // Should default to HOSPITAL
@@ -108,11 +116,14 @@ public class UserServiceTest {
         User savedUser = User.builder()
                 .id(1L)
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("hashed_password")
                 .role("HOSPITAL")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
+        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("hashed_password");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
@@ -133,11 +144,13 @@ public class UserServiceTest {
     void register_EmailAlreadyExists_ThrowsException() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("password123")
                 .role("HOSPITAL")
                 .build();
 
+        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.register(request));
@@ -147,14 +160,34 @@ public class UserServiceTest {
     }
 
     @Test
+    void register_UsernameAlreadyExists_ThrowsException() {
+        RegisterRequest request = RegisterRequest.builder()
+                .name("Test User")
+                .username("testuser")
+                .email("test@example.com")
+                .password("password123")
+                .role("HOSPITAL")
+                .build();
+
+        when(userRepository.existsByUsername(request.getUsername())).thenReturn(true);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.register(request));
+        assertEquals("Username already exists", exception.getMessage());
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void register_InvalidRole_ThrowsException() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("password123")
                 .role("INVALID_ROLE")
                 .build();
 
+        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.register(request));
@@ -169,9 +202,11 @@ public class UserServiceTest {
         User user = User.builder()
                 .id(1L)
                 .name("Test User")
+                .username("testuser")
                 .email("test@example.com")
                 .password("hashed_password")
                 .role("HOSPITAL")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
@@ -205,8 +240,10 @@ public class UserServiceTest {
         LoginRequest request = new LoginRequest("test@example.com", "wrong_password");
         User user = User.builder()
                 .id(1L)
+                .username("testuser")
                 .email("test@example.com")
                 .password("hashed_password")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
@@ -227,8 +264,10 @@ public class UserServiceTest {
 
         User user = User.builder()
                 .id(1L)
+                .username("testuser")
                 .email("test@example.com")
                 .role("HOSPITAL")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         when(refreshTokenRepository.findByToken(tokenStr)).thenReturn(Optional.of(mockRefreshToken));

@@ -4,6 +4,7 @@ import com.medtrack.auth.dto.AuthResponse;
 import com.medtrack.auth.dto.LoginRequest;
 import com.medtrack.auth.dto.RegisterRequest;
 import com.medtrack.auth.model.User;
+import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -80,6 +81,11 @@ public class UserService {
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        // Enforce username uniqueness constraint prior to registration
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+
         // Enforce email uniqueness constraint prior to registration
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
@@ -96,9 +102,11 @@ public class UserService {
         // Map the RegisterRequest DTO to the User database entity and encode raw password
         User user = User.builder()
                 .name(request.getName())
+                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
         
         // Persist the user record to the database
@@ -146,6 +154,7 @@ public class UserService {
         return AuthResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
+                .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .token(token)

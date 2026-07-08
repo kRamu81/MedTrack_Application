@@ -27,7 +27,8 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "email")
+        @UniqueConstraint(columnNames = "email"),
+        @UniqueConstraint(columnNames = "username")
 })
 @Data
 @Builder
@@ -54,6 +55,13 @@ public class User {
     @NotBlank
     @Column(nullable = false)
     private String name;
+
+    /**
+     * User's unique username for identification.
+     */
+    @NotBlank
+    @Column(nullable = false, unique = true)
+    private String username;
 
     /**
      * User's email address, which acts as their unique identifier for login.
@@ -96,4 +104,12 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private String role = "hospital";
+
+    /**
+     * Security and activity status of the user account.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
 }
