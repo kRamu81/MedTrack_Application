@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/MedTrack_Application/static/css/main.3ac99309.css",
-    "main.js": "/MedTrack_Application/static/js/main.eeee0bfc.js",
-    "static/media/logo.png": "/MedTrack_Application/static/media/logo.92204abc884c51846c27.png",
-    "index.html": "/MedTrack_Application/index.html",
-    "main.3ac99309.css.map": "/MedTrack_Application/static/css/main.3ac99309.css.map",
-    "main.eeee0bfc.js.map": "/MedTrack_Application/static/js/main.eeee0bfc.js.map"
+    "main.css": "/static/css/main.f0ba7208.css",
+    "main.js": "/static/js/main.78b89496.js",
+    "static/media/logo.png": "/static/media/logo.92204abc884c51846c27.png",
+    "index.html": "/index.html",
+    "main.f0ba7208.css.map": "/static/css/main.f0ba7208.css.map",
+    "main.78b89496.js.map": "/static/js/main.78b89496.js.map"
   },
   "entrypoints": [
-    "static/css/main.3ac99309.css",
-    "static/js/main.eeee0bfc.js"
+    "static/css/main.f0ba7208.css",
+    "static/js/main.78b89496.js"
   ]
 }
