@@ -192,7 +192,7 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <form
               onSubmit={handleSubmit}
-              className="lg:col-span-2 bg-white text-slate-900 rounded-3xl p-8 space-y-6"
+              className="lg:col-span-2 bg-card text-slate-900 rounded-3xl p-8 space-y-6"
             >
               {done ? (
                 <div className="p-6 bg-emerald-50 text-emerald-700 rounded-2xl font-bold">

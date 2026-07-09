@@ -59,10 +59,10 @@ const RequestEquipmentPage = ({ onNavigate }) => {
   return (
     <div className="min-h-screen bg-blue-50 p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-subtle p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Request Equipment</h2>
-            <p className="text-sm text-gray-500 mt-1">Place a new order for equipment supplies.</p>
+            <p className="text-sm text-secondary mt-1">Place a new order for equipment supplies.</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
@@ -73,7 +73,7 @@ const RequestEquipmentPage = ({ onNavigate }) => {
                 value={formData.equipmentId} 
                 onChange={onChange} 
                 required 
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="" disabled>-- Select Equipment --</option>
                 {equipmentList.map((item) => (
@@ -109,11 +109,11 @@ const RequestEquipmentPage = ({ onNavigate }) => {
               ></textarea>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-subtle">
               <button 
                 type="button" 
                 onClick={() => onNavigate('dashboard')} 
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-hover hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
               >
                 Cancel
               </button>

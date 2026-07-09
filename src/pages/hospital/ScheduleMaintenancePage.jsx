@@ -75,10 +75,10 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
   return (
     <div className="min-h-screen bg-blue-50 p-6">
       <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-card rounded-xl shadow-sm border border-subtle p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Schedule Maintenance</h2>
-            <p className="text-sm text-gray-500 mt-1">Plan upcoming maintenance tasks.</p>
+            <p className="text-sm text-secondary mt-1">Plan upcoming maintenance tasks.</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
@@ -89,7 +89,7 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
                 value={formData.equipmentId} 
                 onChange={onChange} 
                 required 
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {equipmentList.map((item) => (
                   <option key={item.id} value={item.deviceCode || item.id}>
@@ -106,7 +106,7 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
                   name="maintenanceType" 
                   value={formData.maintenanceType} 
                   onChange={onChange} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-card"
                 >
                   <option value="Preventive">Preventive</option>
                   <option value="Corrective">Corrective</option>
@@ -120,7 +120,7 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
                   name="priority" 
                   value={formData.priority} 
                   onChange={onChange} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-card"
                 >
                   <option value="Normal">Normal</option>
                   <option value="High">High</option>
@@ -163,8 +163,8 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button type="button" onClick={() => onNavigate('maintenance')} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+            <div className="flex justify-end gap-3 pt-4 border-t border-subtle">
+              <button type="button" onClick={() => onNavigate('maintenance')} className="px-4 py-2 bg-hover hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
                 Cancel
               </button>
               <button type="submit" className="px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
