@@ -21,26 +21,44 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * SecurityConfig is the central configuration class for Spring Security in the MedTrack application.
- * It defines the security filters, authorization rules, CORS policies, and password hashing mechanisms
+ * SecurityConfig is the central configuration class for Spring Security in the
+ * MedTrack application.
+ * It defines the security filters, authorization rules, CORS policies, and
+ * password hashing mechanisms
  * used to secure the backend REST APIs.
  * 
- * <p>Key Responsibilities of this configuration:
+ * <p>
+ * Key Responsibilities of this configuration:
  * <ul>
- *   <li><strong>Stateless Authentication:</strong> Disables standard session creation and relies entirely on stateless JWT tokens.</li>
- *   <li><strong>JWT Authentication Filter:</strong> Configures and inserts the custom {@link JwtAuthFilter} into the Spring Security filter chain to intercept and validate incoming authorization headers.</li>
- *   <li><strong>Role-Based Access Control (RBAC):</strong> Sets fine-grained access rules based on HTTP methods and roles (e.g., HOSPITAL, TECHNICIAN, SUPPLIER).</li>
- *   <li><strong>Cross-Origin Resource Sharing (CORS):</strong> Customizes CORS settings to allow communication with the React frontend application running on local port 3000.</li>
- *   <li><strong>Cross-Site Request Forgery (CSRF) protection:</strong> Disables CSRF protection since APIs are stateless and do not rely on session cookies.</li>
- *   <li><strong>H2 Console Support:</strong> Configures frame options to allow access to the embedded H2 database console for development purposes.</li>
+ * <li><strong>Stateless Authentication:</strong> Disables standard session
+ * creation and relies entirely on stateless JWT tokens.</li>
+ * <li><strong>JWT Authentication Filter:</strong> Configures and inserts the
+ * custom {@link JwtAuthFilter} into the Spring Security filter chain to
+ * intercept and validate incoming authorization headers.</li>
+ * <li><strong>Role-Based Access Control (RBAC):</strong> Sets fine-grained
+ * access rules based on HTTP methods and roles (e.g., HOSPITAL, TECHNICIAN,
+ * SUPPLIER).</li>
+ * <li><strong>Cross-Origin Resource Sharing (CORS):</strong> Customizes CORS
+ * settings to allow communication with the React frontend application running
+ * on local port 3000.</li>
+ * <li><strong>Cross-Site Request Forgery (CSRF) protection:</strong> Disables
+ * CSRF protection since APIs are stateless and do not rely on session
+ * cookies.</li>
+ * <li><strong>H2 Console Support:</strong> Configures frame options to allow
+ * access to the embedded H2 database console for development purposes.</li>
  * </ul>
  * </p>
  *
- * <p>Annotations used:
+ * <p>
+ * Annotations used:
  * <ul>
- *   <li>{@code @Configuration}: Indicates that the class can be used by the Spring IoC container as a source of bean definitions.</li>
- *   <li>{@code @EnableWebSecurity}: Enables Spring Security's web security support and provides the Spring MVC integration.</li>
- *   <li>{@code @RequiredArgsConstructor}: Lombok annotation that generates a constructor for all {@code final} fields (injecting the {@link JwtAuthFilter}).</li>
+ * <li>{@code @Configuration}: Indicates that the class can be used by the
+ * Spring IoC container as a source of bean definitions.</li>
+ * <li>{@code @EnableWebSecurity}: Enables Spring Security's web security
+ * support and provides the Spring MVC integration.</li>
+ * <li>{@code @RequiredArgsConstructor}: Lombok annotation that generates a
+ * constructor for all {@code final} fields (injecting the
+ * {@link JwtAuthFilter}).</li>
  * </ul>
  * </p>
  */
@@ -50,16 +68,20 @@ import java.util.List;
 public class SecurityConfig {
 
     /**
-     * Custom JWT authentication filter responsible for extracting, parsing, and validating JWT tokens
-     * from the "Authorization" header of incoming HTTP requests. If valid, the filter sets the
+     * Custom JWT authentication filter responsible for extracting, parsing, and
+     * validating JWT tokens
+     * from the "Authorization" header of incoming HTTP requests. If valid, the
+     * filter sets the
      * authentication context in Spring's SecurityContextHolder.
      */
     private final JwtAuthFilter jwtAuthFilter;
 
     /**
      * Configures and registers a {@link PasswordEncoder} bean.
-     * Uses the BCrypt strong password hashing function. BCrypt internally incorporates a salt
-     * to protect against rainbow table attacks and has an adjustable work factor (strength) 
+     * Uses the BCrypt strong password hashing function. BCrypt internally
+     * incorporates a salt
+     * to protect against rainbow table attacks and has an adjustable work factor
+     * (strength)
      * to resist brute-force search attacks.
      *
      * @return a {@link PasswordEncoder} instance using the BCrypt hashing algorithm
@@ -70,105 +92,131 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures the main {@link SecurityFilterChain} which intercept and handle all incoming web requests.
-     * This method defines security rules, public endpoints, role-based restriction on resources, 
+     * Configures the main {@link SecurityFilterChain} which intercept and handle
+     * all incoming web requests.
+     * This method defines security rules, public endpoints, role-based restriction
+     * on resources,
      * CORS mapping, stateless session policy, and integrates custom filters.
      *
      * @param http the {@link HttpSecurity} object to configure security settings
      * @return the configured {@link SecurityFilterChain} bean
-     * @throws Exception if an error occurs while configuring the security filter chain
+     * @throws Exception if an error occurs while configuring the security filter
+     *                   chain
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Disable CSRF (Cross-Site Request Forgery)
-            // CSRF protection is generally required for cookie-based sessions. Since this application
-            // uses stateless JWTs passed via the Authorization header, the client is not susceptible
-            // to standard CSRF attacks, allowing us to safely disable this protection.
-            .csrf(AbstractHttpConfigurer::disable)
-            
-            // 2. Enable CORS (Cross-Origin Resource Sharing)
-            // Integrates the CORS configuration source bean (corsConfigurationSource) to define
-            // which client applications (origins) can make requests to our API.
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // 3. Set Session Management to STATELESS
-            // Ensures that Spring Security does not create or maintain any HTTP sessions (HttpSession).
-            // Every request must be independently authenticated via the JWT token.
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // 4. Configure URL Authorization Rules
-            // Defines access rules based on API paths, HTTP methods, and user roles.
-            .authorizeHttpRequests(auth -> auth
-                // Allow public access (no authentication required) to:
-                // - Authentication endpoints: login and registration
-                // - H2 database console: utilized during development for database visualization
-                .requestMatchers(
-                    "/api/user/login",
-                    "/api/user/register",
-                    "/h2-console/**"
-                ).permitAll()
+                // 1. Disable CSRF (Cross-Site Request Forgery)
+                // CSRF protection is generally required for cookie-based sessions. Since this
+                // application
+                // uses stateless JWTs passed via the Authorization header, the client is not
+                // susceptible
+                // to standard CSRF attacks, allowing us to safely disable this protection.
+                .csrf(AbstractHttpConfigurer::disable)
 
-                // Rule set for Equipment management:
-                // - Read (GET): Any authenticated user can view equipment details.
-                // - Write/Modify (POST, PUT, DELETE): Restricted to users with the 'HOSPITAL' role.
-                .requestMatchers(HttpMethod.GET, "/api/equipment/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/equipment/**").hasRole("HOSPITAL")
-                .requestMatchers(HttpMethod.PUT, "/api/equipment/**").hasRole("HOSPITAL")
-                .requestMatchers(HttpMethod.DELETE, "/api/equipment/**").hasRole("HOSPITAL")
+                // 2. Enable CORS (Cross-Origin Resource Sharing)
+                // Integrates the CORS configuration source bean (corsConfigurationSource) to
+                // define
+                // which client applications (origins) can make requests to our API.
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // Rule set for Orders management:
-                // - Read (GET): Any authenticated user can view order details.
-                // - Creation/Removal (POST, DELETE): Restricted to users with the 'HOSPITAL' role.
-                // - Status Updates (PUT to /status endpoint): Restricted to suppliers ('SUPPLIER' role).
-                .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("HOSPITAL")
-                .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("SUPPLIER")
-                .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("HOSPITAL")
+                // 3. Set Session Management to STATELESS
+                // Ensures that Spring Security does not create or maintain any HTTP sessions
+                // (HttpSession).
+                // Every request must be independently authenticated via the JWT token.
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Rule set for Maintenance schedules/tasks:
-                // - Read (GET): Any authenticated user can view maintenance tasks.
-                // - Creation/Removal (POST, DELETE): Restricted to users with the 'HOSPITAL' role.
-                // - Editing/Completion (PUT): Restricted to technicians ('TECHNICIAN' role).
-                .requestMatchers(HttpMethod.GET, "/api/maintenance/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/maintenance/**").hasRole("HOSPITAL")
-                .requestMatchers(HttpMethod.PUT, "/api/maintenance/**").hasRole("TECHNICIAN")
-                .requestMatchers(HttpMethod.DELETE, "/api/maintenance/**").hasRole("HOSPITAL")
+                // 4. Configure URL Authorization Rules
+                // Defines access rules based on API paths, HTTP methods, and user roles.
+                .authorizeHttpRequests(auth -> auth
+                        // Allow public access (no authentication required) to:
+                        // - Authentication endpoints: login and registration
+                        // - H2 database console: utilized during development for database visualization
+                        .requestMatchers(
+                                "/api/user/login",
+                                "/api/user/register",
+                                "/h2-console/**",
+                                "/actuator/**")
+                        .permitAll()
 
-                // Fallback rule: Any request not matching the rules above must be fully authenticated.
-                .anyRequest().authenticated()
-            )
-            
-            // 5. Register Custom JWT Filter
-            // Inject jwtAuthFilter BEFORE UsernamePasswordAuthenticationFilter.
-            // This ensures that the incoming request has its JWT token parsed and the SecurityContext
-            // populated with authentication details before standard password/session authentication checks.
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            
-            // 6. Disable X-Frame-Options headers
-            // Disables frame options specifically to allow H2 Console to render inside an <iframe>.
-            // Spring Security by default blocks frame rendering (DENY) to prevent clickjacking attacks.
-            .headers(headers -> headers.frameOptions(options -> options.disable()));
+                        // Rule set for Equipment management:
+                        // - Read (GET): Any authenticated user can view equipment details.
+                        // - Write/Modify (POST, PUT, DELETE): Restricted to users with the 'HOSPITAL'
+                        // role.
+                        .requestMatchers(HttpMethod.GET, "/api/equipment/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/equipment/**").hasRole("HOSPITAL")
+                        .requestMatchers(HttpMethod.PUT, "/api/equipment/**").hasRole("HOSPITAL")
+                        .requestMatchers(HttpMethod.DELETE, "/api/equipment/**").hasRole("HOSPITAL")
+
+                        // Rule set for Orders management:
+                        // - Read (GET): Any authenticated user can view order details.
+                        // - Creation/Removal (POST, DELETE): Restricted to users with the 'HOSPITAL'
+                        // role.
+                        // - Status Updates (PUT to /status endpoint): Restricted to suppliers
+                        // ('SUPPLIER' role).
+                        .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("HOSPITAL")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("SUPPLIER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("HOSPITAL")
+
+                        // Rule set for Maintenance schedules/tasks:
+                        // - Read (GET): Any authenticated user can view maintenance tasks.
+                        // - Creation/Removal (POST, DELETE): Restricted to users with the 'HOSPITAL'
+                        // role.
+                        // - Editing/Completion (PUT): Restricted to technicians ('TECHNICIAN' role).
+                        .requestMatchers(HttpMethod.GET, "/api/maintenance/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/maintenance/**").hasRole("HOSPITAL")
+                        .requestMatchers(HttpMethod.PUT, "/api/maintenance/**").hasRole("TECHNICIAN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/maintenance/**").hasRole("HOSPITAL")
+
+                        // Fallback rule: Any request not matching the rules above must be fully
+                        // authenticated.
+                        .anyRequest().authenticated())
+
+                // 5. Register Custom JWT Filter
+                // Inject jwtAuthFilter BEFORE UsernamePasswordAuthenticationFilter.
+                // This ensures that the incoming request has its JWT token parsed and the
+                // SecurityContext
+                // populated with authentication details before standard password/session
+                // authentication checks.
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // 6. Disable X-Frame-Options headers
+                // Disables frame options specifically to allow H2 Console to render inside an
+                // <iframe>.
+                // Spring Security by default blocks frame rendering (DENY) to prevent
+                // clickjacking attacks.
+                .headers(headers -> headers.frameOptions(options -> options.disable()));
 
         return http.build();
     }
 
     /**
      * Configures the Cross-Origin Resource Sharing (CORS) source bean.
-     * Defines the rules governing how external web applications interact with this API.
+     * Defines the rules governing how external web applications interact with this
+     * API.
      *
-     * <p>Configured parameters:
+     * <p>
+     * Configured parameters:
      * <ul>
-     *   <li><strong>Allowed Origins:</strong> Explicitly allows requests from the React frontend running on "http://localhost:3000".</li>
-     *   <li><strong>Allowed Methods:</strong> Restricts operations to safe methods: GET, POST, PUT, DELETE, OPTIONS, PATCH.</li>
-     *   <li><strong>Allowed Headers:</strong> Permits essential headers including Authorization (JWT credentials) and Content-Type (JSON payloads).</li>
-     *   <li><strong>Allow Credentials:</strong> Allows cookies, authorization headers, or SSL client certificates to be exposed on cross-origin requests.</li>
-     *   <li><strong>Max Age (3600 seconds):</strong> Caches the preflight OPTIONS request handshake on the client/browser for 1 hour to reduce network overhead.</li>
+     * <li><strong>Allowed Origins:</strong> Explicitly allows requests from the
+     * React frontend running on "http://localhost:3000".</li>
+     * <li><strong>Allowed Methods:</strong> Restricts operations to safe methods:
+     * GET, POST, PUT, DELETE, OPTIONS, PATCH.</li>
+     * <li><strong>Allowed Headers:</strong> Permits essential headers including
+     * Authorization (JWT credentials) and Content-Type (JSON payloads).</li>
+     * <li><strong>Allow Credentials:</strong> Allows cookies, authorization
+     * headers, or SSL client certificates to be exposed on cross-origin
+     * requests.</li>
+     * <li><strong>Max Age (3600 seconds):</strong> Caches the preflight OPTIONS
+     * request handshake on the client/browser for 1 hour to reduce network
+     * overhead.</li>
      * </ul>
      * </p>
      *
-     * @return a {@link CorsConfigurationSource} used to validate cross-origin requests
+     * @return a {@link CorsConfigurationSource} used to validate cross-origin
+     *         requests
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -178,7 +226,8 @@ public class SecurityConfig {
         // Define HTTP methods allowed during cross-origin requests
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         // Define allowed request headers to allow custom authorization headers
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
+                "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         // Allow client browser to send authentication credentials (JWT/cookies)
         configuration.setAllowCredentials(true);
         // Cache preflight CORS checks on the client for 1 hour to optimize performance
