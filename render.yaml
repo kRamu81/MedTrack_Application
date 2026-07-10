@@ -4,7 +4,8 @@ services:
     name: medtrack-backend
     env: docker
     plan: free
-    dockerfilePath: Backend/Dockerfile
+    rootDir: Backend
+    dockerfilePath: Dockerfile
     repo: https://github.com/kRamu81/MedTrack_Application
     branch: main
     envVars:
@@ -22,3 +23,5 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: https://medtrack-backend.onrender.com
+      - key: CI
+        value: "false"
