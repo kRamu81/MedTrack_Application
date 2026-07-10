@@ -103,6 +103,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Springdoc OpenAPI (Swagger API Documentation) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.5.0</version>
+        </dependency>
+
         <!-- Bucket4j (Rate Limiting) -->
         <dependency>
             <groupId>com.bucket4j</groupId>
