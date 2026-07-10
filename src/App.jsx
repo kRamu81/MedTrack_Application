@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { ReactLenis } from "lenis/react";
 import "lenis/dist/lenis.css";
 import { AuthProvider } from "./context/AuthContext";
@@ -9,127 +9,90 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
-const getRouteStateFromPath = () => {
-  const pathname = window.location.pathname;
-  const path = pathname
-    .replace(/^\/MedTrack_Application/i, "")
-    .replace(/^\/+|\/+$/g, "");
-
-  if (!path) return { page: "landing", data: null };
-
-  if (path.startsWith("blog/")) {
-    return {
-      page: "blog-post",
-      data: decodeURIComponent(path.slice("blog/".length)),
-    };
-  }
-
-  const routeMap = {
-    blog: "blog",
-    register: "register",
-    login: "login",
-    "forgot-password": "forgot-password",
-    "verify-otp": "verify-otp",
-    "reset-password": "reset-password",
-    dashboard: "dashboard",
-    equipment: "equipment",
-    "add-equipment": "add-equipment",
-    "schedule-maintenance": "schedule-maintenance",
-    "request-equipment": "request-equipment",
-    maintenance: "maintenance",
-    tasks: "tasks",
-    "update-task": "update-task",
-    updatetask: "update-task",
-    orders: "orders",
-    orderstatus: "orderstatus",
-    about: "about",
-    contact: "contact",
-  };
-
-  return {
-    page: routeMap[path.toLowerCase()] || "landing",
-    data: null,
-  };
+// Parse page from pathname for manual URL entry and refreshes
+const getPageFromPath = () => {
+  const path = window.location.pathname.toLowerCase();
+  if (path.endsWith("/register")) return "register";
+  if (path.endsWith("/login")) return "login";
+  if (path.endsWith("/forgot-password")) return "forgot-password";
+  if (path.endsWith("/verify-otp")) return "verify-otp";
+  if (path.endsWith("/reset-password")) return "reset-password";
+  if (path.endsWith("/dashboard")) return "dashboard";
+  if (path.endsWith("/equipment")) return "equipment";
+  if (path.endsWith("/add-equipment")) return "add-equipment";
+  if (path.endsWith("/schedule-maintenance")) return "schedule-maintenance";
+  if (path.endsWith("/request-equipment")) return "request-equipment";
+  if (path.endsWith("/maintenance")) return "maintenance";
+  if (path.endsWith("/tasks")) return "tasks";
+  if (path.endsWith("/update-task") || path.endsWith("/updatetask")) return "update-task";
+  if (path.endsWith("/orders")) return "orders";
+  if (path.endsWith("/orderstatus")) return "orderstatus";
+  return "landing";
 };
 
 function AppContent() {
-  const initialRoute = getRouteStateFromPath();
-  const [currentPage, setCurrentPage] = useState(initialRoute.page);
-  const [pageData, setPageData] = useState(initialRoute.data);
+  const [currentPage, setCurrentPage] = useState(getPageFromPath());
+  const [pageData, setPageData] = useState(null);
 
   const handleNavigate = (page, data = null) => {
     setCurrentPage(page);
     setPageData(data);
-
-    const basePath = window.location.pathname.includes("/MedTrack_Application")
-      ? "/MedTrack_Application"
+    
+    // Synchronize URL with the page
+    const basePath = window.location.pathname.includes("/MedTrack_Application") 
+      ? "/MedTrack_Application" 
       : "";
-
-    const nextPath =
-      page === "blog-post" && data
-        ? `${basePath}/blog/${encodeURIComponent(data)}`
-        : `${basePath}/${page}`;
-
-    window.history.pushState({}, "", nextPath);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.history.pushState({}, "", `${basePath}/${page}`);
   };
 
   useEffect(() => {
     const handlePopState = () => {
-      const route = getRouteStateFromPath();
-      setCurrentPage(route.page);
-      setPageData(route.data);
+      setCurrentPage(getPageFromPath());
     };
-
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const noLayoutPages = [
-    "login",
-    "register",
-    "forgot-password",
-    "verify-otp",
-    "reset-password",
-  ];
+  const noLayoutPages = ["login", "register", "forgot-password", "verify-otp", "reset-password"];
   const isAuthPage = noLayoutPages.includes(currentPage);
 
   return (
-    <ReactLenis root>
-      <div
-        className="flex flex-col min-h-screen bg-surface text-primary transition-colors duration-200"
-        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-      >
-        {!isAuthPage && (
-          <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
+    <div
+      className="flex flex-col min-h-screen bg-surface text-primary transition-colors duration-200"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
+      {!isAuthPage && (
+        <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
+      )}
+
+      <main className="flex-1">
+        {currentPage === "about" ? (
+          <AboutPage />
+        ) : currentPage === "contact" ? (
+          <ContactPage />
+        ) : (
+          <AppRoutes 
+            currentPage={currentPage} 
+            onNavigate={handleNavigate} 
+            pageData={pageData} 
+          />
         )}
+      </main>
 
-        <main className="flex-1">
-          {currentPage === "about" ? (
-            <AboutPage />
-          ) : currentPage === "contact" ? (
-            <ContactPage />
-          ) : (
-            <AppRoutes
-              currentPage={currentPage}
-              onNavigate={handleNavigate}
-              pageData={pageData}
-            />
-          )}
-        </main>
-
-        {!isAuthPage && <Footer />}
-      </div>
-    </ReactLenis>
+      {!isAuthPage && <Footer />}
+    </div>
   );
 }
 
+
 export default function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </AuthProvider>
+    <ReactLenis root>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </AuthProvider>
+    </ReactLenis>
   );
 }
