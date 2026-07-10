@@ -5,7 +5,7 @@ services:
     env: docker
     plan: free
     rootDir: Backend
-    dockerfilePath: Dockerfile
+    dockerfilePath: Backend/Dockerfile
     repo: https://github.com/kRamu81/MedTrack_Application
     branch: main
     envVars:
