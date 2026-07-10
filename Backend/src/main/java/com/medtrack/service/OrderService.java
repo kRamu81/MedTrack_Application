@@ -2,6 +2,7 @@ package com.medtrack.service;
 
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.repository.EquipmentOrderRepository;
+import com.medtrack.util.PurchaseOrderPdf;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.medtrack.exception.ResourceNotFoundException;
@@ -14,6 +15,7 @@ import java.util.List;
 public class OrderService {
 
     private final EquipmentOrderRepository orderRepository;
+    private final PurchaseOrderPdf purchaseOrderPdf;
 
     public List<EquipmentOrder> getAllOrders() {
         return orderRepository.findAll();
@@ -40,6 +42,10 @@ public class OrderService {
         order.setUpdatedAt(LocalDateTime.now());
         
         return orderRepository.save(order);
+    }
+    public byte[] generatePurchaseOrderPdf(Long id) {
+        EquipmentOrder order = getOrderById(id);
+        return purchaseOrderPdf.generate(order);
     }
 
     public void deleteOrder(Long id) {
