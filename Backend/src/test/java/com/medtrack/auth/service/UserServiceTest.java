@@ -287,7 +287,7 @@ public class UserServiceTest {
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
-        when(authenticationManager.authenticate(any())).thenReturn(null);
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -297,7 +297,7 @@ public class UserServiceTest {
             return rt;
         });
 
-        LoginResponse response = userService.login(request);
+        AuthResponse response = userService.login(request);
 
         assertNotNull(response);
         assertNotNull(response.getToken());
@@ -312,7 +312,7 @@ public class UserServiceTest {
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, () -> userService.login(request));
+        assertThrows(BadCredentialsException.class, () -> userService.login(request));
     }
 
     @Test
@@ -323,11 +323,12 @@ public class UserServiceTest {
                 .username("testuser")
                 .email("test@example.com")
                 .password("hashed_password")
+                .role("HOSPITAL")
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
-        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid email or password"));
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThrows(BadCredentialsException.class, () -> userService.login(request));
@@ -340,12 +341,14 @@ public class UserServiceTest {
         User user = User.builder()
                 .id(1L)
                 .email("test@example.com")
+                .password("hashed_password")
+                .role("HOSPITAL")
                 .failedLoginAttempts(2)
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
-        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThrows(BadCredentialsException.class, () -> userService.login(request));
@@ -358,12 +361,14 @@ public class UserServiceTest {
         User user = User.builder()
                 .id(1L)
                 .email("test@example.com")
+                .password("hashed_password")
+                .role("HOSPITAL")
                 .failedLoginAttempts(4)
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
-        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThrows(BadCredentialsException.class, () -> userService.login(request));
@@ -385,8 +390,8 @@ public class UserServiceTest {
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
 
         LockedException exception = assertThrows(LockedException.class, () -> userService.login(request));
-        assertEquals("Account is temporarily locked.", exception.getMessage());
-        verify(authenticationManager, never()).authenticate(any());
+        assertEquals("Account is temporarily locked. Please try again later.", exception.getMessage());
+        verify(passwordEncoder, never()).matches(any(), any());
     }
 
     @Test
@@ -395,6 +400,7 @@ public class UserServiceTest {
         User user = User.builder()
                 .id(1L)
                 .email("test@example.com")
+                .password("hashed_password")
                 .name("Test User")
                 .role("HOSPITAL")
                 .accountStatus(AccountStatus.LOCKED)
@@ -404,7 +410,7 @@ public class UserServiceTest {
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(authenticationManager.authenticate(any())).thenReturn(null);
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
 
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> {
             RefreshToken rt = invocation.getArgument(0);
@@ -412,7 +418,7 @@ public class UserServiceTest {
             return rt;
         });
 
-        LoginResponse response = userService.login(request);
+        AuthResponse response = userService.login(request);
 
         assertNotNull(response);
         assertEquals(AccountStatus.ACTIVE, user.getAccountStatus());

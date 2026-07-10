@@ -63,16 +63,18 @@ public class AuthControllerIntegrationTest {
         // 1. Register a user
         RegisterRequest registerRequest = RegisterRequest.builder()
                 .name("Integration Test User")
-                .username("integtest")
                 .email("integtest@medtrack.com")
+                .phone("1234567890")
+                .organization("MedTrack Testing")
                 .password("Password123")
+                .confirmPassword("Password123")
                 .role("HOSPITAL")
                 .build();
 
         MvcResult regResult = mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         String regResponseContent = regResult.getResponse().getContentAsString();
@@ -90,7 +92,7 @@ public class AuthControllerIntegrationTest {
         verify(kafkaEventPublisher, times(1)).publishUserRegistered(any());
 
         // 2. Login successfully
-        LoginRequest loginRequest = new LoginRequest("integtest@medtrack.com", "Password123");
+        LoginRequest loginRequest = new LoginRequest("integtest@medtrack.com", "Password123", "HOSPITAL");
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
@@ -113,6 +115,8 @@ public class AuthControllerIntegrationTest {
                 .name("OTP User")
                 .username("otpuser")
                 .email("otpuser@medtrack.com")
+                .phone("1234567890")
+                .organization("MedTrack Testing")
                 .password(passwordEncoder.encode("OldPassword123"))
                 .role("HOSPITAL")
                 .accountStatus(AccountStatus.ACTIVE)
@@ -147,7 +151,7 @@ public class AuthControllerIntegrationTest {
                 .andExpect(status().isOk());
 
         // Verify login works with new password
-        LoginRequest loginRequest = new LoginRequest("otpuser@medtrack.com", "NewPassword123");
+        LoginRequest loginRequest = new LoginRequest("otpuser@medtrack.com", "NewPassword123", "HOSPITAL");
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
