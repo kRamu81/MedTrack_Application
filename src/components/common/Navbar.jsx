@@ -18,12 +18,13 @@ export default function Navbar({ onNavigate, currentPage }) {
   const isLanding = currentPage === "landing";
 
   // Landing page links
-  const publicLinks = [
-    { label: "Features", page: "features" },
-    { label: "Hospitals", page: "hospitals" },
-    { label: "Suppliers", page: "suppliers" },
-    { label: "For employers", page: "about" },
-  ];
+ const publicLinks = [
+  { label: "Features", page: "features" },
+  { label: "Hospitals", page: "hospitals" },
+  { label: "Suppliers", page: "suppliers" },
+  { label: "Blog", page: "blog" },
+  { label: "For employers", page: "about" },
+];
 
   // Dashboard links after login
   const privateLinks = user
