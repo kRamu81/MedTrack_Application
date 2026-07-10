@@ -48,6 +48,9 @@ public class PasswordResetTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private KafkaEventPublisher kafkaEventPublisher;
+
     private final JwtUtil jwtUtil = new JwtUtil();
     private RefreshTokenService refreshTokenService;
     private UserService userService;
@@ -63,7 +66,8 @@ public class PasswordResetTest {
                 refreshTokenService,
                 authenticationManager,
                 passwordResetTokenRepository,
-                emailService
+                emailService,
+                kafkaEventPublisher
         );
         ReflectionTestUtils.setField(userService, "otpLength", 6);
         ReflectionTestUtils.setField(userService, "otpExpiryMinutes", 10);
