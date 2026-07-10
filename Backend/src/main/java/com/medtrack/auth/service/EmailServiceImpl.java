@@ -1,4 +1,4 @@
-i stopackage com.medtrack.auth.service;
+package com.medtrack.auth.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
