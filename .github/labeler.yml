@@ -1,0 +1,14 @@
+frontend:
+  - src/**/*
+  - public/**/*
+  - package.json
+  - tailwind.config.js
+
+backend:
+  - Backend/**/*
+
+documentation:
+  - '**/*.md'
+
+workflows:
+  - .github/workflows/**/*

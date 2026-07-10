@@ -1,16 +1,16 @@
-name: PR Welcome Message
+name: Issue Welcome Message
 on:
-  pull_request:
+  issues:
     types: [opened]
 
 permissions:
-  pull-requests: write
+  issues: write
 
 jobs:
-  pr-welcome:
+  welcome:
     runs-on: ubuntu-latest
     steps:
-      - name: Welcome PR
+      - name: Welcome Issue
         uses: actions/github-script@v7
         with:
           script: |
@@ -18,5 +18,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "🎉 Thanks for opening this PR!\n\nPlease ensure you have:\n- [ ] Linked an existing issue\n- [ ] Added tests if applicable\n- [ ] Followed Conventional Commits\n\nA reviewer will be assigned shortly."
+              body: "👋 Thanks for opening this issue! A maintainer will triage this shortly. Please ensure you've provided all necessary reproduction steps."
             })

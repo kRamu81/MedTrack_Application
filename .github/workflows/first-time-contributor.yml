@@ -1,0 +1,23 @@
+name: Welcome First-Time Contributor
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome message
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-message: |
+            Hello there! 👋 Welcome to the MedTrack project! 
+            
+            Thank you for your first pull request. We are excited to have you contribute.
+            Our team will review your PR shortly. In the meantime, please make sure you've:
+            - Checked our Contributing Guidelines
+            - Added relevant tests
+            - Updated documentation if necessary
+            
+            Happy coding! 🚀

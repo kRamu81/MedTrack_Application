@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Maintain dependencies for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  
+  # Maintain dependencies for Maven
+  - package-ecosystem: "maven"
+    directory: "/Backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      java-dependencies:
+        patterns:
+          - "*"
+
+  # Maintain github-actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

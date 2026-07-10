@@ -1,0 +1,47 @@
+name: CI/CD Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+          cache-dependency-path: 'Backend/pom.xml'
+
+      - name: Install dependencies (Frontend)
+        run: npm install
+        
+      - name: Lint Code (Frontend)
+        run: npm run lint --if-present
+
+      - name: Build (Frontend)
+        run: npm run build --if-present
+
+      - name: Build (Backend)
+        run: mvn -B package --file Backend/pom.xml -DskipTests
+        
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build/
+            Backend/target/*.jar
