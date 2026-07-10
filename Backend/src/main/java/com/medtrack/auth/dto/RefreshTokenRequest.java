@@ -1,5 +1,6 @@
 package com.medtrack.auth.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Payload containing UUID refresh token key")
 public class RefreshTokenRequest {
 
     /**
@@ -30,5 +32,6 @@ public class RefreshTokenRequest {
      * </ul>
      */
     @NotBlank(message = "Refresh token must not be blank")
+    @Schema(description = "UUID string representing the active refresh token", example = "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d", requiredMode = Schema.RequiredMode.REQUIRED)
     private String refreshToken;
 }

@@ -184,7 +184,10 @@ public class SecurityConfig {
                     "/api/auth/verify-otp",
                     "/api/auth/reset-password",
                     "/h2-console/**",
-                    "/error"
+                    "/error",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
 
