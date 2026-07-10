@@ -4,11 +4,13 @@ import com.medtrack.auth.dto.AuthResponse;
 import com.medtrack.auth.dto.LoginRequest;
 import com.medtrack.auth.dto.LoginResponse;
 import com.medtrack.auth.dto.RegisterRequest;
+import com.medtrack.exception.EmailAlreadyExistsException;
 import com.medtrack.auth.model.RefreshToken;
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.repository.RefreshTokenRepository;
+import com.medtrack.auth.repository.PasswordResetTokenRepository;
 import com.medtrack.auth.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,12 @@ public class UserServiceTest {
     @Mock
     private AuthenticationManager authenticationManager;
 
+    @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Mock
+    private EmailService emailService;
+
     private final JwtUtil jwtUtil = new JwtUtil();
 
     private RefreshTokenService refreshTokenService;
@@ -55,9 +63,11 @@ public class UserServiceTest {
 
     @BeforeEach
     void setUp() {
+        ReflectionTestUtils.setField(jwtUtil, "secret", "medtrack-super-secret-key-change-this-in-production-1234567890");
+        ReflectionTestUtils.setField(jwtUtil, "expirationMs", 604800000L);
         refreshTokenService = new RefreshTokenService(refreshTokenRepository);
         ReflectionTestUtils.setField(refreshTokenService, "refreshExpirationDays", 7L);
-        userService = new UserService(userRepository, passwordEncoder, jwtUtil, refreshTokenService, authenticationManager);
+        userService = new UserService(userRepository, passwordEncoder, jwtUtil, refreshTokenService, authenticationManager, passwordResetTokenRepository, emailService);
         ReflectionTestUtils.setField(userService, "lockDurationMinutes", 30);
     }
 
@@ -65,23 +75,27 @@ public class UserServiceTest {
     void register_Success() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
                 .password("password123")
+                .confirmPassword("password123")
                 .role("HOSPITAL")
                 .build();
 
         User savedUser = User.builder()
                 .id(1L)
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
+                .username("test")
                 .password("hashed_password")
                 .role("HOSPITAL")
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
-        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
+        when(userRepository.existsByUsername("test")).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("hashed_password");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
@@ -95,16 +109,20 @@ public class UserServiceTest {
         AuthResponse response = userService.register(request);
 
         assertNotNull(response);
-        assertEquals(1L, response.getId());
-        assertEquals("Test User", response.getName());
-        assertEquals("testuser", response.getUsername());
-        assertEquals("test@example.com", response.getEmail());
-        assertEquals("HOSPITAL", response.getRole());
+        assertTrue(response.isSuccess());
+        assertEquals("Account created successfully", response.getMessage());
+        assertNotNull(response.getUser());
+        assertEquals(1L, response.getUser().getId());
+        assertEquals("Test User", response.getUser().getName());
+        assertEquals("test@example.com", response.getUser().getEmail());
+        assertEquals("+1 (555) 019-2834", response.getUser().getPhone());
+        assertEquals("St. Mary Clinic", response.getUser().getOrganization());
+        assertEquals("HOSPITAL", response.getUser().getRole());
         assertNotNull(response.getToken());
         assertFalse(response.getToken().isEmpty());
         assertNotNull(response.getRefreshToken());
 
-        verify(userRepository).existsByUsername(request.getUsername());
+        verify(userRepository).existsByUsername("test");
         verify(userRepository).existsByEmail(request.getEmail());
         verify(passwordEncoder).encode(request.getPassword());
         verify(userRepository).save(any(User.class));
@@ -115,23 +133,27 @@ public class UserServiceTest {
     void register_Success_DefaultRole() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
                 .password("password123")
+                .confirmPassword("password123")
                 .role(null) // Should default to HOSPITAL
                 .build();
 
         User savedUser = User.builder()
                 .id(1L)
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
+                .username("test")
                 .password("hashed_password")
                 .role("HOSPITAL")
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
-        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
+        when(userRepository.existsByUsername("test")).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("hashed_password");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
@@ -145,61 +167,105 @@ public class UserServiceTest {
         AuthResponse response = userService.register(request);
 
         assertNotNull(response);
-        assertEquals("HOSPITAL", response.getRole());
+        assertEquals("HOSPITAL", response.getUser().getRole());
     }
 
     @Test
     void register_EmailAlreadyExists_ThrowsException() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
                 .password("password123")
+                .confirmPassword("password123")
                 .role("HOSPITAL")
                 .build();
 
-        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.register(request));
-        assertEquals("Email already exists", exception.getMessage());
+        assertThrows(EmailAlreadyExistsException.class, () -> userService.register(request));
 
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
-    void register_UsernameAlreadyExists_ThrowsException() {
+    void register_UsernameCollision_AutoGeneratesUniqueUsername() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
                 .password("password123")
+                .confirmPassword("password123")
                 .role("HOSPITAL")
                 .build();
 
-        when(userRepository.existsByUsername(request.getUsername())).thenReturn(true);
+        User savedUser = User.builder()
+                .id(1L)
+                .name("Test User")
+                .organization("St. Mary Clinic")
+                .email("test@example.com")
+                .phone("+1 (555) 019-2834")
+                .username("test1") // Unique username auto-generated
+                .password("hashed_password")
+                .role("HOSPITAL")
+                .accountStatus(AccountStatus.ACTIVE)
+                .build();
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.register(request));
-        assertEquals("Username already exists", exception.getMessage());
+        // mock "test" as already existing, but "test1" as unique
+        when(userRepository.existsByUsername("test")).thenReturn(true);
+        when(userRepository.existsByUsername("test1")).thenReturn(false);
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("hashed_password");
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
-        verify(userRepository, never()).save(any(User.class));
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> {
+            RefreshToken rt = invocation.getArgument(0);
+            rt.setId(10L);
+            return rt;
+        });
+
+        AuthResponse response = userService.register(request);
+
+        assertNotNull(response);
+        assertEquals("test1", response.getUsername()); // legacy flat field will map to username
     }
 
     @Test
     void register_InvalidRole_ThrowsException() {
         RegisterRequest request = RegisterRequest.builder()
                 .name("Test User")
-                .username("testuser")
+                .organization("St. Mary Clinic")
                 .email("test@example.com")
+                .phone("+1 (555) 019-2834")
                 .password("password123")
+                .confirmPassword("password123")
                 .role("INVALID_ROLE")
                 .build();
 
-        when(userRepository.existsByUsername(request.getUsername())).thenReturn(false);
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.register(request));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> userService.register(request));
         assertTrue(exception.getMessage().contains("Invalid role"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void register_PasswordMismatch_ThrowsException() {
+        RegisterRequest request = RegisterRequest.builder()
+                .name("Test User")
+                .organization("St. Mary Clinic")
+                .email("test@example.com")
+                .phone("+1 (555) 019-2834")
+                .password("password123")
+                .confirmPassword("different_password")
+                .role("HOSPITAL")
+                .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> userService.register(request));
+        assertEquals("Passwords do not match", exception.getMessage());
 
         verify(userRepository, never()).save(any(User.class));
     }

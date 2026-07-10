@@ -1,6 +1,6 @@
 export default function AboutPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-card">
 
       {/* SECTION 1 */}
       <section className="relative py-28 overflow-hidden">
@@ -12,7 +12,7 @@ export default function AboutPage() {
 
         <div className="relative max-w-7xl mx-auto px-6">
 
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl font-bold text-primary mb-6">
             About MedTrack
           </h1>
 
@@ -43,9 +43,9 @@ export default function AboutPage() {
           {/* LEFT TEXT */}
           <div>
 
-            <p className="text-sm text-gray-500 mb-2">Mission</p>
+            <p className="text-sm text-secondary mb-2">Mission</p>
 
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl font-bold text-primary mb-6">
               Our journey towards democratizing health record access
             </h2>
 

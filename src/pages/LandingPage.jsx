@@ -125,42 +125,42 @@ export default function LandingPage({ onNavigate }) {
   };
 
   return (
-    <div className="bg-[#f8fafc] text-gray-900 font-sans min-h-screen selection:bg-blue-600 selection:text-white">
+    <div className="bg-surface text-primary font-sans min-h-screen selection:bg-blue-600 selection:text-white">
       
       {/* Hero Section (Asymmetric) */}
-      <section className="relative w-full pt-12 pb-16 lg:pt-8 lg:pb-0 overflow-hidden bg-white rounded-b-[40px] shadow-sm">
+      <section className="relative w-full pt-12 pb-16 lg:pt-8 lg:pb-0 overflow-hidden bg-card rounded-b-[40px] shadow-sm">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* Left Side: Typography & CTAs */}
           <div className="flex flex-col justify-center order-2 lg:order-1 pt-8 lg:pt-0 z-10 lg:pr-8">
             
             {/* Persona Switcher (Horizontal Row) */}
-            <div className="flex items-center flex-wrap gap-4 mb-8 bg-gray-50 p-2 rounded-[2rem] w-fit border border-gray-100">
+            <div className="flex items-center flex-wrap gap-4 mb-8 bg-surface p-2 rounded-[2rem] w-fit border border-subtle">
               {personas.map((p, idx) => (
                 <button
                   key={p.id}
                   onClick={() => setActivePersona(idx)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
-                    activePersona === idx ? "bg-white shadow-sm ring-1 ring-gray-200" : "opacity-60 hover:opacity-100"
+                    activePersona === idx ? "bg-card shadow-sm ring-1 ring-gray-200" : "opacity-60 hover:opacity-100"
                   }`}
                   aria-label={`Switch to ${p.label} view`}
                 >
-                  <img src={p.avatar} alt={`${p.label} Avatar`} width="32" height="32" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
-                  <span className={`text-sm font-semibold ${activePersona === idx ? "text-gray-900" : "text-gray-500"}`}>
+                  <img src={p.avatar} alt={`${p.label} Avatar`} width="32" height="32" className="w-8 h-8 rounded-full object-cover border border-subtle" />
+                  <span className={`text-sm font-semibold ${activePersona === idx ? "text-primary" : "text-secondary"}`}>
                     {p.label}
                   </span>
                 </button>
               ))}
             </div>
 
-            <h1 className="text-5xl sm:text-7xl lg:text-[5.5rem] font-black leading-[1.05] tracking-tight mb-6 text-gray-900">
+            <h1 className="text-5xl sm:text-7xl lg:text-[5.5rem] font-black leading-[1.05] tracking-tight mb-6 text-primary">
               Keep your <br className="hidden sm:block" /> equipment <br className="hidden sm:block" />
               <span className="text-blue-600">always ready.</span>
             </h1>
             
             {/* Dynamic Subtext with Crossfade */}
             <div className="relative min-h-[80px] mb-10">
-              <p key={activePersona} className="text-lg sm:text-xl text-gray-500 max-w-lg leading-relaxed font-medium animate-fadeSlideIn">
+              <p key={activePersona} className="text-lg sm:text-xl text-secondary max-w-lg leading-relaxed font-medium animate-fadeSlideIn">
                 {currentHero.subtext}
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function LandingPage({ onNavigate }) {
               </button>
               <button
                 onClick={() => onNavigate("login")}
-                className="px-8 py-4 bg-gray-100 text-gray-900 text-lg font-bold rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
+                className="px-8 py-4 bg-hover text-primary text-lg font-bold rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
               >
                 Sign In
               </button>
@@ -182,7 +182,7 @@ export default function LandingPage({ onNavigate }) {
           </div>
 
           {/* Right Side: Large Lifestyle Photo */}
-          <div className="relative order-1 lg:order-2 h-[350px] sm:h-[500px] lg:h-[800px] w-full rounded-[40px] overflow-hidden shadow-2xl bg-gray-100">
+          <div className="relative order-1 lg:order-2 h-[350px] sm:h-[500px] lg:h-[800px] w-full rounded-[40px] overflow-hidden shadow-2xl bg-hover">
             <img 
               key={activePersona}
               src={currentHero.heroImg} 
@@ -196,8 +196,8 @@ export default function LandingPage({ onNavigate }) {
                 {currentHero.icon}
               </div>
               <div>
-                <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider">Module Active</p>
-                <p className="text-xs sm:text-sm font-bold text-gray-900">{currentHero.badge}</p>
+                <p className="text-[10px] sm:text-xs text-secondary font-bold uppercase tracking-wider">Module Active</p>
+                <p className="text-xs sm:text-sm font-bold text-primary">{currentHero.badge}</p>
               </div>
             </div>
           </div>
@@ -220,13 +220,13 @@ export default function LandingPage({ onNavigate }) {
       </div>
 
       {/* Stats Section */}
-      <section className="py-20 sm:py-24 bg-[#f8fafc]">
+      <section className="py-20 sm:py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center divide-x divide-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center divide-x divide-subtle">
             {stats.map((s) => (
               <div key={s.label} className="px-2 sm:px-4">
-                <p className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 mb-2 tracking-tighter">{s.value}</p>
-                <p className="text-gray-500 font-semibold uppercase tracking-wider text-xs sm:text-sm">{s.label}</p>
+                <p className="text-4xl sm:text-5xl md:text-6xl font-black text-primary mb-2 tracking-tighter">{s.value}</p>
+                <p className="text-secondary font-semibold uppercase tracking-wider text-xs sm:text-sm">{s.label}</p>
               </div>
             ))}
           </div>
@@ -234,15 +234,15 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Slideshow Features Section */}
-      <section className="py-16 sm:py-24 bg-white relative">
+      <section className="py-16 sm:py-24 bg-card relative">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 sm:mb-12">
             <div className="max-w-2xl">
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 sm:mb-6 leading-tight tracking-tight">
+              <h2 className="text-4xl md:text-5xl font-black text-primary mb-4 sm:mb-6 leading-tight tracking-tight">
                 Everything your facility needs.
               </h2>
-              <p className="text-lg sm:text-xl text-gray-500 font-medium">
+              <p className="text-lg sm:text-xl text-secondary font-medium">
                 A complete toolkit for managing the full lifecycle of medical equipment — from procurement to disposal.
               </p>
             </div>
@@ -250,22 +250,22 @@ export default function LandingPage({ onNavigate }) {
             {/* Slideshow Controls */}
             <div className="flex items-center gap-4 sm:gap-6 mt-6 md:mt-0">
               <div className="flex items-center gap-2">
-                <button aria-label="Previous Slide" onClick={handlePrevSlide} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:border-blue-600 hover:text-blue-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+                <button aria-label="Previous Slide" onClick={handlePrevSlide} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-subtle flex items-center justify-center text-gray-600 hover:bg-surface hover:border-blue-600 hover:text-blue-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
                   <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <button aria-label="Next Slide" onClick={handleNextSlide} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:border-blue-600 hover:text-blue-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+                <button aria-label="Next Slide" onClick={handleNextSlide} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-subtle flex items-center justify-center text-gray-600 hover:bg-surface hover:border-blue-600 hover:text-blue-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
                   <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
               <div className="text-xl sm:text-2xl font-black text-gray-300 tracking-widest">
-                <span className="text-gray-900">0{activeSlide + 1}</span> / 0{features.length}
+                <span className="text-primary">0{activeSlide + 1}</span> / 0{features.length}
               </div>
             </div>
           </div>
 
           {/* Active Slide Card */}
           <div 
-            className="relative w-full h-[450px] lg:h-[600px] rounded-[30px] sm:rounded-[40px] overflow-hidden bg-gray-100 group cursor-grab active:cursor-grabbing"
+            className="relative w-full h-[450px] lg:h-[600px] rounded-[30px] sm:rounded-[40px] overflow-hidden bg-hover group cursor-grab active:cursor-grabbing"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEndEvent}
@@ -298,31 +298,31 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Stakeholder Portals */}
-      <section className="py-20 sm:py-24 bg-[#f8fafc]">
+      <section className="py-20 sm:py-24 bg-surface">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
           
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 sm:mb-6 tracking-tight">Built for every stakeholder</h2>
-            <p className="text-lg sm:text-xl text-gray-500 font-medium">Three tailored portals. One unified system.</p>
+            <h2 className="text-4xl md:text-5xl font-black text-primary mb-4 sm:mb-6 tracking-tight">Built for every stakeholder</h2>
+            <p className="text-lg sm:text-xl text-secondary font-medium">Three tailored portals. One unified system.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {personas.map((p) => (
-              <div key={p.id} className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 lg:p-10 shadow-sm border border-gray-100 hover:shadow-2xl transition-shadow duration-300 group flex flex-col h-full">
+              <div key={p.id} className="bg-card rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 lg:p-10 shadow-sm border border-subtle hover:shadow-2xl transition-shadow duration-300 group flex flex-col h-full">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-50 flex items-center justify-center mb-6 sm:mb-8 group-hover:bg-blue-600 transition-colors duration-300">
                   <div className="text-blue-600 group-hover:text-white transition-colors duration-300">
                     {p.icon}
                   </div>
                 </div>
                 
-                <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-3 sm:mb-4">{p.label} Portal</h3>
-                <p className="text-gray-500 font-medium leading-relaxed mb-8 sm:mb-10 flex-grow">
+                <h3 className="text-xl sm:text-2xl font-black text-primary mb-3 sm:mb-4">{p.label} Portal</h3>
+                <p className="text-secondary font-medium leading-relaxed mb-8 sm:mb-10 flex-grow">
                   {p.subtext}
                 </p>
 
                 <button
                   onClick={() => onNavigate("login")}
-                  className="w-full py-3 sm:py-4 bg-gray-50 text-gray-900 font-bold rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200 hover:border-blue-200"
+                  className="w-full py-3 sm:py-4 bg-surface text-primary font-bold rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors border border-subtle hover:border-blue-200"
                 >
                   Login as {p.label.split(' ')[0]}
                 </button>
@@ -333,17 +333,17 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Oversized Closing CTA */}
-      <section className="py-24 sm:py-32 bg-white text-center px-6">
+      <section className="py-24 sm:py-32 bg-card text-center px-6">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-5xl sm:text-6xl md:text-8xl font-black text-gray-900 tracking-tighter mb-6 sm:mb-8 leading-none">
+          <h2 className="text-5xl sm:text-6xl md:text-8xl font-black text-primary tracking-tighter mb-6 sm:mb-8 leading-none">
             Ready to <br className="hidden sm:block" /> <span className="text-blue-600">transform</span> <br className="hidden sm:block" /> your workflow?
           </h2>
-          <p className="text-xl sm:text-2xl text-gray-500 font-medium mb-10 sm:mb-12 max-w-2xl mx-auto">
+          <p className="text-xl sm:text-2xl text-secondary font-medium mb-10 sm:mb-12 max-w-2xl mx-auto">
             Join hundreds of hospitals already using MedTrack to reduce downtime and cut costs.
           </p>
           <button
             onClick={() => onNavigate("register")}
-            className="px-10 py-5 sm:px-12 sm:py-6 bg-gray-900 text-white text-xl sm:text-2xl font-black rounded-full hover:bg-blue-600 transition-colors shadow-2xl"
+            className="px-10 py-5 sm:px-12 sm:py-6 bg-surface text-white text-xl sm:text-2xl font-black rounded-full hover:bg-blue-600 transition-colors shadow-2xl"
           >
             Get Started Now
           </button>
@@ -351,8 +351,8 @@ export default function LandingPage({ onNavigate }) {
       </section>
 
       {/* Unsplash Attribution Footer */}
-      <footer className="bg-gray-50 py-6 text-center border-t border-gray-200">
-        <p className="text-xs sm:text-sm text-gray-400 font-medium">
+      <footer className="bg-surface py-6 text-center border-t border-subtle">
+        <p className="text-xs sm:text-sm text-secondary font-medium">
           Images provided by incredible photographers on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-600 underline decoration-gray-300 hover:decoration-blue-600 transition-colors">Unsplash</a>.
         </p>
       </footer>

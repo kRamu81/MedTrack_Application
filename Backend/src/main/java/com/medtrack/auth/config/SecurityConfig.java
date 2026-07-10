@@ -1,6 +1,7 @@
 package com.medtrack.auth.config;
 
 import com.medtrack.auth.security.JwtAuthFilter;
+import com.medtrack.auth.security.RateLimitingFilter;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.model.AccountStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,7 +21,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import com.medtrack.auth.security.CustomAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,26 +35,44 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * SecurityConfig is the central configuration class for Spring Security in the MedTrack application.
- * It defines the security filters, authorization rules, CORS policies, and password hashing mechanisms
+ * SecurityConfig is the central configuration class for Spring Security in the
+ * MedTrack application.
+ * It defines the security filters, authorization rules, CORS policies, and
+ * password hashing mechanisms
  * used to secure the backend REST APIs.
  * 
- * <p>Key Responsibilities of this configuration:
+ * <p>
+ * Key Responsibilities of this configuration:
  * <ul>
- *   <li><strong>Stateless Authentication:</strong> Disables standard session creation and relies entirely on stateless JWT tokens.</li>
- *   <li><strong>JWT Authentication Filter:</strong> Configures and inserts the custom {@link JwtAuthFilter} into the Spring Security filter chain to intercept and validate incoming authorization headers.</li>
- *   <li><strong>Role-Based Access Control (RBAC):</strong> Sets fine-grained access rules based on HTTP methods and roles (e.g., HOSPITAL, TECHNICIAN, SUPPLIER).</li>
- *   <li><strong>Cross-Origin Resource Sharing (CORS):</strong> Customizes CORS settings to allow communication with the React frontend application running on local port 3000.</li>
- *   <li><strong>Cross-Site Request Forgery (CSRF) protection:</strong> Disables CSRF protection since APIs are stateless and do not rely on session cookies.</li>
- *   <li><strong>H2 Console Support:</strong> Configures frame options to allow access to the embedded H2 database console for development purposes.</li>
+ * <li><strong>Stateless Authentication:</strong> Disables standard session
+ * creation and relies entirely on stateless JWT tokens.</li>
+ * <li><strong>JWT Authentication Filter:</strong> Configures and inserts the
+ * custom {@link JwtAuthFilter} into the Spring Security filter chain to
+ * intercept and validate incoming authorization headers.</li>
+ * <li><strong>Role-Based Access Control (RBAC):</strong> Sets fine-grained
+ * access rules based on HTTP methods and roles (e.g., HOSPITAL, TECHNICIAN,
+ * SUPPLIER).</li>
+ * <li><strong>Cross-Origin Resource Sharing (CORS):</strong> Customizes CORS
+ * settings to allow communication with the React frontend application running
+ * on local port 3000.</li>
+ * <li><strong>Cross-Site Request Forgery (CSRF) protection:</strong> Disables
+ * CSRF protection since APIs are stateless and do not rely on session
+ * cookies.</li>
+ * <li><strong>H2 Console Support:</strong> Configures frame options to allow
+ * access to the embedded H2 database console for development purposes.</li>
  * </ul>
  * </p>
  *
- * <p>Annotations used:
+ * <p>
+ * Annotations used:
  * <ul>
- *   <li>{@code @Configuration}: Indicates that the class can be used by the Spring IoC container as a source of bean definitions.</li>
- *   <li>{@code @EnableWebSecurity}: Enables Spring Security's web security support and provides the Spring MVC integration.</li>
- *   <li>{@code @RequiredArgsConstructor}: Lombok annotation that generates a constructor for all {@code final} fields (injecting the {@link JwtAuthFilter}).</li>
+ * <li>{@code @Configuration}: Indicates that the class can be used by the
+ * Spring IoC container as a source of bean definitions.</li>
+ * <li>{@code @EnableWebSecurity}: Enables Spring Security's web security
+ * support and provides the Spring MVC integration.</li>
+ * <li>{@code @RequiredArgsConstructor}: Lombok annotation that generates a
+ * constructor for all {@code final} fields (injecting the
+ * {@link JwtAuthFilter}).</li>
  * </ul>
  * </p>
  */
@@ -61,17 +83,22 @@ import java.util.List;
 public class SecurityConfig {
 
     /**
-     * Custom JWT authentication filter responsible for extracting, parsing, and validating JWT tokens
-     * from the "Authorization" header of incoming HTTP requests. If valid, the filter sets the
+     * Custom JWT authentication filter responsible for extracting, parsing, and
+     * validating JWT tokens
+     * from the "Authorization" header of incoming HTTP requests. If valid, the
+     * filter sets the
      * authentication context in Spring's SecurityContextHolder.
      */
     private final JwtAuthFilter jwtAuthFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final RateLimitingFilter rateLimitingFilter;
 
     /**
      * Configures and registers a {@link PasswordEncoder} bean.
-     * Uses the BCrypt strong password hashing function. BCrypt internally incorporates a salt
-     * to protect against rainbow table attacks and has an adjustable work factor (strength) 
+     * Uses the BCrypt strong password hashing function. BCrypt internally
+     * incorporates a salt
+     * to protect against rainbow table attacks and has an adjustable work factor
+     * (strength)
      * to resist brute-force search attacks.
      *
      * @return a {@link PasswordEncoder} instance using the BCrypt hashing algorithm
@@ -85,19 +112,20 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> {
             com.medtrack.auth.model.User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
             return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
-                .password(user.getPassword())
-                .authorities("ROLE_" + user.getRole().toUpperCase())
-                .disabled(user.getAccountStatus() == AccountStatus.DISABLED)
-                .accountLocked(user.getAccountStatus() == AccountStatus.LOCKED)
-                .build();
+                    .username(user.getEmail())
+                    .password(user.getPassword())
+                    .authorities("ROLE_" + user.getRole().toUpperCase())
+                    .disabled(user.getAccountStatus() == AccountStatus.DISABLED)
+                    .accountLocked(user.getAccountStatus() == AccountStatus.LOCKED)
+                    .build();
         };
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
@@ -109,18 +137,17 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-
-
-
-
     /**
-     * Configures the main {@link SecurityFilterChain} which intercept and handle all incoming web requests.
-     * This method defines security rules, public endpoints, role-based restriction on resources, 
+     * Configures the main {@link SecurityFilterChain} which intercept and handle
+     * all incoming web requests.
+     * This method defines security rules, public endpoints, role-based restriction
+     * on resources,
      * CORS mapping, stateless session policy, and integrates custom filters.
      *
      * @param http the {@link HttpSecurity} object to configure security settings
      * @return the configured {@link SecurityFilterChain} bean
-     * @throws Exception if an error occurs while configuring the security filter chain
+     * @throws Exception if an error occurs while configuring the security filter
+     *                   chain
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -153,7 +180,11 @@ public class SecurityConfig {
                     "/api/auth/register",
                     "/api/auth/refresh-token",
                     "/api/auth/logout",
-                    "/h2-console/**"
+                    "/api/auth/forgot-password",
+                    "/api/auth/verify-otp",
+                    "/api/auth/reset-password",
+                    "/h2-console/**",
+                    "/error"
                 ).permitAll()
 
                 // Rule set for Equipment management:
@@ -186,10 +217,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             
-            // 5. Register Custom JWT Filter
-            // Inject jwtAuthFilter BEFORE UsernamePasswordAuthenticationFilter.
-            // This ensures that the incoming request has its JWT token parsed and the SecurityContext
-            // populated with authentication details before standard password/session authentication checks.
+            .addFilterBefore(rateLimitingFilter, LogoutFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             
             // 5b. Exception Handling for Unauthorized Requests
@@ -207,29 +235,40 @@ public class SecurityConfig {
 
     /**
      * Configures the Cross-Origin Resource Sharing (CORS) source bean.
-     * Defines the rules governing how external web applications interact with this API.
+     * Defines the rules governing how external web applications interact with this
+     * API.
      *
-     * <p>Configured parameters:
+     * <p>
+     * Configured parameters:
      * <ul>
-     *   <li><strong>Allowed Origins:</strong> Explicitly allows requests from the React frontend running on "http://localhost:3000".</li>
-     *   <li><strong>Allowed Methods:</strong> Restricts operations to safe methods: GET, POST, PUT, DELETE, OPTIONS, PATCH.</li>
-     *   <li><strong>Allowed Headers:</strong> Permits essential headers including Authorization (JWT credentials) and Content-Type (JSON payloads).</li>
-     *   <li><strong>Allow Credentials:</strong> Allows cookies, authorization headers, or SSL client certificates to be exposed on cross-origin requests.</li>
-     *   <li><strong>Max Age (3600 seconds):</strong> Caches the preflight OPTIONS request handshake on the client/browser for 1 hour to reduce network overhead.</li>
+     * <li><strong>Allowed Origins:</strong> Explicitly allows requests from the
+     * React frontend running on "http://localhost:3000".</li>
+     * <li><strong>Allowed Methods:</strong> Restricts operations to safe methods:
+     * GET, POST, PUT, DELETE, OPTIONS, PATCH.</li>
+     * <li><strong>Allowed Headers:</strong> Permits essential headers including
+     * Authorization (JWT credentials) and Content-Type (JSON payloads).</li>
+     * <li><strong>Allow Credentials:</strong> Allows cookies, authorization
+     * headers, or SSL client certificates to be exposed on cross-origin
+     * requests.</li>
+     * <li><strong>Max Age (3600 seconds):</strong> Caches the preflight OPTIONS
+     * request handshake on the client/browser for 1 hour to reduce network
+     * overhead.</li>
      * </ul>
      * </p>
      *
-     * @return a {@link CorsConfigurationSource} used to validate cross-origin requests
+     * @return a {@link CorsConfigurationSource} used to validate cross-origin
+     *         requests
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Restrict allowed origin to React Frontend application
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
         // Define HTTP methods allowed during cross-origin requests
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         // Define allowed request headers to allow custom authorization headers
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
+                "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         // Allow client browser to send authentication credentials (JWT/cookies)
         configuration.setAllowCredentials(true);
         // Cache preflight CORS checks on the client for 1 hour to optimize performance

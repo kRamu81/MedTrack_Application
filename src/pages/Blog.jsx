@@ -230,7 +230,7 @@ export default function Blog({ onNavigate }) {
             <button
               type="button"
               onClick={() => onNavigate("register")}
-              className="px-7 py-3.5 bg-white text-blue-600 rounded-full font-bold hover:bg-blue-50 transition-colors"
+              className="px-7 py-3.5 bg-card text-blue-600 rounded-full font-bold hover:bg-blue-50 transition-colors"
             >
               Get Started
             </button>

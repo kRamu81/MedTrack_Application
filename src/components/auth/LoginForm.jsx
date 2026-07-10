@@ -134,6 +134,7 @@ export default function LoginForm({ onNavigate }) {
             </label>
             <button
               type="button"
+              onClick={() => onNavigate("forgot-password")}
               className="text-xs font-medium"
               style={{ color: "#0ea5e9" }}
             >

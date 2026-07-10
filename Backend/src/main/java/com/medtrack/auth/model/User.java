@@ -120,15 +120,18 @@ public class User {
 
     private LocalDateTime accountLockedUntil;
 
-    /**
-     * Optional phone number for the user (e.g. "+1 (555) 019-2834").
-     */
-    @Column
+    @NotBlank
+    @Column(nullable = false)
     private String phone;
 
-    /**
-     * Optional organization / clinic name the user belongs to (e.g. "St. Mary Clinic").
-     */
-    @Column
+    @NotBlank
+    @Column(nullable = false)
     private String organization;
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @org.hibernate.annotations.UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

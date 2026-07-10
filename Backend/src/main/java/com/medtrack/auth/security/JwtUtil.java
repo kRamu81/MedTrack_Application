@@ -3,6 +3,7 @@ package com.medtrack.auth.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,39 +14,39 @@ import java.util.function.Function;
  * JwtUtil is a helper utility component responsible for handling JSON Web Tokens (JWT).
  * It provides methods to construct/generate tokens, parse and extract payload claims 
  * (such as user email, roles, and expiration date), and validate token integrity and lifetime.
- *
- * <p>Annotations used:
- * <ul>
- *   <li>{@code @Component}: Marks this class as a Spring-managed utility component for easy autowiring dependency injection.</li>
- * </ul>
- * </p>
  */
 @Component
 public class JwtUtil {
 
-    // Strong cryptographic signing key (must be at least 256 bits).
-    // WARNING: In production environments, this key must be loaded from external configuration (e.g., system env vars)
-    // rather than being hardcoded inside the class codebase to prevent source code exposure vulnerabilities.
-    private static final String SECRET = "medtrack-super-secret-key-change-this-in-production-1234567890";
-    private static final SecretKey SIGNING_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
+    @Value("${app.jwt.secret:medtrack-super-secret-key-change-this-in-production-1234567890}")
+    private String secret;
 
-    // Token validity period set to 15 minutes (in milliseconds)
-    private static final long EXPIRATION_MS = 1000 * 60 * 15;
+    @Value("${app.jwt.expiration-ms:604800000}") // Default to 7 days in ms
+    private long expirationMs;
 
     /**
-     * Generates a new JSON Web Token (JWT) signed with HMAC-SHA containing the user's email and role.
+     * Internal helper to build the HMAC signing key from the configured secret.
+     */
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+    /**
+     * Generates a new JSON Web Token (JWT) signed with HMAC-SHA containing the user's ID, email and role.
      *
+     * @param userId user database ID to be set as a custom claim
      * @param email user email address to be set as the subject claim
      * @param role user role (e.g., "hospital", "technician", "supplier") to be set as a custom claim
      * @return the compacted, cryptographically signed JWT string
      */
-    public String generateToken(String email, String role) {
+    public String generateToken(Long userId, String email, String role) {
         return Jwts.builder()
                 .subject(email)
+                .claim("userId", userId)
                 .claim("role", role)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(SIGNING_KEY)
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -124,7 +125,7 @@ public class JwtUtil {
      */
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(SIGNING_KEY)
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

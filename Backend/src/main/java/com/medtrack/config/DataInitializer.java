@@ -31,101 +31,101 @@ public class DataInitializer implements CommandLineRunner {
         // 1. Seed Users
         if (userRepository.count() == 0) {
             userRepository.save(User.builder()
-                .name("Dr. Evelyn Carter")
-                .username("admin")
-                .email("admin@medtrack.com")
-                .password(passwordEncoder.encode("admin123"))
-                .role("HOSPITAL")
-                .phone("+1 (555) 019-2834")
-                .organization("St. Mary Clinic")
-                .accountStatus(AccountStatus.ACTIVE)
-                .build());
+                    .name("Admin User")
+                    .username("admin")
+                    .email("hospital@medtrack.com")
+                    .password(passwordEncoder.encode("admin123"))
+                    .role("hospital")
+                    .phone("+1 (555) 019-2834")
+                    .organization("St. Mary Clinic")
+                    .accountStatus(AccountStatus.ACTIVE)
+                    .build());
 
             userRepository.save(User.builder()
-                .name("John Tech")
-                .username("technician")
-                .email("tech@medtrack.com")
-                .password(passwordEncoder.encode("tech123"))
-                .role("TECHNICIAN")
-                .phone("+1 (555) 100-2001")
-                .organization("MedTech Services")
-                .accountStatus(AccountStatus.ACTIVE)
-                .build());
+                    .name("John Tech")
+                    .username("technician")
+                    .email("tech@medtrack.com")
+                    .password(passwordEncoder.encode("tech123"))
+                    .role("Technician")
+                    .phone("+1 (555) 019-2835")
+                    .organization("Maintenance Hub")
+                    .accountStatus(AccountStatus.ACTIVE)
+                    .build());
 
             userRepository.save(User.builder()
-                .name("Global Supplies")
-                .username("supplier")
-                .email("supplier@medtrack.com")
-                .password(passwordEncoder.encode("supplier123"))
-                .role("SUPPLIER")
-                .phone("+1 (555) 200-3002")
-                .organization("GlobalMed Supply Co.")
-                .accountStatus(AccountStatus.ACTIVE)
-                .build());
+                    .name("Global Supplies")
+                    .username("supplier")
+                    .email("supplier@medtrack.com")
+                    .password(passwordEncoder.encode("supply123"))
+                    .role("Supplier")
+                    .phone("+1 (555) 019-2836")
+                    .organization("Global Suppliers Ltd")
+                    .accountStatus(AccountStatus.ACTIVE)
+                    .build());
         }
 
         // 2. Seed Equipment
         if (equipmentRepository.count() == 0) {
             equipmentRepository.save(Equipment.builder()
-                .name("MRI Scanner X100")
-                .equipmentCode("EQ-1001")
-                .model("Siemens Healthcare")
-                .serialNumber("SN-9921-A")
-                .department("Radiology")
-                .status("Operational")
-                .category("Imaging")
-                .purchaseDate(LocalDate.now().minusYears(2))
-                .build());
+                    .name("MRI Scanner X100")
+                    .equipmentCode("EQ-1001")
+                    .model("Siemens Healthcare")
+                    .serialNumber("SN-9921-A")
+                    .department("Radiology")
+                    .status("Operational")
+                    .category("Imaging")
+                    .purchaseDate(LocalDate.now().minusYears(2))
+                    .build());
 
             equipmentRepository.save(Equipment.builder()
-                .name("Portable Ventilator")
-                .equipmentCode("EQ-1002")
-                .model("Philips V60")
-                .serialNumber("SN-1102-B")
-                .department("ICU")
-                .status("Maintenance")
-                .category("Respiratory")
-                .purchaseDate(LocalDate.now().minusMonths(6))
-                .build());
+                    .name("Portable Ventilator")
+                    .equipmentCode("EQ-1002")
+                    .model("Philips V60")
+                    .serialNumber("SN-1102-B")
+                    .department("ICU")
+                    .status("Maintenance")
+                    .category("Respiratory")
+                    .purchaseDate(LocalDate.now().minusMonths(6))
+                    .build());
         }
 
         // 3. Seed Maintenance Tasks
         if (maintenanceTaskRepository.count() == 0) {
             maintenanceTaskRepository.save(MaintenanceTask.builder()
-                .taskCode("MNT-5001")
-                .equipment("MRI Scanner X100")
-                .hospital("City General Hospital")
-                .maintenanceType("Inspection")
-                .deadline(LocalDate.now().plusDays(5))
-                .priority("Normal")
-                .status("Scheduled")
-                .description("Routine quarterly inspection of magnet cooling system.")
-                .build());
+                    .taskCode("MNT-5001")
+                    .equipment("MRI Scanner X100")
+                    .hospital("City General Hospital")
+                    .maintenanceType("Inspection")
+                    .deadline(LocalDate.now().plusDays(5))
+                    .priority("Normal")
+                    .status("Scheduled")
+                    .description("Routine quarterly inspection of magnet cooling system.")
+                    .build());
 
             maintenanceTaskRepository.save(MaintenanceTask.builder()
-                .taskCode("MNT-5002")
-                .equipment("Portable Ventilator")
-                .hospital("City General Hospital")
-                .maintenanceType("Corrective")
-                .deadline(LocalDate.now().plusDays(1))
-                .priority("Critical")
-                .status("In Progress")
-                .description("Oxygen sensor failure reported. Requires calibration.")
-                .build());
+                    .taskCode("MNT-5002")
+                    .equipment("Portable Ventilator")
+                    .hospital("City General Hospital")
+                    .maintenanceType("Corrective")
+                    .deadline(LocalDate.now().plusDays(1))
+                    .priority("Critical")
+                    .status("In Progress")
+                    .description("Oxygen sensor failure reported. Requires calibration.")
+                    .build());
         }
 
         // 4. Seed Orders
         if (equipmentOrderRepository.count() == 0) {
             equipmentOrderRepository.save(EquipmentOrder.builder()
-                .orderCode("ORD-1001")
-                .equipmentId("EQ-1001")
-                .equipmentName("Defibrillator Pads (Box of 10)")
-                .quantity(5)
-                .hospital("City General Hospital")
-                .createdBy("Admin User")
-                .orderDate(LocalDate.now().minusDays(2).atStartOfDay())
-                .status("PENDING")
-                .build());
+                    .orderCode("ORD-1001")
+                    .equipmentId("EQ-1001")
+                    .equipmentName("Defibrillator Pads (Box of 10)")
+                    .quantity(5)
+                    .hospital("City General Hospital")
+                    .createdBy("Admin User")
+                    .orderDate(LocalDate.now().minusDays(2).atStartOfDay())
+                    .status("PENDING")
+                    .build());
         }
 
         System.out.println(">> Database Seeded Successfully!");

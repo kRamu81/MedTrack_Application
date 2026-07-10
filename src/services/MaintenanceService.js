@@ -12,8 +12,13 @@ export const getAllTasks = async (technicianId) => {
 
 // Fetch a single maintenance task by ID
 export const getTaskById = async (id) => {
-  const response = await API.get(`/api/maintenance/${id}`);
-  return response.data;
+  try {
+    const response = await API.get(`/api/maintenance/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch maintenance task:", error);
+    throw error; // Let the component decide how to display the error
+  }
 };
 
 // Schedule a new maintenance task

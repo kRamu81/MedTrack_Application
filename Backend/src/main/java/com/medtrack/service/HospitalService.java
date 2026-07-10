@@ -1,8 +1,8 @@
 package com.medtrack.service;
 
 import com.medtrack.model.Hospital;
+import lombok.RequiredArgsConstructor;
 import com.medtrack.auth.model.User;
-import com.medtrack.repository.HospitalRepository;
 import com.medtrack.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,15 +17,17 @@ public class HospitalService {
 
     /**
      * Create a new hospital profile and link it to the authenticated user.
-     * @param hospital the hospital details
+     * 
+     * @param hospital  the hospital details
      * @param userEmail the email of the authenticated user
      * @return the saved hospital
      */
     @Transactional
     public Hospital createHospitalProfile(Hospital hospital, String userEmail) {
+
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
-        
+
         // Ensure user is actually a hospital role
         if (!"hospital".equalsIgnoreCase(user.getRole())) {
             throw new RuntimeException("Only users with role 'hospital' can create a hospital profile.");
@@ -42,11 +44,13 @@ public class HospitalService {
 
     /**
      * Get a hospital profile by the associated user's ID.
+     * 
      * @param userId the user ID
      * @return the Hospital
      */
     public Hospital getHospitalByUserId(Long userId) {
         return hospitalRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Hospital profile not found for user ID: " + userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Hospital profile not found for user ID: " + userId));
     }
 }

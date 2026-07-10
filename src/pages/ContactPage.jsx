@@ -1,6 +1,6 @@
 export default function ContactPage() {
   return (
-    <section className="relative py-24 overflow-hidden bg-white">
+    <section className="relative py-24 overflow-hidden bg-card">
 
       {/* Grid background */}
       <div className="absolute inset-0 opacity-30
@@ -12,7 +12,7 @@ export default function ContactPage() {
         {/* LEFT SIDE */}
         <div>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-primary mb-4">
             Speak to an expert
           </h1>
 
@@ -23,7 +23,7 @@ export default function ContactPage() {
           <div className="space-y-8">
 
             <div>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-primary">
                 For general communication
               </h3>
 
@@ -38,7 +38,7 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-primary">
                 For technical support
               </h3>
 
@@ -53,12 +53,12 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900">Phone</h3>
+              <h3 className="font-semibold text-primary">Phone</h3>
               <p className="text-gray-600 mt-2">(+91) 9392861225</p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900">Address</h3>
+              <h3 className="font-semibold text-primary">Address</h3>
 
               <p className="text-gray-600 text-sm mt-2">
                 MedTrack Technologies YV Street,
@@ -75,7 +75,7 @@ export default function ContactPage() {
 
 
         {/* RIGHT SIDE FORM */}
-        <div className="bg-gray-50 rounded-2xl shadow p-8">
+        <div className="bg-surface rounded-2xl shadow p-8">
 
           <h2 className="text-lg font-semibold mb-6">
             Contact us
