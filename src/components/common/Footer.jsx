@@ -2,7 +2,7 @@ import logo from "../../assets/logo.png";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-400 mt-auto">
+    <footer className="bg-surface text-secondary mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
 
             <div className="mb-6">
-              <div className="bg-white p-2 rounded-lg inline-flex shadow-sm">
+              <div className="bg-card p-2 rounded-lg inline-flex shadow-sm">
                 <img
                   src={logo}
                   alt="MedTrack Logo"
@@ -20,7 +20,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
+            <p className="text-sm leading-relaxed text-secondary max-w-xs">
               Medical equipment lifecycle management for modern hospitals.
             </p>
 
@@ -66,7 +66,7 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-sm">© 2024 MedTrack. All rights reserved.</p>
-          <p className="text-xs bg-gray-800 text-gray-500 px-3 py-1 rounded-full">
+          <p className="text-xs bg-card text-secondary px-3 py-1 rounded-full">
           </p>
         </div>
 

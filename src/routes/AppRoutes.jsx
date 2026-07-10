@@ -4,8 +4,12 @@ import { useAuth } from "../context/AuthContext";
 
 // Page Imports
 import LandingPage from "../pages/LandingPage";
+import Blog from "../pages/Blog";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import VerifyOtpPage from "../pages/auth/VerifyOtpPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import Dashboard from "../pages/hospital/Dashboard";
 import EquipmentList from "../pages/hospital/EquipmentList";
 import MaintenanceSchedule from "../pages/hospital/MaintenanceSchedule";
@@ -49,12 +53,26 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
 
   switch (currentPage) {
     // --- Public Routes ---
-    case "landing": 
+    case "landing":
       return <LandingPage onNavigate={onNavigate} />;
-    case "login": 
+
+    case "blog":
+      return <Blog onNavigate={onNavigate} />;
+
+    case "login":
       return <LoginPage onNavigate={onNavigate} />;
+      
     case "register": 
       return <RegisterPage onNavigate={onNavigate} />;
+
+    case "forgot-password":
+      return <ForgotPasswordPage onNavigate={onNavigate} />;
+
+    case "verify-otp":
+      return <VerifyOtpPage onNavigate={onNavigate} email={pageData} />;
+
+    case "reset-password":
+      return <ResetPasswordPage onNavigate={onNavigate} email={pageData?.email} otp={pageData?.otp} />;
     
     // --- Protected Routes: Hospital Admin ---
     case "dashboard": 

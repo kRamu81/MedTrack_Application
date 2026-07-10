@@ -1,5 +1,6 @@
 package com.medtrack.model;
 
+import com.medtrack.auth.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

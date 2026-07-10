@@ -109,7 +109,7 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
             <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-200/50 hover:rotate-6 transition-transform">
               <span className="text-white font-bold text-xl">M</span>
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-gray-900">MedTrack</span>
+            <span className="font-extrabold text-xl tracking-tight text-primary">MedTrack</span>
           </button>
           
           <button 
@@ -123,7 +123,7 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-gray-400 mb-8">
+        <nav className="flex items-center gap-2 text-sm text-secondary mb-8">
           <span onClick={() => onNavigate("dashboard")} className="hover:text-sky-600 cursor-pointer flex items-center gap-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d={Icons.home} /></svg>Dashboard
           </span>
@@ -134,14 +134,14 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
         </nav>
 
         {/* Search Bar for manual lookup */}
-        <form onSubmit={handleSearchSubmit} className="bg-white p-4 rounded-3xl border border-sky-100 shadow-lg mb-8 flex flex-col sm:flex-row gap-3">
+        <form onSubmit={handleSearchSubmit} className="bg-card p-4 rounded-3xl border border-sky-100 shadow-lg mb-8 flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <input 
               type="text" 
               placeholder="Enter Order ID to track (e.g. 1)" 
               value={orderIdInput}
               onChange={(e) => setOrderIdInput(e.target.value)}
-              className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+              className="w-full pl-4 pr-10 py-3 bg-surface border border-subtle rounded-2xl text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
             />
           </div>
           <button 
@@ -153,18 +153,18 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
         </form>
 
         {loading && (
-          <div className="bg-white rounded-3xl border border-sky-100 p-16 text-center shadow-md">
+          <div className="bg-card rounded-3xl border border-sky-100 p-16 text-center shadow-md">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-sky-600"></div>
-            <p className="mt-4 text-gray-500 font-bold">Querying backend registry...</p>
+            <p className="mt-4 text-secondary font-bold">Querying backend registry...</p>
           </div>
         )}
 
         {error && !loading && (
-          <div className="bg-white rounded-3xl border-2 border-dashed border-red-200 p-16 text-center shadow-lg animate-in zoom-in-95 duration-300">
+          <div className="bg-card rounded-3xl border-2 border-dashed border-red-200 p-16 text-center shadow-lg animate-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 text-3xl">⚠️</div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">Fulfillment Record Not Found</h2>
+            <h2 className="text-2xl font-black text-primary mb-2">Fulfillment Record Not Found</h2>
             <p className="text-red-600 font-bold max-w-md mx-auto mb-6">{error}</p>
-            <div className="text-sm text-gray-500">Please verify the Order ID or select from the active orders list.</div>
+            <div className="text-sm text-secondary">Please verify the Order ID or select from the active orders list.</div>
           </div>
         )}
 
@@ -198,12 +198,12 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 bg-gray-100 p-1.5 rounded-xl w-fit">
+            <div className="flex gap-2 mb-6 bg-hover p-1.5 rounded-xl w-fit">
               {["timeline", "items"].map((tab) => (
                 <button 
                   key={tab} 
                   onClick={() => setActiveTab(tab)} 
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${activeTab === tab ? "bg-white text-sky-700 shadow-md" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"}`}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${activeTab === tab ? "bg-card text-sky-700 shadow-md" : "text-secondary hover:text-gray-800 hover:bg-surface"}`}
                 >
                   {tab === "timeline" ? "Tracking Timeline" : "Item Status"}
                 </button>
@@ -211,7 +211,7 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
             </div>
 
             {/* Main Content Card */}
-            <div className="bg-white rounded-3xl border border-sky-100 shadow-xl overflow-hidden mb-8">
+            <div className="bg-card rounded-3xl border border-sky-100 shadow-xl overflow-hidden mb-8">
               {activeTab === "timeline" && (
                 <div className="p-8">
                   {status === "Cancelled" ? (
@@ -230,7 +230,7 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
                           </div>
                         </div>
                         <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000" style={{ left: `calc(${percent}% - 16px)` }}>
-                          <div className="w-8 h-8 bg-white rounded-full border-4 border-sky-600 shadow-lg flex items-center justify-center hover:scale-125 transition-transform">
+                          <div className="w-8 h-8 bg-card rounded-full border-4 border-sky-600 shadow-lg flex items-center justify-center hover:scale-125 transition-transform">
                             <span className="text-sm">🚚</span>
                           </div>
                         </div>
@@ -243,7 +243,7 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
                             const active = i === progress;
                             return (
                               <div key={i} className="flex gap-6 items-start relative group cursor-pointer">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 z-10 transform ${done ? "bg-gradient-to-br from-sky-500 to-blue-600 shadow-lg shadow-sky-200" : active ? "bg-white border-2 border-sky-600 scale-110 ring-4 ring-sky-100" : "border-2 border-gray-200 bg-white group-hover:border-sky-300"}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 z-10 transform ${done ? "bg-gradient-to-br from-sky-500 to-blue-600 shadow-lg shadow-sky-200" : active ? "bg-card border-2 border-sky-600 scale-110 ring-4 ring-sky-100" : "border-2 border-subtle bg-card group-hover:border-sky-300"}`}>
                                   {done ? (
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d={Icons.check} /></svg>
                                   ) : active ? (
@@ -252,13 +252,13 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
                                     <div className="w-2 h-2 bg-gray-300 rounded-full group-hover:bg-sky-300" />
                                   )}
                                 </div>
-                                <div className={`flex-1 bg-gray-50 p-4 rounded-xl border transition-all duration-300 ${done || active ? "opacity-100 border-sky-100 bg-sky-50/50" : "opacity-60 group-hover:opacity-100 group-hover:bg-gray-50"}`}>
+                                <div className={`flex-1 bg-surface p-4 rounded-xl border transition-all duration-300 ${done || active ? "opacity-100 border-sky-100 bg-sky-50/50" : "opacity-60 group-hover:opacity-100 group-hover:bg-surface"}`}>
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                      <p className={`font-bold text-lg ${done || active ? "text-gray-900" : "text-gray-500"}`}>{step.label}</p>
+                                      <p className={`font-bold text-lg ${done || active ? "text-primary" : "text-secondary"}`}>{step.label}</p>
                                       {active && <span className="text-xs bg-sky-600 text-white px-3 py-1 rounded-full font-bold animate-pulse">Active</span>}
                                     </div>
-                                    <p className="text-sm text-gray-500 font-medium bg-white px-3 py-1 rounded-lg shadow-sm">{step.date}</p>
+                                    <p className="text-sm text-secondary font-medium bg-card px-3 py-1 rounded-lg shadow-sm">{step.date}</p>
                                   </div>
                                   {active && (
                                     <div className="mt-3 flex items-center gap-2 text-sky-700 text-sm">
@@ -279,11 +279,11 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
 
               {activeTab === "items" && (
                 <div className="p-8">
-                  <div className="group bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-lg hover:border-sky-200 transition-all duration-300">
+                  <div className="group bg-card border border-subtle rounded-2xl p-5 hover:shadow-lg hover:border-sky-200 transition-all duration-300">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <p className="font-bold text-gray-800 text-lg mb-1">{order.equipmentName || order.equipment?.name || "Medical Asset"}</p>
-                        <p className="text-sm text-gray-500">Qty: {order.quantity || 1} <span className="mx-1">•</span> Hospital: {order.hospital}</p>
+                        <p className="text-sm text-secondary">Qty: {order.quantity || 1} <span className="mx-1">•</span> Hospital: {order.hospital}</p>
                       </div>
                       <div className={`text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 ${
                         status === "Delivered" ? "bg-emerald-50 text-emerald-600" :
@@ -294,13 +294,13 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
                         {status}
                       </div>
                     </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden mb-2">
+                    <div className="w-full bg-hover h-2 rounded-full overflow-hidden mb-2">
                       <div 
                         className={`h-2 rounded-full transition-all duration-1000 ${status === "Delivered" || status === "Shipped" ? 'bg-green-500' : 'bg-yellow-500'}`} 
                         style={{ width: `${percent}%` }} 
                       />
                     </div>
-                    <div className="flex justify-between items-center text-xs text-gray-500">
+                    <div className="flex justify-between items-center text-xs text-secondary">
                       <span>{Math.round(percent)}% Completed</span>
                       <span>Est. Delivery: {order.estimatedDelivery || "Pending"}</span>
                     </div>
@@ -310,7 +310,7 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
             </div>
 
             {/* Order Summary Accordion */}
-            <div className="bg-white rounded-3xl border border-sky-100 shadow-xl overflow-hidden transition-all hover:shadow-2xl mb-6">
+            <div className="bg-card rounded-3xl border border-sky-100 shadow-xl overflow-hidden transition-all hover:shadow-2xl mb-6">
               <div 
                 className="flex justify-between items-center p-6 cursor-pointer hover:bg-sky-50/50 transition-colors group" 
                 onClick={() => setExpanded(!expanded)}
@@ -321,13 +321,13 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
                   </div>
                   <div>
                     <h2 className="font-bold text-gray-800 text-lg">Order Summary</h2>
-                    <p className="text-sm text-gray-500">Fulfillment Details</p>
+                    <p className="text-sm text-secondary">Fulfillment Details</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Estimated Cost</p>
-                    <span className="font-extrabold text-2xl text-gray-900">₹{estimatedPrice.toLocaleString()}</span>
+                    <p className="text-xs text-secondary uppercase tracking-wider">Estimated Cost</p>
+                    <span className="font-extrabold text-2xl text-primary">₹{estimatedPrice.toLocaleString()}</span>
                   </div>
                   <div className={`w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center transition-all duration-300 ${expanded ? "rotate-180 bg-sky-100" : ""}`}>
                     <svg className="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d={Icons.chevronDown} /></svg>
@@ -336,17 +336,17 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
               </div>
               
               <div className={`transition-all duration-500 ease-in-out overflow-hidden ${expanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="px-6 pb-6 pt-2 border-t border-gray-100 bg-gray-50/50">
+                <div className="px-6 pb-6 pt-2 border-t border-subtle bg-surface/50">
                   <div className="space-y-3 mt-4">
-                    <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center p-4 bg-card rounded-xl shadow-sm border border-subtle">
                       <div>
                         <p className="font-medium text-gray-800">{order.equipmentName || "Medical Equipment"}</p>
-                        <p className="text-xs text-gray-500">Qty: {order.quantity || 1}</p>
+                        <p className="text-xs text-secondary">Qty: {order.quantity || 1}</p>
                       </div>
-                      <p className="font-bold text-gray-900">₹{estimatedPrice.toLocaleString()}</p>
+                      <p className="font-bold text-primary">₹{estimatedPrice.toLocaleString()}</p>
                     </div>
                   </div>
-                  <div className="mt-6 bg-white p-6 rounded-xl border border-gray-100">
+                  <div className="mt-6 bg-card p-6 rounded-xl border border-subtle">
                     <div className="flex justify-between items-center text-gray-600">
                       <p>Subtotal</p>
                       <p>₹{estimatedPrice.toLocaleString()}</p>
@@ -359,8 +359,8 @@ export default function OrderStatus({ onNavigate, order: initialOrder }) {
                       <p>Tax / Duties</p>
                       <p>Included</p>
                     </div>
-                    <div className="flex justify-between items-center mt-6 pt-4 border-t-2 border-dashed border-gray-200">
-                      <p className="font-bold text-xl text-gray-900">Grand Total</p>
+                    <div className="flex justify-between items-center mt-6 pt-4 border-t-2 border-dashed border-subtle">
+                      <p className="font-bold text-xl text-primary">Grand Total</p>
                       <p className="font-extrabold text-2xl text-sky-600">₹{estimatedPrice.toLocaleString()}</p>
                     </div>
                   </div>

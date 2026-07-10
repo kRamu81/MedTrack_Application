@@ -8,6 +8,7 @@ export default function RegisterForm({ onNavigate }) {
 
   const [form, setForm] = useState({
     name: "",
+    username: "",
     email: "",
     password: "",
     confirm: "",
@@ -36,6 +37,7 @@ export default function RegisterForm({ onNavigate }) {
     try {
       const user = await registerUser({
         name: form.name,
+        username: form.username,
         email: form.email,
         password: form.password,
         role: form.role,
@@ -151,6 +153,26 @@ export default function RegisterForm({ onNavigate }) {
             placeholder="City General Hospital"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            style={inputBase}
+            onFocus={focusIn}
+            onBlur={focusOut}
+          />
+        </div>
+
+        {/* Username */}
+        <div>
+          <label
+            className="block text-xs font-semibold mb-2 tracking-widest uppercase"
+            style={{ color: "#065f46" }}
+          >
+            Username
+          </label>
+          <input
+            type="text"
+            placeholder="hospital_admin"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
             required
             style={inputBase}
             onFocus={focusIn}

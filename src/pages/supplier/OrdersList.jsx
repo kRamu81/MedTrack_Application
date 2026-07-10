@@ -58,7 +58,7 @@ export default function OrdersList({ onNavigate }) {
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Inventory Orders</h1>
           <p className="text-slate-500 text-lg">Manage and track equipment fulfillment requests</p>
         </div>
-        <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex bg-card p-1 rounded-2xl border border-slate-200 shadow-sm">
           <div className="px-6 py-2">
             <span className="block text-2xl font-bold text-primary">{orders.length}</span>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Orders</span>
@@ -83,7 +83,7 @@ export default function OrdersList({ onNavigate }) {
           {orders.map((order) => (
             <div 
               key={order.id}
-              className="bg-white rounded-3xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 group"
+              className="bg-card rounded-3xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 group"
             >
               <div className="flex flex-col lg:flex-row">
                 <div className="w-full lg:w-72 h-48 lg:h-auto relative overflow-hidden">
@@ -187,7 +187,7 @@ export default function OrdersList({ onNavigate }) {
       )}
 
       {!loading && orders.length === 0 && (
-        <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 p-20 text-center">
+        <div className="bg-card rounded-3xl border-2 border-dashed border-slate-200 p-20 text-center">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />

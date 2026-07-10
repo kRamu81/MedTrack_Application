@@ -40,7 +40,7 @@ export default function AddEquipmentForm({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-blue-50/50 p-6 flex items-center justify-center font-sans">
-      <div className="max-w-xl w-full bg-white rounded-3xl shadow-xl shadow-blue-900/5 border border-white p-8 lg:p-12 relative overflow-hidden">
+      <div className="max-w-xl w-full bg-card rounded-3xl shadow-xl shadow-blue-900/5 border border-white p-8 lg:p-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
         
         <div className="mb-10 text-center relative z-10">
