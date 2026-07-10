@@ -1,9 +1,10 @@
 package com.medtrack.service;
 
 import com.medtrack.model.Hospital;
-import lombok.RequiredArgsConstructor;
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.repository.HospitalRepository;
+import com.medtrack.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import com.medtrack.repository.HospitalRepository;
 import com.medtrack.exception.ResourceNotFoundException;

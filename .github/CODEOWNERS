@@ -1,0 +1,11 @@
+# Global owner
+*       @kRamu81
+
+# Frontend owner
+/src/   @kRamu81
+
+# Backend owner
+/Backend/ @kRamu81
+
+# Automation/Workflows
+/.github/ @kRamu81

@@ -1,0 +1,19 @@
+good-ui:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/**/*
+      - public/**/*
+      - package.json
+      - tailwind.config.js
+
+good-backend:
+  - changed-files:
+    - any-glob-to-any-file: Backend/**/*
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'
+
+workflows:
+  - changed-files:
+    - any-glob-to-any-file: .github/workflows/**/*

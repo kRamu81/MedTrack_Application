@@ -186,6 +186,7 @@ public class SecurityConfig {
                     "/h2-console/**",
                     "/error"
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
 
                 // Rule set for Equipment management:
                 // - Read (GET): Any authenticated user can view equipment details.
