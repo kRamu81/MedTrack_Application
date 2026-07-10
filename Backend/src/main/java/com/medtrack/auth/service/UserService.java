@@ -183,7 +183,7 @@ public class UserService {
      * @throws BadCredentialsException if credentials or role do not match
      */
     @Transactional(noRollbackFor = {BadCredentialsException.class, LockedException.class})
-    public LoginResponse login(LoginRequest loginRequest) {
+    public AuthResponse login(LoginRequest loginRequest) {
         // Normalize email to lowercase before lookup
         String normalizedEmail = loginRequest.getEmail().trim().toLowerCase();
 

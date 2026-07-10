@@ -296,7 +296,7 @@ public class UserServiceTest {
             return rt;
         });
 
-        LoginResponse response = userService.login(request);
+        AuthResponse response = userService.login(request);
 
         assertNotNull(response);
         assertNotNull(response.getToken());
@@ -409,7 +409,7 @@ public class UserServiceTest {
             return rt;
         });
 
-        LoginResponse response = userService.login(request);
+        AuthResponse response = userService.login(request);
 
         assertNotNull(response);
         assertEquals(AccountStatus.ACTIVE, user.getAccountStatus());

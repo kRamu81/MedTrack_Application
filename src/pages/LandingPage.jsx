@@ -1,361 +1,489 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function LandingPage({ onNavigate }) {
-  const [activePersona, setActivePersona] = useState(null);
-  const [activeSlide, setActiveSlide] = useState(0);
+  const [activeIdeaIndex, setActiveIdeaIndex] = useState(0);
 
-  const defaultHeroState = {
-    heroImg: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&h=1600&q=80",
-    subtext: "MedTrack connects hospitals, technicians, and suppliers in one unified platform — ensuring zero downtime, complete traceability, and optimized equipment lifecycles.",
-    badge: "Unified Platform",
-    icon: (
-      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    )
-  };
-
-  const personas = [
-    {
-      id: "hospital",
-      label: "Hospital Admin",
-      avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=100&h=100&q=80",
-      heroImg: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&h=1600&q=80",
-      subtext: "Monitor hospital equipment, schedule maintenance, and manage supplier orders from a central dashboard.",
-      badge: "Hospital Management",
-      icon: (
-        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-      )
-    },
-    {
-      id: "technician",
-      label: "Technician",
-      avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=100&h=100&q=80",
-      heroImg: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&h=1600&q=80",
-      subtext: "Access maintenance assignments, update task status, and record service details for efficient equipment support.",
-      badge: "Maintenance Portal",
-      icon: (
-        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-      )
-    },
-    {
-      id: "supplier",
-      label: "Supplier",
-      avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&h=100&q=80",
-      heroImg: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&h=1600&q=80",
-      subtext: "Process equipment orders, manage inventory levels, and coordinate deliveries to healthcare facilities.",
-      badge: "Supplier Network",
-      icon: (
-        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-      )
-    }
+  const searchIdeas = [
+    { text: "MRI Machine", color: "text-blue-600" },
+    { text: "Hospital Bed", color: "text-emerald-600" },
+    { text: "Defibrillator", color: "text-amber-600" },
+    { text: "Ventilator", color: "text-indigo-600" },
+    { text: "Infusion Pump", color: "text-rose-600" }
   ];
 
-  const currentHero = activePersona !== null ? personas[activePersona] : defaultHeroState;
+  // Cycle through ideas every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveIdeaIndex((prev) => (prev + 1) % searchIdeas.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [searchIdeas.length]);
+
+  // Pinterest-style background images (medical equipment)
+  const masonryImages = [
+    "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1638202993928-7267aad84c31?auto=format&fit=crop&w=400&q=80",
+    "https://images.unsplash.com/photo-1584982751601-97d883f510f4?auto=format&fit=crop&w=400&q=80"
+  ];
 
   const features = [
     {
-      img: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1600&h=900&q=80",
-      badge: "Live Analytics",
-      title: "Real-Time Equipment Dashboards",
-      desc: "Monitor equipment health, track maintenance trends, and view operational KPIs from clinical device sensors."
+      img: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+      title: "Real-Time Tracking",
+      desc: "Monitor equipment health and operational KPIs."
     },
     {
-      img: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&w=1600&h=900&q=80",
-      badge: "Maintenance Scheduling",
-      title: "Automated Work Orders",
-      desc: "Keep equipment running smoothly with predictive scheduling and automated technician dispatches for regular servicing."
+      img: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&w=800&q=80",
+      title: "Automated Maintenance",
+      desc: "Predictive scheduling and automated technician dispatches."
     },
     {
-      img: "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1600&h=900&q=80",
-      badge: "Supplier Integration",
-      title: "Supplier Order Tracking",
-      desc: "Process new orders, track part deliveries, and manage your inventory stock with real-time supplier synchronization."
+      img: "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=600&h=800&q=80", // Taller aspect ratio for masonry
+      title: "Supplier Integration",
+      desc: "Process new orders and manage inventory stock."
     },
     {
-      img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1600&h=900&q=80",
-      badge: "Compliance & Security",
-      title: "HIPAA Compliant Reporting",
-      desc: "Ensure enterprise-grade security with role-based access control, full audit trails, and automated compliance reports."
+      img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80",
+      title: "HIPAA Compliant",
+      desc: "Role-based access control and full audit trails."
+    },
+    {
+      img: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&h=800&q=80", // Taller aspect ratio
+      title: "Supplier Portals",
+      desc: "Dedicated interfaces for B2B procurement."
+    },
+    {
+      img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+      title: "Zero Downtime",
+      desc: "Ensure seamless healthcare facility operations."
     }
   ];
 
-  const stats = [
-    { value: "500+", label: "Hospitals Served" },
-    { value: "12,000+", label: "Devices Tracked" },
-    { value: "99.8%", label: "Uptime SLA" },
-    { value: "40%", label: "Downtime Reduced" },
-  ];
-
-  const handleNextSlide = () => {
-    setActiveSlide((prev) => (prev + 1) % features.length);
-  };
-
-  const handlePrevSlide = () => {
-    setActiveSlide((prev) => (prev === 0 ? features.length - 1 : prev - 1));
-  };
-
-  // Keyboard support for carousel
-  React.useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowRight") handleNextSlide();
-      if (e.key === "ArrowLeft") handlePrevSlide();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Swipe support
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-
-  const onTouchEndEvent = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) handleNextSlide();
-    if (distance < -minSwipeDistance) handlePrevSlide();
-  };
+  const currentIdea = searchIdeas[activeIdeaIndex];
 
   return (
-    <div className="bg-surface text-primary font-sans min-h-screen selection:bg-blue-600 selection:text-white">
-      
-      {/* Hero Section (Asymmetric) */}
-      <section className="relative w-full pt-12 pb-16 lg:pt-8 lg:pb-0 overflow-hidden bg-card rounded-b-[40px] shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
-          {/* Left Side: Typography & CTAs */}
-          <div className="flex flex-col justify-center order-2 lg:order-1 pt-8 lg:pt-0 z-10 lg:pr-8">
-            
-            {/* Persona Switcher (Horizontal Row) */}
-            <div className="flex items-center flex-wrap gap-4 mb-8 bg-surface p-2 rounded-[2rem] w-fit border border-subtle">
-              {personas.map((p, idx) => (
-                <button
-                  key={p.id}
-                  onClick={() => setActivePersona(idx)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
-                    activePersona === idx ? "bg-card shadow-sm ring-1 ring-gray-200" : "opacity-60 hover:opacity-100"
-                  }`}
-                  aria-label={`Switch to ${p.label} view`}
-                >
-                  <img src={p.avatar} alt={`${p.label} Avatar`} width="32" height="32" className="w-8 h-8 rounded-full object-cover border border-subtle" />
-                  <span className={`text-sm font-semibold ${activePersona === idx ? "text-primary" : "text-secondary"}`}>
-                    {p.label}
-                  </span>
-                </button>
+    <div className="bg-surface text-primary font-sans min-h-screen selection:bg-blue-600 selection:text-white pb-24">
+
+      {/* Hero Section: Pinterest Masonry Background + Glassdoor Search */}
+      <section className="relative w-full h-screen min-h-[700px] bg-surface overflow-hidden flex flex-col items-center justify-center pt-20">
+        
+        {/* Background Masonry Grid (Animated) */}
+        <div className="absolute inset-0 z-0 overflow-hidden opacity-30 select-none pointer-events-none">
+          <div className="flex gap-4 p-4 absolute top-0 animate-scroll-up w-full justify-center">
+            {/* Column 1 */}
+            <div className="flex flex-col gap-4 w-[250px] -mt-24">
+              {[...masonryImages, ...masonryImages].map((src, i) => (
+                <img key={i} src={src} alt="" className="w-full rounded-2xl object-cover shadow-sm" />
               ))}
             </div>
-
-            <h1 className="text-5xl sm:text-7xl lg:text-[5.5rem] font-black leading-[1.05] tracking-tight mb-6 text-primary">
-              Keep your <br className="hidden sm:block" /> equipment <br className="hidden sm:block" />
-              <span className="text-blue-600">always ready.</span>
-            </h1>
-            
-            {/* Dynamic Subtext with Crossfade */}
-            <div className="relative min-h-[80px] mb-10">
-              <p key={activePersona} className="text-lg sm:text-xl text-secondary max-w-lg leading-relaxed font-medium animate-fadeSlideIn">
-                {currentHero.subtext}
-              </p>
+            {/* Column 2 */}
+            <div className="flex flex-col gap-4 w-[250px] mt-12 hidden sm:flex">
+              {[...masonryImages.slice(4), ...masonryImages.slice(0, 4), ...masonryImages.slice(4), ...masonryImages.slice(0, 4)].map((src, i) => (
+                <img key={i} src={src} alt="" className="w-full rounded-2xl object-cover shadow-sm" />
+              ))}
             </div>
-
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={() => onNavigate("register")}
-                className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-full hover:bg-blue-700 transition-transform transform hover:-translate-y-0.5 shadow-xl shadow-blue-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-              >
-                Get Started Free
-              </button>
-              <button
-                onClick={() => onNavigate("login")}
-                className="px-8 py-4 bg-hover text-primary text-lg font-bold rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
-              >
-                Sign In
-              </button>
+            {/* Column 3 */}
+            <div className="flex flex-col gap-4 w-[250px] -mt-16 hidden lg:flex">
+              {[...masonryImages.slice(8), ...masonryImages.slice(0, 8), ...masonryImages.slice(8), ...masonryImages.slice(0, 8)].map((src, i) => (
+                <img key={i} src={src} alt="" className="w-full rounded-2xl object-cover shadow-sm" />
+              ))}
+            </div>
+             {/* Column 4 */}
+             <div className="flex flex-col gap-4 w-[250px] mt-24 hidden xl:flex">
+              {[...masonryImages, ...masonryImages].reverse().map((src, i) => (
+                <img key={i} src={src} alt="" className="w-full rounded-2xl object-cover shadow-sm" />
+              ))}
             </div>
           </div>
+          {/* Gradient Overlay to fade out edges and keep text readable */}
+          <div className="absolute inset-0 bg-gradient-to-b from-surface via-surface/80 to-surface/10" />
+        </div>
 
-          {/* Right Side: Large Lifestyle Photo */}
-          <div className="relative order-1 lg:order-2 h-[350px] sm:h-[500px] lg:h-[800px] w-full rounded-[40px] overflow-hidden shadow-2xl bg-hover">
-            <img 
-              key={activePersona}
-              src={currentHero.heroImg} 
-              alt="Medical Professional using MedTrack" 
-              className="w-full h-full object-cover animate-fadeSlideIn"
-            />
+        {/* Foreground Content */}
+        <div className="relative z-10 w-full max-w-[1000px] px-6 text-center">
+          
+          <h1 className="text-4xl sm:text-6xl lg:text-[4.5rem] font-black tracking-tight text-primary leading-tight mb-4">
+            Find the right <br/>
+            <span key={activeIdeaIndex} className={`inline-block animate-fadeSlideIn ${currentIdea.color}`}>
+              {currentIdea.text}
+            </span>
+          </h1>
+          
+          <p className="text-lg sm:text-xl text-secondary font-medium mb-10 max-w-2xl mx-auto">
+            Discover thousands of medical devices, manage maintenance, and seamlessly connect with top healthcare suppliers.
+          </p>
+
+          {/* Glassdoor-Style Central Search Pill */}
+          <div className="bg-white p-2 rounded-[2rem] shadow-2xl shadow-blue-900/10 border border-gray-200 flex flex-col sm:flex-row items-center w-full max-w-4xl mx-auto relative group focus-within:ring-4 focus-within:ring-blue-100 transition-all">
             
-            {/* Overlapping Badge */}
-            <div key={`${activePersona}-badge`} className="absolute top-4 sm:top-8 right-4 sm:right-8 bg-white/90 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4 rounded-3xl shadow-xl flex items-center gap-3 sm:gap-4 animate-fadeSlideIn">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                {currentHero.icon}
-              </div>
-              <div>
-                <p className="text-[10px] sm:text-xs text-secondary font-bold uppercase tracking-wider">Module Active</p>
-                <p className="text-xs sm:text-sm font-bold text-primary">{currentHero.badge}</p>
-              </div>
+            {/* Input 1: What */}
+            <div className="flex-1 flex items-center w-full px-6 py-4 border-b sm:border-b-0 sm:border-r border-gray-100 group-hover:border-gray-200">
+              <svg className="w-6 h-6 text-gray-400 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Equipment type, keyword, or serial no." 
+                className="w-full bg-transparent border-none outline-none text-lg text-primary placeholder-gray-400 font-medium"
+              />
             </div>
+
+            {/* Input 2: Where */}
+            <div className="flex-1 flex items-center w-full px-6 py-4">
+              <svg className="w-6 h-6 text-gray-400 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Hospital, Department, or Ward" 
+                className="w-full bg-transparent border-none outline-none text-lg text-primary placeholder-gray-400 font-medium"
+              />
+            </div>
+
+            {/* Search Button */}
+            <button 
+              onClick={() => onNavigate("login")}
+              className="w-full sm:w-auto mt-2 sm:mt-0 bg-blue-600 text-white font-bold text-lg px-10 py-4 rounded-full hover:bg-blue-700 transition-colors shadow-md sm:ml-2"
+            >
+              Search
+            </button>
           </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm font-medium">
+            <span className="text-gray-500">Popular:</span>
+            {["MRI Scanners", "Ventilators", "Defibrillators", "Surgical Robots"].map((tag) => (
+              <span key={tag} className="px-4 py-1.5 bg-gray-100 text-gray-700 rounded-full cursor-pointer hover:bg-gray-200 transition-colors">
+                {tag}
+              </span>
+            ))}
+          </div>
+          
         </div>
       </section>
 
-      {/* Marquee Ticker */}
-      <div className="w-full bg-blue-600 py-3 sm:py-4 overflow-hidden shadow-inner flex relative z-0">
-        <div className="whitespace-nowrap flex animate-marquee">
-          {/* Repeat text multiple times to ensure seamless infinite scroll */}
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="flex items-center text-white/90 font-bold text-lg sm:text-xl uppercase tracking-widest mx-2 sm:mx-4">
-              <span>Hospitals</span><span className="mx-4 sm:mx-8 opacity-50">•</span>
-              <span>Technicians</span><span className="mx-4 sm:mx-8 opacity-50">•</span>
-              <span>Suppliers</span><span className="mx-4 sm:mx-8 opacity-50">•</span>
-              <span>Compliance</span><span className="mx-4 sm:mx-8 opacity-50">•</span>
-            </div>
+      {/* Trusted By (Floating Marquee) */}
+      <section className="border-t border-b border-subtle bg-white py-10 overflow-hidden">
+        <div className="max-w-[1400px] mx-auto px-6 mb-8">
+          <p className="text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Trusted by leading healthcare providers</p>
+        </div>
+        
+        {/* Marquee Container */}
+        <div className="flex w-max animate-scroll-left hover:[animation-play-state:paused] opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+          {[
+            { name: "Mayo Clinic", domain: "mayoclinic.org" },
+            { name: "Cleveland Clinic", domain: "clevelandclinic.org" },
+            { name: "Johns Hopkins", domain: "hopkinsmedicine.org" },
+            { name: "Mass General", domain: "massgeneral.org" },
+            { name: "UCLA Health", domain: "uclahealth.org" },
+            { name: "Stanford Health", domain: "stanfordhealthcare.org" },
+            { name: "Mount Sinai", domain: "mountsinai.org" },
+            { name: "NYU Langone", domain: "nyulangone.org" },
+            // Duplicated for seamless scrolling
+            { name: "Mayo Clinic", domain: "mayoclinic.org" },
+            { name: "Cleveland Clinic", domain: "clevelandclinic.org" },
+            { name: "Johns Hopkins", domain: "hopkinsmedicine.org" },
+            { name: "Mass General", domain: "massgeneral.org" },
+            { name: "UCLA Health", domain: "uclahealth.org" },
+            { name: "Stanford Health", domain: "stanfordhealthcare.org" },
+            { name: "Mount Sinai", domain: "mountsinai.org" },
+            { name: "NYU Langone", domain: "nyulangone.org" }
+          ].map((hospital, i) => (
+             <div key={i} className="flex items-center gap-4 mx-8 sm:mx-12">
+                <img 
+                  src={`https://logo.clearbit.com/${hospital.domain}`} 
+                  alt={`${hospital.name} Logo`} 
+                  className="h-10 sm:h-12 w-auto object-contain"
+                  onError={(e) => {
+                    // Fallback to text if the logo fails to load
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+                <span className="hidden font-black text-2xl text-gray-800 whitespace-nowrap">
+                  {hospital.name}
+                </span>
+             </div>
           ))}
         </div>
-      </div>
-
-      {/* Stats Section */}
-      <section className="py-20 sm:py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center divide-x divide-subtle">
-            {stats.map((s) => (
-              <div key={s.label} className="px-2 sm:px-4">
-                <p className="text-4xl sm:text-5xl md:text-6xl font-black text-primary mb-2 tracking-tighter">{s.value}</p>
-                <p className="text-secondary font-semibold uppercase tracking-wider text-xs sm:text-sm">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
-      {/* Slideshow Features Section */}
-      <section className="py-16 sm:py-24 bg-card relative">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 sm:mb-12">
-            <div className="max-w-2xl">
-              <h2 className="text-4xl md:text-5xl font-black text-primary mb-4 sm:mb-6 leading-tight tracking-tight">
-                Everything your facility needs.
-              </h2>
-              <p className="text-lg sm:text-xl text-secondary font-medium">
-                A complete toolkit for managing the full lifecycle of medical equipment — from procurement to disposal.
-              </p>
-            </div>
-            
-            {/* Slideshow Controls */}
-            <div className="flex items-center gap-4 sm:gap-6 mt-6 md:mt-0">
-              <div className="flex items-center gap-2">
-                <button aria-label="Previous Slide" onClick={handlePrevSlide} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-subtle flex items-center justify-center text-gray-600 hover:bg-surface hover:border-blue-600 hover:text-blue-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button aria-label="Next Slide" onClick={handleNextSlide} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-subtle flex items-center justify-center text-gray-600 hover:bg-surface hover:border-blue-600 hover:text-blue-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-gray-300 tracking-widest">
-                <span className="text-primary">0{activeSlide + 1}</span> / 0{features.length}
-              </div>
-            </div>
-          </div>
+      {/* Feature Grid (Horizontal Scrolling Carousel) */}
+      <section id="features" className="py-24 bg-slate-50 dark:bg-slate-900/40 max-w-[1400px] mx-auto px-6 lg:px-12 relative overflow-hidden">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-black text-primary mb-4 tracking-tight">Explore MedTrack Features</h2>
+          <p className="text-xl text-secondary max-w-2xl mx-auto">Everything you need to manage the full lifecycle of your medical equipment in one unified platform.</p>
+        </div>
 
-          {/* Active Slide Card */}
+        {/* Carousel Container */}
+        <div className="relative group">
           <div 
-            className="relative w-full h-[450px] lg:h-[600px] rounded-[30px] sm:rounded-[40px] overflow-hidden bg-hover group cursor-grab active:cursor-grabbing"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEndEvent}
+            id="features-carousel"
+            className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <img 
-              key={activeSlide}
-              src={features[activeSlide].img} 
-              alt={features[activeSlide].title}
-              width="1600"
-              height="900"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 animate-fadeSlideIn"
-              loading="lazy"
-            />
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-900/50 to-transparent"></div>
-            
-            <div className="absolute bottom-0 left-0 p-6 sm:p-10 lg:p-16 max-w-3xl">
-              <span className="inline-block bg-blue-600 text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full mb-4 sm:mb-6 text-xs sm:text-sm tracking-wider uppercase">
-                {features[activeSlide].badge}
-              </span>
-              <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-3 sm:mb-4">
-                {features[activeSlide].title}
-              </h3>
-              <p className="text-lg sm:text-xl text-gray-200 font-medium leading-relaxed">
-                {features[activeSlide].desc}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stakeholder Portals */}
-      <section className="py-20 sm:py-24 bg-surface">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-          
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-primary mb-4 sm:mb-6 tracking-tight">Built for every stakeholder</h2>
-            <p className="text-lg sm:text-xl text-secondary font-medium">Three tailored portals. One unified system.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {personas.map((p) => (
-              <div key={p.id} className="bg-card rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 lg:p-10 shadow-sm border border-subtle hover:shadow-2xl transition-shadow duration-300 group flex flex-col h-full">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-50 flex items-center justify-center mb-6 sm:mb-8 group-hover:bg-blue-600 transition-colors duration-300">
-                  <div className="text-blue-600 group-hover:text-white transition-colors duration-300">
-                    {p.icon}
+            {[
+              {
+                img: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80",
+                title: "Real-Time Tracking",
+                desc: "Monitor equipment health and operational KPIs.",
+                btnText: "Track Now",
+                bgClass: "bg-gradient-to-br from-orange-100 to-orange-200"
+              },
+              {
+                img: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?auto=format&fit=crop&w=600&q=80",
+                title: "Automated Maintenance",
+                desc: "Predictive scheduling and automated technician dispatches.",
+                btnText: "Apply Now",
+                bgClass: "bg-gradient-to-br from-fuchsia-100 to-pink-200"
+              },
+              {
+                img: "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=600&q=80",
+                title: "Supplier Integration",
+                desc: "Process new orders and manage inventory stock seamlessly.",
+                btnText: "Avail Now",
+                bgClass: "bg-gradient-to-br from-indigo-100 to-blue-200"
+              },
+              {
+                img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80",
+                title: "HIPAA Compliant",
+                desc: "Role-based access control and full audit trails.",
+                btnText: "Learn More",
+                bgClass: "bg-gradient-to-br from-emerald-100 to-teal-200"
+              },
+              {
+                img: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80",
+                title: "Supplier Portals",
+                desc: "Dedicated interfaces for B2B healthcare procurement.",
+                btnText: "View Portal",
+                bgClass: "bg-gradient-to-br from-amber-100 to-yellow-200"
+              }
+            ].map((feature, idx) => (
+              <div 
+                key={idx} 
+                className={`snap-start shrink-0 w-[400px] sm:w-[480px] h-[240px] rounded-2xl relative overflow-hidden flex shadow-sm hover:shadow-md transition-shadow ${feature.bgClass}`}
+              >
+                {/* Background Pattern Overlay (Subtle Waves) */}
+                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
+                
+                {/* Left Content */}
+                <div className="relative z-10 w-[55%] p-6 flex flex-col justify-center">
+                  <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2">{feature.title}</h3>
+                  <p className="text-gray-700 text-sm font-medium mb-6 leading-relaxed">{feature.desc}</p>
+                  <div>
+                    <button className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors text-sm">
+                      {feature.btnText}
+                    </button>
                   </div>
                 </div>
-                
-                <h3 className="text-xl sm:text-2xl font-black text-primary mb-3 sm:mb-4">{p.label} Portal</h3>
-                <p className="text-secondary font-medium leading-relaxed mb-8 sm:mb-10 flex-grow">
-                  {p.subtext}
-                </p>
 
-                <button
-                  onClick={() => onNavigate("login")}
-                  className="w-full py-3 sm:py-4 bg-surface text-primary font-bold rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors border border-subtle hover:border-blue-200"
-                >
-                  Login as {p.label.split(' ')[0]}
-                </button>
+                {/* Right Image */}
+                <div className="absolute right-0 top-0 bottom-0 w-[55%]">
+                  <img 
+                    src={feature.img} 
+                    alt={feature.title} 
+                    className="w-full h-full object-cover"
+                    style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 30%)', maskImage: 'linear-gradient(to right, transparent, black 30%)' }}
+                  />
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Scroll Right Button Overlay */}
+          <div className="absolute right-0 top-0 bottom-8 w-32 bg-gradient-to-l from-surface to-transparent pointer-events-none flex items-center justify-end pr-4">
+            <button 
+              className="pointer-events-auto w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-gray-900 hover:scale-105 transition-all focus:outline-none border border-gray-100"
+              onClick={() => {
+                document.getElementById('features-carousel').scrollBy({ left: 400, behavior: 'smooth' });
+              }}
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Oversized Closing CTA */}
-      <section className="py-24 sm:py-32 bg-card text-center px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-5xl sm:text-6xl md:text-8xl font-black text-primary tracking-tighter mb-6 sm:mb-8 leading-none">
-            Ready to <br className="hidden sm:block" /> <span className="text-blue-600">transform</span> <br className="hidden sm:block" /> your workflow?
-          </h2>
-          <p className="text-xl sm:text-2xl text-secondary font-medium mb-10 sm:mb-12 max-w-2xl mx-auto">
-            Join hundreds of hospitals already using MedTrack to reduce downtime and cut costs.
-          </p>
-          <button
-            onClick={() => onNavigate("register")}
-            className="px-10 py-5 sm:px-12 sm:py-6 bg-surface text-white text-xl sm:text-2xl font-black rounded-full hover:bg-blue-600 transition-colors shadow-2xl"
-          >
-            Get Started Now
-          </button>
+      {/* Value Proposition Section (Screenshot Style) */}
+      <section className="py-20 bg-white dark:bg-slate-900 max-w-[1400px] mx-auto px-6 lg:px-12 border-t border-subtle">
+        <div className="mb-14">
+          <h2 className="text-2xl md:text-3xl font-black text-primary mb-2">Why Choose MedTrack</h2>
+          <p className="text-base text-secondary font-medium">Take the hassle out of securing your medical equipment for the best years of your facility</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+          
+          {/* Item 1 */}
+          <div>
+            <div className="mb-5 relative w-12 h-12 flex items-center justify-center">
+              <div className="absolute inset-0 bg-pink-500/20 rounded-full blur-md opacity-80 transform -translate-x-2 translate-y-2"></div>
+              <svg className="w-9 h-9 text-primary relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-primary text-lg mb-2">Instant & Easy Bookings</h3>
+            <p className="text-sm text-secondary leading-relaxed font-medium">Time is money. Save both when you book with us..</p>
+          </div>
+
+          {/* Item 2 */}
+          <div>
+            <div className="mb-5 relative w-12 h-12 flex items-center justify-center">
+              <div className="absolute inset-0 bg-pink-500/20 rounded-full blur-md opacity-80 transform -translate-x-2 translate-y-2"></div>
+              <svg className="w-9 h-9 text-primary relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-primary text-lg mb-2">Lowest Price Guarantee</h3>
+            <p className="text-sm text-secondary leading-relaxed font-medium">Find a lower price and we'll match it. No questions asked.. <a href="#" className="font-bold text-primary underline decoration-subtle underline-offset-4 hover:decoration-primary transition-colors">Learn More</a></p>
+          </div>
+
+          {/* Item 3 */}
+          <div>
+            <div className="mb-5 relative w-12 h-12 flex items-center justify-center">
+              <div className="absolute inset-0 bg-pink-500/20 rounded-full blur-md opacity-80 transform -translate-x-2 translate-y-2"></div>
+              <svg className="w-9 h-9 text-primary relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-primary text-lg mb-2">24x7 Assistance</h3>
+            <p className="text-sm text-secondary leading-relaxed font-medium">If you have a doubt or a query, we're always a call away..</p>
+          </div>
+
+          {/* Item 4 */}
+          <div>
+            <div className="mb-5 relative w-12 h-12 flex items-center justify-center">
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-md opacity-80 transform -translate-x-2 translate-y-2"></div>
+              <svg className="w-9 h-9 text-primary relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-primary text-lg mb-2">100% Verified Listings</h3>
+            <p className="text-sm text-secondary leading-relaxed font-medium">We promise to deliver what you see on the website..</p>
+          </div>
         </div>
       </section>
 
-      {/* Unsplash Attribution Footer */}
-      <footer className="bg-surface py-6 text-center border-t border-subtle">
-        <p className="text-xs sm:text-sm text-secondary font-medium">
-          Images provided by incredible photographers on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-600 underline decoration-gray-300 hover:decoration-blue-600 transition-colors">Unsplash</a>.
+      {/* Get Ahead with MedTrack (Glassdoor style) */}
+      <section className="py-12 bg-slate-50 dark:bg-slate-900/40 max-w-[1400px] mx-auto px-6 lg:px-12 text-center border-t border-subtle">
+        <h2 className="text-2xl md:text-3xl font-black text-primary mb-3 tracking-tight">Get ahead with MedTrack</h2>
+        <p className="text-secondary font-medium max-w-2xl mx-auto mb-10 text-sm">
+          We're serving up trusted insights and seamless procurement, so you'll have the equipment you need to succeed.
         </p>
-      </footer>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+          {/* Item 1 */}
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="w-[64px] h-[64px] rounded-full border-[1.5px] border-primary flex items-center justify-center mb-4 group-hover:bg-primary/5 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+              </svg>
+            </div>
+            <p className="text-primary font-medium text-xs sm:text-sm">Join your medical network</p>
+          </div>
+
+          {/* Item 2 */}
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="w-[64px] h-[64px] rounded-full border-[1.5px] border-primary flex items-center justify-center mb-4 group-hover:bg-primary/5 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+              </svg>
+            </div>
+            <p className="text-primary font-medium text-xs sm:text-sm">Find and request equipment</p>
+          </div>
+
+          {/* Item 3 */}
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="w-[64px] h-[64px] rounded-full border-[1.5px] border-primary flex items-center justify-center mb-4 group-hover:bg-primary/5 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <p className="text-primary font-medium text-xs sm:text-sm">Search supplier reviews</p>
+          </div>
+
+          {/* Item 4 */}
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="w-[64px] h-[64px] rounded-full border-[1.5px] border-primary flex items-center justify-center mb-4 group-hover:bg-primary/5 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <p className="text-primary font-medium text-xs sm:text-sm">Compare supplier prices</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section (Upgraded Style) */}
+      <section className="py-12 bg-white dark:bg-slate-900 max-w-[1400px] mx-auto px-6 lg:px-12 border-t border-subtle">
+        <h2 className="text-xl md:text-2xl font-black text-primary mb-1">Need help? Let's connect</h2>
+        <p className="text-sm text-secondary font-medium mb-8">If you have any queries or want to collaborate, feel free to reach out.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Card 1: Partner With Us */}
+          <div className="relative rounded-2xl bg-[#D6E8FC] dark:bg-blue-900/20 overflow-hidden flex min-h-[220px]">
+            {/* Left Content */}
+            <div className="relative z-10 w-3/5 p-8 flex flex-col justify-center">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Partner With Us</h3>
+              <p className="text-gray-700 dark:text-gray-300 text-sm mb-6 leading-relaxed">
+                At MedTrack, we offer a seamless onboarding process and robust supplier support.
+              </p>
+              <div>
+                <button className="bg-white text-gray-900 font-semibold text-sm px-5 py-2.5 rounded shadow-sm hover:shadow transition-all">
+                  Partner With Us
+                </button>
+              </div>
+            </div>
+            {/* Right Image Mask */}
+            <div className="absolute right-0 top-0 bottom-0 w-1/2">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#D6E8FC] dark:from-[#131f36] to-transparent z-10 w-1/3"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1576091160550-2173ff9e5eb3?auto=format&fit=crop&w=600&q=80" 
+                alt="Partner Handshake" 
+                className="w-full h-full object-cover object-left mix-blend-multiply dark:mix-blend-screen opacity-90"
+              />
+            </div>
+          </div>
+
+          {/* Card 2: List With Us */}
+          <div className="relative rounded-2xl bg-[#D6E8FC] dark:bg-blue-900/20 overflow-hidden flex min-h-[220px]">
+            {/* Left Content */}
+            <div className="relative z-10 w-3/5 p-8 flex flex-col justify-center">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">List Equipment</h3>
+              <p className="text-gray-700 dark:text-gray-300 text-sm mb-6 leading-relaxed">
+                List your medical properties and equipment efficiently with MedTrack.
+              </p>
+              <div>
+                <button className="bg-white text-gray-900 font-semibold text-sm px-5 py-2.5 rounded shadow-sm hover:shadow transition-all">
+                  List Equipment
+                </button>
+              </div>
+            </div>
+            {/* Right Image Mask */}
+            <div className="absolute right-0 top-0 bottom-0 w-1/2">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#D6E8FC] dark:from-[#131f36] to-transparent z-10 w-1/3"></div>
+              <img 
+                src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80" 
+                alt="List Equipment" 
+                className="w-full h-full object-cover object-left mix-blend-multiply dark:mix-blend-screen opacity-90"
+              />
+            </div>
+          </div>
+
+        </div>
+      </section>
+      
     </div>
   );
 }
