@@ -130,6 +130,7 @@ public class UserServiceTest {
         verify(passwordEncoder).encode(request.getPassword());
         verify(userRepository).save(any(User.class));
         verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(kafkaEventPublisher, times(1)).publishUserRegistered(any());
     }
 
     @Test
@@ -301,6 +302,8 @@ public class UserServiceTest {
         assertNotNull(response);
         assertNotNull(response.getToken());
         assertFalse(response.getToken().isEmpty());
+        assertNotNull(response.getRefreshToken());
+        verify(kafkaEventPublisher, times(1)).publishUserLogin(any());
     }
 
     @Test
