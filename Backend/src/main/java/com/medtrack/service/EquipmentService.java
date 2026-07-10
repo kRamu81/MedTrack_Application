@@ -4,6 +4,7 @@ import com.medtrack.model.Equipment;
 import com.medtrack.repository.EquipmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.medtrack.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -28,11 +29,11 @@ public class EquipmentService {
     /**
      * Fetches a single equipment record by its database ID.
      * Used for equipment detail views.
-     * Throws a RuntimeException if no equipment exists with the given ID.
+     * Throws a ResourceNotFoundException if no equipment exists with the given ID.
      */
     public Equipment getEquipmentById(Long id) {
         return equipmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Equipment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment not found with id: " + id));
     }
 
     /**
@@ -59,11 +60,11 @@ public class EquipmentService {
      * Updates an existing equipment record's fields.
      * Fetches the existing record first, then overwrites its fields
      * with the incoming values before saving.
-     * Throws a RuntimeException if no equipment exists with the given ID.
+     * Throws a ResourceNotFoundException if no equipment exists with the given ID.
      */
     public Equipment updateEquipment(Long id, Equipment equipmentDetails) {
         Equipment equipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Equipment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Equipment not found"));
 
         equipment.setName(equipmentDetails.getName());
         equipment.setModel(equipmentDetails.getModel());

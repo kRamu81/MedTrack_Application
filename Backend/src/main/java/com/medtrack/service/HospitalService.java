@@ -3,7 +3,6 @@ package com.medtrack.service;
 import com.medtrack.model.Hospital;
 import lombok.RequiredArgsConstructor;
 import com.medtrack.auth.model.User;
-import com.medtrack.repository.HospitalRepository;
 import com.medtrack.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +24,7 @@ public class HospitalService {
      */
     @Transactional
     public Hospital createHospitalProfile(Hospital hospital, String userEmail) {
+
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
 
@@ -50,6 +50,7 @@ public class HospitalService {
      */
     public Hospital getHospitalByUserId(Long userId) {
         return hospitalRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Hospital profile not found for user ID: " + userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Hospital profile not found for user ID: " + userId));
     }
 }
