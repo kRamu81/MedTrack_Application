@@ -109,6 +109,18 @@
             <artifactId>bucket4j_jdk17-core</artifactId>
             <version>8.11.0</version>
         </dependency>
+        <!-- iText PDF generation -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>kernel</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+
 
         <!-- Spring Kafka -->
         <dependency>

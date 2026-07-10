@@ -1,5 +1,6 @@
 i stopackage com.medtrack.auth.service;
 
+import com.medtrack.auth.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
