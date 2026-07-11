@@ -30,7 +30,7 @@ public class MaintenanceService {
     public MaintenanceTask scheduleTask(MaintenanceTask task) {
         try {
             if (task.getTaskCode() == null) {
-                task.setTaskCode("MNT-" + System.currentTimeMillis() % 10000);
+                task.setTaskCode("MNT-" + java.util.UUID.randomUUID().toString());
             }
             return taskRepository.save(task);
         } catch (Exception e) {
