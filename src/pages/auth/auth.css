@@ -442,3 +442,75 @@
     font-size: 9px;
   }
 }
+
+/* Password visibility toggle button */
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s;
+  pointer-events: all;
+}
+
+.password-toggle:hover {
+  color: #316bff;
+}
+
+/* Adjust input right padding when toggle is present */
+.input-box:has(.password-toggle) input {
+  padding-right: 44px;
+}
+
+/* Password strength indicator */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+
+.strength-label {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Inline field-level messages */
+.field-error {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.field-success {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #10b981;
+  margin-top: 4px;
+}

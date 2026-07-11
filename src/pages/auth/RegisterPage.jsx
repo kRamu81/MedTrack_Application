@@ -6,6 +6,8 @@ import { useGSAP } from "@gsap/react";
 import {
   Building2,
   Check,
+  Eye,
+  EyeOff,
   Hospital,
   Layers,
   Lock,
@@ -19,21 +21,41 @@ import {
 // Register GSAP plugins
 gsap.registerPlugin(useGSAP);
 
+// Password strength calculation
+function getPasswordStrength(pw) {
+  if (!pw) return { score: 0, label: "", color: "" };
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 1) return { score, label: "Weak", color: "#ef4444" };
+  if (score <= 3) return { score, label: "Fair", color: "#f59e0b" };
+  return { score, label: "Strong", color: "#10b981" };
+}
+
 const roles = [
   {
     title: "Hospital",
     subtitle: "Manage Equipment",
     icon: Hospital,
+    orgLabel: "Hospital Name",
+    orgPlaceholder: "St. Mary Clinic",
   },
   {
     title: "Technician",
     subtitle: "Maintenance",
     icon: Wrench,
+    orgLabel: "Organization",
+    orgPlaceholder: "MedCare Services",
   },
   {
     title: "Supplier",
     subtitle: "Medical Equipment Vendor",
     icon: Layers,
+    orgLabel: "Company Name",
+    orgPlaceholder: "BioMed Supplies Inc.",
   },
 ];
 
@@ -50,6 +72,11 @@ export default function RegisterPage({ onNavigate }) {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordStrength = getPasswordStrength(password);
+  const passwordMismatch = confirmPassword.length > 0 && confirmPassword !== password;
 
   const containerRef = useRef(null);
 
@@ -199,12 +226,12 @@ export default function RegisterPage({ onNavigate }) {
             </label>
 
             <label>
-              Hospital Name
+              {roles.find((r) => r.title === selectedRole)?.orgLabel ?? "Organization"}
               <div className="input-box">
                 <Building2 size={18} />
                 <input
                   type="text"
-                  placeholder="St. Mary Clinic"
+                  placeholder={roles.find((r) => r.title === selectedRole)?.orgPlaceholder ?? "Organization"}
                   value={hospitalName}
                   onChange={(e) => setHospitalName(e.target.value)}
                   required
@@ -249,13 +276,45 @@ export default function RegisterPage({ onNavigate }) {
               <div className="input-box">
                 <Lock size={18} />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-describedby="password-strength"
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
+
+              {/* Password strength bar */}
+              {password && (
+                <div id="password-strength" className="password-strength">
+                  <div className="strength-bars">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="strength-bar"
+                        style={{
+                          background:
+                            i <= passwordStrength.score
+                              ? passwordStrength.color
+                              : "#e2e8f0",
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className="strength-label" style={{ color: passwordStrength.color }}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+              )}
             </label>
 
             <label>
@@ -263,13 +322,41 @@ export default function RegisterPage({ onNavigate }) {
               <div className="input-box">
                 <Lock size={18} />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  aria-invalid={passwordMismatch}
+                  aria-describedby="confirm-password-msg"
+                  style={
+                    passwordMismatch
+                      ? { borderColor: "#fca5a5" }
+                      : confirmPassword && !passwordMismatch
+                      ? { borderColor: "#86efac" }
+                      : {}
+                  }
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
+
+              {passwordMismatch && (
+                <span id="confirm-password-msg" className="field-error">
+                  Passwords don't match
+                </span>
+              )}
+              {confirmPassword && !passwordMismatch && (
+                <span id="confirm-password-msg" className="field-success">
+                  Passwords match
+                </span>
+              )}
             </label>
           </div>
 
