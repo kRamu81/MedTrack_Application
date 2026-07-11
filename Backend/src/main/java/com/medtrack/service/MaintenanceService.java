@@ -61,5 +61,4 @@ public class MaintenanceService {
 
         taskRepository.delete(task);
     }
-    }
 }
