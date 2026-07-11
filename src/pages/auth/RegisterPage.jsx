@@ -31,7 +31,7 @@ function getPasswordStrength(pw) {
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   if (score <= 1) return { score, label: "Weak", color: "#ef4444" };
-  if (score <= 3) return { score, label: "Fair", color: "#f59e0b" };
+  if (score <= 3 || pw.length < 10) return { score, label: "Fair", color: "#f59e0b" };
   return { score, label: "Strong", color: "#10b981" };
 }
 
@@ -281,7 +281,7 @@ export default function RegisterPage({ onNavigate }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  aria-describedby="password-strength"
+                  aria-describedby={password ? "password-strength" : undefined}
                 />
                 <button
                   type="button"
@@ -310,7 +310,7 @@ export default function RegisterPage({ onNavigate }) {
                       />
                     ))}
                   </div>
-                  <span className="strength-label" style={{ color: passwordStrength.color }}>
+                  <span className="strength-label" style={{ color: passwordStrength.score <= 1 ? "#b91c1c" : passwordStrength.score <= 3 || password.length < 10 ? "#b45309" : "#047857" }}>
                     {passwordStrength.label}
                   </span>
                 </div>
@@ -328,7 +328,7 @@ export default function RegisterPage({ onNavigate }) {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   aria-invalid={passwordMismatch}
-                  aria-describedby="confirm-password-msg"
+                  aria-describedby={confirmPassword ? "confirm-password-msg" : undefined}
                   style={
                     passwordMismatch
                       ? { borderColor: "#fca5a5" }
@@ -348,12 +348,12 @@ export default function RegisterPage({ onNavigate }) {
               </div>
 
               {passwordMismatch && (
-                <span id="confirm-password-msg" className="field-error">
+                <span id="confirm-password-msg" className="field-error" role="alert">
                   Passwords don't match
                 </span>
               )}
               {confirmPassword && !passwordMismatch && (
-                <span id="confirm-password-msg" className="field-success">
+                <span id="confirm-password-msg" className="field-success" role="status">
                   Passwords match
                 </span>
               )}

@@ -499,11 +499,12 @@
 }
 
 /* Inline field-level messages */
+/* Darker shades for readable text on light backgrounds (WCAG AA contrast) */
 .field-error {
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: #ef4444;
+  color: #b91c1c;
   margin-top: 4px;
 }
 
@@ -511,6 +512,6 @@
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: #10b981;
+  color: #047857;
   margin-top: 4px;
 }
