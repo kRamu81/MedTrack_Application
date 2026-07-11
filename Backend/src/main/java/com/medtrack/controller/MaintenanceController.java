@@ -3,6 +3,7 @@ package com.medtrack.controller;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.service.MaintenanceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,12 +31,14 @@ public class MaintenanceController {
     @PostMapping
     @PreAuthorize("hasRole('HOSPITAL')")
     public ResponseEntity<MaintenanceTask> scheduleTask(@RequestBody MaintenanceTask task) {
-        return ResponseEntity.ok(maintenanceService.scheduleTask(task));
+        MaintenanceTask createdTask = maintenanceService.scheduleTask(task);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('TECHNICIAN')")
-    public ResponseEntity<MaintenanceTask> updateTask(@PathVariable Long id, @RequestBody MaintenanceTask task) {
+    public ResponseEntity<MaintenanceTask> updateTask(@PathVariable Long id,
+                                                      @RequestBody MaintenanceTask task) {
         return ResponseEntity.ok(maintenanceService.updateTask(id, task));
     }
 

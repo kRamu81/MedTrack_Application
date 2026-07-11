@@ -3,6 +3,7 @@ package com.medtrack.controller;
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,15 +31,17 @@ public class OrderController {
     @PostMapping
     @PreAuthorize("hasRole('HOSPITAL')")
     public ResponseEntity<EquipmentOrder> placeOrder(@RequestBody EquipmentOrder order) {
-        return ResponseEntity.ok(orderService.placeOrder(order));
+        EquipmentOrder createdOrder = orderService.placeOrder(order);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
     }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('SUPPLIER')")
     public ResponseEntity<EquipmentOrder> updateStatus(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @RequestParam String status,
             @RequestParam(required = false) String notes) {
+
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status, notes));
     }
 
