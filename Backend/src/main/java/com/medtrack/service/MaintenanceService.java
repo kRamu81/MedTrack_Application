@@ -30,7 +30,7 @@ public class MaintenanceService {
     public MaintenanceTask scheduleTask(MaintenanceTask task) {
         try {
             if (task.getTaskCode() == null) {
-                task.setTaskCode("MNT-" + System.currentTimeMillis() % 10000);
+                task.setTaskCode("MNT-" + java.util.UUID.randomUUID().toString());
             }
             return taskRepository.save(task);
         } catch (Exception e) {
@@ -55,10 +55,11 @@ public class MaintenanceService {
     }
 
     public void deleteTask(Long id) {
-        try {
-            taskRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete maintenance task", e);
-        }
+        MaintenanceTask task = taskRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Maintenance task not found with id: " + id));
+
+        taskRepository.delete(task);
+    }
     }
 }

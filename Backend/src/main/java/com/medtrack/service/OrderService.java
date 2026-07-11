@@ -28,7 +28,7 @@ public class OrderService {
 
     public EquipmentOrder placeOrder(EquipmentOrder order) {
         if (order.getOrderCode() == null) {
-            order.setOrderCode("ORD-" + System.currentTimeMillis() % 10000);
+            order.setOrderCode("ORD-" + java.util.UUID.randomUUID().toString());
         }
         return orderRepository.save(order);
     }
@@ -49,6 +49,10 @@ public class OrderService {
     }
 
     public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
+        EquipmentOrder order = orderRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Order not found with id: " + id));
+
+        orderRepository.delete(order);
     }
 }

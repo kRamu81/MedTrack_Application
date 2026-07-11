@@ -5,6 +5,7 @@
 The project already contains a basic Maintenance Scheduling module. It is implemented as a simple CRUD flow using these backend files:
 
 - `model/MaintenanceTask.java`
+- `model/MaintenanceStatus.java`
 - `repository/MaintenanceTaskRepository.java`
 - `service/MaintenanceService.java`
 - `controller/MaintenanceController.java`
@@ -23,7 +24,7 @@ The current backend can create, fetch, update, and delete maintenance tasks thro
 
 ### MaintenanceTask.java
 
-`MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used.
+`MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used. Its `status` field now uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`.
 
 Current limitation: equipment, hospital, and technician details are mostly stored as plain text. The task is not yet properly connected to the `Equipment` entity through a database relationship.
 
@@ -35,9 +36,21 @@ It also defines simple query methods:
 
 - `findByTaskCode(String taskCode)`
 - `findByAssignedTechnician(String assignedTechnician)`
-- `findByStatus(String status)`
+- `findByStatus(MaintenanceStatus status)`
 
 Current limitation: it does not yet provide equipment-based, hospital-based, or strongly user-based maintenance queries.
+
+### MaintenanceStatus.java
+
+`MaintenanceStatus` defines the supported task states:
+
+- `SCHEDULED`
+- `IN_PROGRESS`
+- `NEEDS_PART`
+- `ON_HOLD`
+- `COMPLETED`
+
+The enum uses Jackson conversion annotations so the REST API continues to accept and return the human-readable values already used by the frontend, such as `"Scheduled"` and `"In Progress"`. Invalid status text is rejected instead of being stored as arbitrary data.
 
 ### MaintenanceService.java
 
@@ -51,7 +64,7 @@ It currently supports:
 - updating a task
 - deleting a task
 
-Current limitation: scheduling does not verify that the equipment exists, does not check hospital ownership, does not validate status values, and does not verify technician assignment. Updating also does not currently persist all technician report fields consistently.
+Current limitation: scheduling does not verify that the equipment exists, does not check hospital ownership, does not validate allowed status transitions, and does not verify technician assignment. Updating also does not currently persist all technician report fields consistently.
 
 ### MaintenanceController.java
 
@@ -106,7 +119,7 @@ This will make maintenance records depend on real equipment records instead of o
 
 ## Status Lifecycle
 
-Maintenance status should eventually be controlled through an enum instead of free text.
+Maintenance status is now controlled through the `MaintenanceStatus` enum instead of free text.
 
 Recommended statuses:
 
@@ -115,13 +128,13 @@ Recommended statuses:
 - `NEEDS_PART`
 - `ON_HOLD`
 - `COMPLETED`
-- `CANCELLED`
+
+`CANCELLED` is not currently implemented and can be added later when cancellation behavior is defined.
 
 Recommended lifecycle:
 
 ```text
 SCHEDULED -> IN_PROGRESS -> COMPLETED
-SCHEDULED -> CANCELLED
 IN_PROGRESS -> NEEDS_PART
 IN_PROGRESS -> ON_HOLD
 NEEDS_PART -> IN_PROGRESS
@@ -214,8 +227,8 @@ The current frontend field names should be preserved unless frontend changes are
 
 ## Next Implementation Steps
 
-1. Add a `MaintenanceStatus` enum.
-2. Refactor `MaintenanceTask` to use the enum for status.
+1. [Completed] Add a `MaintenanceStatus` enum.
+2. [Completed] Refactor `MaintenanceTask` to use the enum for status.
 3. Improve `MaintenanceTask` relationship with `Equipment`.
 4. Add repository query methods for filters.
 5. Improve scheduling logic in `MaintenanceService`.
@@ -233,4 +246,4 @@ The current frontend field names should be preserved unless frontend changes are
 - Status lifecycle is defined.
 - API behavior is defined.
 - Validation and security rules are listed.
-- No production code behavior is changed in this step.
+- The completed enum refactor is documented in `docs/maintenance-status-enum.md`.

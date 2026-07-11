@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * MaintenanceTask Entity - Enhanced to match TaskList.jsx expectations
- */
 @Entity
 @Table(name = "maintenance_tasks")
 @Data
@@ -26,24 +23,25 @@ public class MaintenanceTask {
 
     private String taskCode;
     private String equipmentId;
-    private String equipment; // Matches frontend task.equipment
-    private String hospital;  // Matches frontend task.hospital
+    private String equipment;
+    private String hospital;
     private String maintenanceType;
-    private LocalDate deadline; // Matches frontend task.deadline (previously scheduledDate)
+    private LocalDate deadline;
     private String assignedTechnician;
     private String description;
-    private String priority; // "Critical", "High", "Normal"
-    private String image;    // Optional image URL/base64
+    private String priority;
+    private String image;
 
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private String status = "Scheduled";
+    private MaintenanceStatus status = MaintenanceStatus.SCHEDULED;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    private Double hoursWorked; // Matches frontend task.hours (previously hoursSpent)
+    private Double hoursWorked;
 
-    private String partsUsed; // To match technician report
+    private String partsUsed;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
