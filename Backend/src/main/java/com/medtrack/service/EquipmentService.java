@@ -53,15 +53,19 @@ public class EquipmentService {
      * Deletes an equipment record by ID.
      */
     public void deleteEquipment(Long id) {
-        equipmentRepository.deleteById(id);
+        Equipment equipment = equipmentRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Equipment not found with id: " + id));
+
+        equipmentRepository.delete(equipment);
     }
 
-    /**
-     * Updates an existing equipment record's fields.
-     * Fetches the existing record first, then overwrites its fields
-     * with the incoming values before saving.
-     * Throws a ResourceNotFoundException if no equipment exists with the given ID.
-     */
+        /**
+         * Updates an existing equipment record's fields.
+         * Fetches the existing record first, then overwrites its fields
+         * with the incoming values before saving.
+         * Throws a ResourceNotFoundException if no equipment exists with the given ID.
+         */
     public Equipment updateEquipment(Long id, Equipment equipmentDetails) {
         Equipment equipment = equipmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Equipment not found"));

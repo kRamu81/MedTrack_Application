@@ -43,6 +43,10 @@ public class OrderService {
     }
 
     public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
+        EquipmentOrder order = orderRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Order not found with id: " + id));
+
+        orderRepository.delete(order);
     }
 }
