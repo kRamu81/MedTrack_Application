@@ -44,7 +44,7 @@ public class EquipmentService {
     public Equipment addEquipment(Equipment equipment) {
         // Generate a simple code if not provided
         if (equipment.getEquipmentCode() == null) {
-            equipment.setEquipmentCode("EQ-" + System.currentTimeMillis() % 10000);
+            equipment.setEquipmentCode("EQ-" + java.util.UUID.randomUUID().toString());
         }
         return equipmentRepository.save(equipment);
     }

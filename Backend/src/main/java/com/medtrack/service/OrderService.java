@@ -28,7 +28,7 @@ public class OrderService {
 
     public EquipmentOrder placeOrder(EquipmentOrder order) {
         if (order.getOrderCode() == null) {
-            order.setOrderCode("ORD-" + System.currentTimeMillis() % 10000);
+            order.setOrderCode("ORD-" + java.util.UUID.randomUUID().toString());
         }
         return orderRepository.save(order);
     }
