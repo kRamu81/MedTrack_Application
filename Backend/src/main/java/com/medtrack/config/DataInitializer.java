@@ -14,7 +14,11 @@ import java.time.LocalDate;
 import java.util.Arrays;
 
 /**
- * Seeds initial data for the H2 database on startup.
+ * Bootstraps initial state for the local and testing H2 database environments on application startup.
+ * Provides default users with different authorization roles (admin, technician, supplier),
+ * sample medical equipment profiles, maintenance schedules, and initial equipment procurement orders.
+ *
+ * Designed with idempotent checks (count-based guards) to prevent data duplication across system restarts.
  */
 @Component
 @RequiredArgsConstructor
@@ -28,7 +32,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // 1. Seed Users
+        // 1. Seed Users (Roles: Admin, Technician, Supplier)
+        // Ensure default accounts exist for localized developer testing.
+        // Hashing passwords using PasswordEncoder to ensure security best practices even in transient H2 databases.
         if (userRepository.count() == 0) {
             userRepository.save(User.builder()
                     .name("Admin User")
@@ -64,7 +70,9 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
-        // 2. Seed Equipment
+        // 2. Seed Equipment Profiles
+        // Inserts a baseline of medical devices mapped to distinct hospital units (Radiology, ICU).
+        // Includes varied operating statuses (Operational, Maintenance) for filtering validations.
         if (equipmentRepository.count() == 0) {
             equipmentRepository.save(Equipment.builder()
                     .name("MRI Scanner X100")
@@ -89,7 +97,9 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
-        // 3. Seed Maintenance Tasks
+        // 3. Seed Maintenance Schedules
+        // Populates initial maintenance workflows referencing the seeded equipment.
+        // Utilizes the type-safe MaintenanceStatus enum configuration introduced in recent updates.
         if (maintenanceTaskRepository.count() == 0) {
             maintenanceTaskRepository.save(MaintenanceTask.builder()
                     .taskCode("MNT-5001")
@@ -114,7 +124,8 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
-        // 4. Seed Orders
+        // 4. Seed Procurement Orders
+        // Inserts baseline equipment procurement records to test requisition workflows.
         if (equipmentOrderRepository.count() == 0) {
             equipmentOrderRepository.save(EquipmentOrder.builder()
                     .orderCode("ORD-1001")
