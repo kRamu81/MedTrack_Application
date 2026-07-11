@@ -171,7 +171,11 @@ export default function LoginPage({ onNavigate }) {
               Remember Me
             </label>
 
-            <button type="button" className="link-button">
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => onNavigate && onNavigate("forgot-password")}
+            >
               Forgot Password?
             </button>
           </div>

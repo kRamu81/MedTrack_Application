@@ -1,0 +1,35 @@
+name: ECSoC Congratulations
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  congratulate:
+    if: |
+      github.event.sender.login == 'ecsoc-sentinel[bot]' &&
+      (github.event.label.name == 'ECSoC26-L1' ||
+       github.event.label.name == 'ECSoC26-L2' ||
+       github.event.label.name == 'ECSoC26-L3')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const level = context.payload.label.name;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🎉 Congratulations @${context.payload.pull_request.user.login}!
+
+Your contribution has been officially recognized by **ECSoC Sentinel**.
+
+🏅 **Awarded Level:** ${level}
+
+Thank you for your valuable contribution to the project. Keep contributing and aim for even higher levels in ECSoC! 🚀🌟`
+            });

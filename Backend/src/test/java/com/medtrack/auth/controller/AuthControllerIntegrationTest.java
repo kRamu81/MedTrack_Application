@@ -1,11 +1,15 @@
 package com.medtrack.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.medtrack.auth.dto.*;
-import com.medtrack.auth.model.User;
+import com.medtrack.auth.dto.ForgotPasswordRequest;
+import com.medtrack.auth.dto.LoginRequest;
+import com.medtrack.auth.dto.RegisterRequest;
+import com.medtrack.auth.dto.ResetPasswordRequest;
+import com.medtrack.auth.dto.VerifyOtpRequest;
 import com.medtrack.auth.model.AccountStatus;
-import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.PasswordResetTokenRepository;
+import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.service.KafkaEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,16 +24,21 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-    "eureka.client.enabled=false",
-    "spring.cloud.discovery.enabled=false",
-    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
+        "eureka.client.enabled=false",
+        "spring.cloud.discovery.enabled=false",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
 })
 @AutoConfigureMockMvc
 public class AuthControllerIntegrationTest {
@@ -60,20 +69,19 @@ public class AuthControllerIntegrationTest {
 
     @Test
     void testFullAuthFlow() throws Exception {
-        // 1. Register a user
         RegisterRequest registerRequest = RegisterRequest.builder()
                 .name("Integration Test User")
+                .organization("Integration Test Hospital")
                 .email("integtest@medtrack.com")
-                .phone("1234567890")
-                .organization("MedTrack Testing")
+                .phone("9876543210")
                 .password("Password123")
                 .confirmPassword("Password123")
                 .role("HOSPITAL")
                 .build();
 
         MvcResult regResult = mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registerRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -81,80 +89,108 @@ public class AuthControllerIntegrationTest {
         assertNotNull(regResponseContent);
         assertTrue(regResponseContent.contains("token"));
 
-        Optional<User> userOpt = userRepository.findByEmail("integtest@medtrack.com");
+        Optional<User> userOpt =
+                userRepository.findByEmail("integtest@medtrack.com");
+
         assertTrue(userOpt.isPresent());
+
         User user = userOpt.get();
+
         assertEquals("integtest", user.getUsername());
+        assertEquals("Integration Test User", user.getName());
+        assertEquals("Integration Test Hospital", user.getOrganization());
+        assertEquals("9876543210", user.getPhone());
         assertEquals("HOSPITAL", user.getRole());
         assertTrue(passwordEncoder.matches("Password123", user.getPassword()));
 
-        // Verify Kafka event was published on registration
-        verify(kafkaEventPublisher, times(1)).publishUserRegistered(any());
+        verify(kafkaEventPublisher, times(1))
+                .publishUserRegistered(any());
 
-        // 2. Login successfully
-        LoginRequest loginRequest = new LoginRequest("integtest@medtrack.com", "Password123", "HOSPITAL");
+        LoginRequest loginRequest = new LoginRequest(
+                "integtest@medtrack.com",
+                "Password123",
+                "HOSPITAL"
+        );
+
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String loginResponseContent = loginResult.getResponse().getContentAsString();
+        String loginResponseContent =
+                loginResult.getResponse().getContentAsString();
+
         assertNotNull(loginResponseContent);
         assertTrue(loginResponseContent.contains("token"));
         assertTrue(loginResponseContent.contains("refreshToken"));
 
-        // Verify Kafka event was published on login
-        verify(kafkaEventPublisher, times(1)).publishUserLogin(any());
+        verify(kafkaEventPublisher, times(1))
+                .publishUserLogin(any());
     }
 
     @Test
-    void testForgotPasswordAndVerifyOtpAndResetPasswordFlow() throws Exception {
-        // Register user first
+    void testForgotPasswordAndVerifyOtpAndResetPasswordFlow()
+            throws Exception {
+
         User user = User.builder()
                 .name("OTP User")
                 .username("otpuser")
                 .email("otpuser@medtrack.com")
-                .phone("1234567890")
-                .organization("MedTrack Testing")
+                .phone("9876543211")
+                .organization("OTP Test Hospital")
                 .password(passwordEncoder.encode("OldPassword123"))
                 .role("HOSPITAL")
                 .accountStatus(AccountStatus.ACTIVE)
                 .build();
+
         userRepository.save(user);
 
-        // 1. Request OTP (Forgot Password)
-        ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest("otpuser@medtrack.com");
+        ForgotPasswordRequest forgotPasswordRequest =
+                new ForgotPasswordRequest("otpuser@medtrack.com");
+
         mockMvc.perform(post("/api/auth/forgot-password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(forgotPasswordRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(forgotPasswordRequest)))
                 .andExpect(status().isOk());
 
-        // Retrieve the OTP from database
         var tokens = passwordResetTokenRepository.findAll();
+
         assertFalse(tokens.isEmpty());
+
         String otp = tokens.get(0).getOtp();
+
         assertNotNull(otp);
 
-        // 2. Verify OTP
-        VerifyOtpRequest verifyRequest = new VerifyOtpRequest("otpuser@medtrack.com", otp);
+        VerifyOtpRequest verifyRequest =
+                new VerifyOtpRequest("otpuser@medtrack.com", otp);
+
         mockMvc.perform(post("/api/auth/verify-otp")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(verifyRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(verifyRequest)))
                 .andExpect(status().isOk());
 
-        // 3. Reset Password
-        ResetPasswordRequest resetRequest = new ResetPasswordRequest("otpuser@medtrack.com", otp, "NewPassword123");
+        ResetPasswordRequest resetRequest =
+                new ResetPasswordRequest(
+                        "otpuser@medtrack.com",
+                        otp,
+                        "NewPassword123"
+                );
+
         mockMvc.perform(post("/api/auth/reset-password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(resetRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)))
                 .andExpect(status().isOk());
 
-        // Verify login works with new password
-        LoginRequest loginRequest = new LoginRequest("otpuser@medtrack.com", "NewPassword123", "HOSPITAL");
+        LoginRequest loginRequest = new LoginRequest(
+                "otpuser@medtrack.com",
+                "NewPassword123",
+                "HOSPITAL"
+        );
+
         mockMvc.perform(post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk());
     }
 
@@ -171,7 +207,9 @@ public class AuthControllerIntegrationTest {
     }
 
     @Test
-    void testActuatorEnv_IsProtectedAndReturnsUnauthorized() throws Exception {
+    void testActuatorEnv_IsProtectedAndReturnsUnauthorized()
+            throws Exception {
+
         mockMvc.perform(get("/actuator/env"))
                 .andExpect(status().isUnauthorized());
     }

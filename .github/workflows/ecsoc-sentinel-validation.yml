@@ -1,0 +1,99 @@
+name: ECSoC Sentinel Validation
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, labeled, unlabeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Validate Labels and Admin Enforcer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr_number = pr.number;
+            
+            // Fetch latest labels
+            const { data: labelsData } = await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number: pr_number
+            });
+            const labels = labelsData.map(l => l.name);
+
+            console.log("=== Workflow Triggered ===");
+            console.log(`Trigger: ${context.eventName}`);
+            console.log(`Actor: ${context.actor}`);
+            console.log(`Labels before: ${labels.join(', ')}`);
+
+            // 1. Admin Enforcer for protected labels
+            const protectedLabels = ['ECSoC26-L1', 'ECSoC26-L2', 'ECSoC26-L3', 'good-pr', 'good-ui', 'good-backend', 'good-issue'];
+            
+            if (context.eventName === 'pull_request_target' && context.payload.action === 'labeled') {
+              const addedLabel = context.payload.label.name;
+              if (protectedLabels.includes(addedLabel)) {
+                const actor = context.actor;
+                
+                // Exempt bots from permission checks
+                if (actor.endsWith('[bot]')) {
+                  console.log(`Exempting bot ${actor} from admin check.`);
+                } else {
+                  try {
+                    const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+                      owner, repo, username: actor
+                    });
+                    // Allow 'admin' and 'write' permissions for project maintainers
+                    if (permission.permission !== 'admin' && permission.permission !== 'write') {
+                       // Reverse the unauthorized label addition
+                       await github.rest.issues.removeLabel({
+                         owner, repo, issue_number: pr_number, name: addedLabel
+                       });
+                       await github.rest.issues.createComment({
+                         owner, repo, issue_number: pr_number,
+                         body: `⚠️ @${actor}, you do not have permission to add the restricted label \`${addedLabel}\`. Only Project Admins can add this label.`
+                       });
+                       core.setFailed(`User ${actor} does not have admin permissions to add ${addedLabel}`);
+                       return;
+                    }
+                  } catch (e) {
+                     console.log("Error checking permission:", e);
+                     // If we get an error (e.g. 404 because user is not a collaborator at all), we should still fail them
+                     await github.rest.issues.removeLabel({
+                       owner, repo, issue_number: pr_number, name: addedLabel
+                     });
+                     await github.rest.issues.createComment({
+                       owner, repo, issue_number: pr_number,
+                       body: `⚠️ @${actor}, you do not have permission to add the restricted label \`${addedLabel}\`. Only Project Admins can add this label.`
+                     });
+                     core.setFailed(`Error or no permission for user ${actor} to add ${addedLabel}`);
+                     return;
+                  }
+                }
+              }
+            }
+
+            // 2. Validation Check
+            if (!labels.includes('ECSoC26')) {
+              core.setFailed("Validation Failed: The 'ECSoC26' label is missing.");
+              return;
+            }
+
+            const difficultyLabels = labels.filter(l => ['ECSoC26-L1', 'ECSoC26-L2', 'ECSoC26-L3'].includes(l));
+            if (difficultyLabels.length === 0) {
+              core.setFailed("Validation Failed: No difficulty label found. A Project Admin must add ECSoC26-L1, ECSoC26-L2, or ECSoC26-L3.");
+              return;
+            } else if (difficultyLabels.length > 1) {
+              core.setFailed(`Validation Failed: Multiple difficulty labels found (${difficultyLabels.join(', ')}). Exactly one is required.`);
+              return;
+            }
+
+            console.log("Validation passed! Labels:", labels.join(', '));

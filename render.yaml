@@ -1,0 +1,26 @@
+services:
+  # Backend Service (Spring Boot)
+  - type: web
+    name: medtrack-backend
+    env: docker
+    plan: free
+    dockerfilePath: Backend/Dockerfile
+    repo: https://github.com/kRamu81/MedTrack_Application
+    branch: main
+    envVars:
+      - key: PORT
+        value: 8081
+
+  # Frontend Service (React)
+  - type: web
+    name: medtrack-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    repo: https://github.com/kRamu81/MedTrack_Application
+    branch: main
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://medtrack-backend.onrender.com
+      - key: CI
+        value: "false"

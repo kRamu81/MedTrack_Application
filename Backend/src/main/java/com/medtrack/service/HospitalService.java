@@ -6,6 +6,8 @@ import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.repository.HospitalRepository;
 import com.medtrack.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import com.medtrack.repository.HospitalRepository;
+import com.medtrack.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

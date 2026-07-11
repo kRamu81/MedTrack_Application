@@ -63,6 +63,6 @@ public class Equipment {
      * Many Equipment items belong to one Hospital.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "hospital_id", insertable = false, updatable = false)
+    @JoinColumn(name = "hospital_id") // removed insertable=false, updatable=false
     private Hospital hospital;
 }

@@ -1,0 +1,72 @@
+name: ECSoC Sentinel Label Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/ecsoc-sentinel-labels.yml'
+  workflow_dispatch:
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Sync Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log("=== Workflow Triggered ===");
+            console.log(`Trigger: ${context.eventName}`);
+            console.log(`Actor: ${context.actor}`);
+            
+            const requiredLabels = [
+              { name: 'ECSoC26', color: '1D76DB', description: 'ECSoC 2026 Initiative' },
+              { name: 'ECSoC26-L1', color: '0E8A16', description: 'Difficulty Level 1 - Easy' },
+              { name: 'ECSoC26-L2', color: 'FBCA04', description: 'Difficulty Level 2 - Medium' },
+              { name: 'ECSoC26-L3', color: 'D93F0B', description: 'Difficulty Level 3 - Hard' },
+              { name: 'frontend', color: '5319E7', description: 'Frontend related changes' },
+              { name: 'backend', color: '0052CC', description: 'Backend related changes' },
+              { name: 'documentation', color: '0075CA', description: 'Improvements or additions to documentation' },
+              { name: 'bug', color: 'D73A4A', description: 'Something isn\'t working' },
+              { name: 'enhancement', color: 'A2EEEF', description: 'New feature or request' },
+              { name: 'newbie', color: '7057FF', description: 'First time contributor' },
+              { name: 'good-pr', color: '006B75', description: 'Bonus: Exceptional Pull Request' },
+              { name: 'good-ui', color: '006B75', description: 'Bonus: Excellent User Interface' },
+              { name: 'good-backend', color: '006B75', description: 'Bonus: Excellent Backend Code' },
+              { name: 'good-issue', color: '006B75', description: 'Bonus: High Quality Issue' }
+            ];
+
+            for (const label of requiredLabels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+                await github.rest.issues.updateLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+                console.log(`Updated label: ${label.name}`);
+              } catch (error) {
+                if (error.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description
+                  });
+                  console.log(`Created label: ${label.name}`);
+                } else {
+                  console.error(`Error processing label ${label.name}: ${error.message}`);
+                }
+              }
+            }

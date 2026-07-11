@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -47,6 +48,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EquipmentOrder {
+    public static final String APPROVAL_PENDING = "PENDING_ADMIN_APPROVAL";
+    public static final String APPROVAL_APPROVED = "APPROVED";
+
 
     /**
      * Unique identifier for the order record, auto-incremented by the database.
@@ -79,6 +83,24 @@ public class EquipmentOrder {
      */
     @Column(nullable = false)
     private Integer quantity;
+    /**
+     * Cost of one ordered unit at the time the hospital submits the procurement request.
+     */
+    @Column(precision = 12, scale = 2)
+    private BigDecimal unitCost;
+
+    /**
+     * Total procurement cost calculated from quantity and unit cost.
+     */
+    @Column(precision = 14, scale = 2)
+    private BigDecimal totalCost;
+
+    /**
+     * Budget gate status used by hospital administrators before high-cost orders proceed.
+     */
+    @Builder.Default
+    @Column(nullable = false, length = 50)
+    private String approvalStatus = APPROVAL_PENDING;
 
     /**
      * Delivery, specifications, or urgency notes provided by the hospital administrator when placing the order.
@@ -169,4 +191,11 @@ public class EquipmentOrder {
      */
     @Column(columnDefinition = "TEXT")
     private String supplierNotes;
+    @PrePersist
+    @PreUpdate
+    void calculateTotalCost() {
+        if (quantity != null && unitCost != null) {
+            totalCost = unitCost.multiply(BigDecimal.valueOf(quantity.longValue()));
+        }
+    }
 }

@@ -1,0 +1,48 @@
+name: ECSoC Sentinel Merge Event
+
+on:
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  record-merge:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Record Leaderboard Stats
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = pr.labels ? pr.labels.map(l => l.name) : [];
+
+            console.log("=== Workflow Triggered ===");
+            console.log(`Trigger: ${context.eventName}`);
+            console.log(`Actor: ${context.actor}`);
+            console.log(`Labels before: ${labels.join(', ')}`);
+            
+            const difficulty = labels.find(l => ['ECSoC26-L1', 'ECSoC26-L2', 'ECSoC26-L3'].includes(l)) || 'Unknown';
+            const bonusLabels = labels.filter(l => l.startsWith('good-'));
+            const categories = labels.filter(l => ['frontend', 'backend', 'documentation', 'bug', 'enhancement'].includes(l));
+
+            const stats = {
+              contributor: pr.user.login,
+              pr_number: pr.number,
+              merge_timestamp: pr.merged_at,
+              difficulty: difficulty,
+              bonus_labels: bonusLabels,
+              categories: categories
+            };
+
+            console.log("=== ECSoC Sentinel Bot Data Payload ===");
+            console.log(JSON.stringify(stats, null, 2));
+
+            // Set outputs for leaderboard bot to consume
+            core.setOutput('contributor', stats.contributor);
+            core.setOutput('pr_number', stats.pr_number);
+            core.setOutput('merge_timestamp', stats.merge_timestamp);
+            core.setOutput('difficulty', stats.difficulty);
+            core.setOutput('bonus_labels', stats.bonus_labels.join(','));
+            core.setOutput('categories', stats.categories.join(','));

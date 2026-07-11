@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 // Page Imports
 import LandingPage from "../pages/LandingPage";
 import Blog from "../pages/Blog";
+import BlogPost from "../pages/BlogPost";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
@@ -26,11 +27,16 @@ import RequestEquipmentPage from "../pages/hospital/RequestEquipmentPage";
 const UnauthorizedPage = ({ onNavigate, message }) => (
   <div className="min-h-screen bg-slate-900 flex items-center justify-center font-sans text-white p-6">
     <div className="bg-slate-800 rounded-[2rem] p-16 text-center border border-red-500/20 max-w-md shadow-2xl">
-      <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 text-3xl">⚠️</div>
+      <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 text-3xl">
+        ⚠️
+      </div>
       <h2 className="text-2xl font-black mb-2">Access Denied</h2>
-      <p className="text-red-400 font-bold mb-6">{message || "Your account role is not authorized to access this resource."}</p>
-      <button 
-        onClick={() => onNavigate("dashboard")} 
+      <p className="text-red-400 font-bold mb-6">
+        {message ||
+          "Your account role is not authorized to access this resource."}
+      </p>
+      <button
+        onClick={() => onNavigate("dashboard")}
         className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-500/20"
       >
         Go to Dashboard
@@ -42,12 +48,16 @@ const UnauthorizedPage = ({ onNavigate, message }) => (
 export default function AppRouter({ currentPage, onNavigate, pageData }) {
   const { user } = useAuth();
 
-  // Helper function to protect routes with optional role restriction
   const ProtectedRoute = (Component, props = {}, allowedRoles = []) => {
     if (!user) return <LoginPage onNavigate={onNavigate} />;
-    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+
+    if (
+      allowedRoles.length > 0 &&
+      !allowedRoles.includes(user.role?.toLowerCase())
+    ) {
       return <UnauthorizedPage onNavigate={onNavigate} />;
     }
+
     return <Component onNavigate={onNavigate} {...props} />;
   };
 
@@ -55,55 +65,51 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     // --- Public Routes ---
     case "landing":
       return <LandingPage onNavigate={onNavigate} />;
-
     case "blog":
       return <Blog onNavigate={onNavigate} />;
-
+    case "blog-post":
+      return <BlogPost onNavigate={onNavigate} slug={pageData} />;
     case "login":
       return <LoginPage onNavigate={onNavigate} />;
-      
-    case "register": 
+    case "register":
       return <RegisterPage onNavigate={onNavigate} />;
-
     case "forgot-password":
       return <ForgotPasswordPage onNavigate={onNavigate} />;
-
     case "verify-otp":
-      return <VerifyOtpPage onNavigate={onNavigate} email={pageData} />;
-
+      return <VerifyOtpPage onNavigate={onNavigate} />;
     case "reset-password":
-      return <ResetPasswordPage onNavigate={onNavigate} email={pageData?.email} otp={pageData?.otp} />;
-    
+      return <ResetPasswordPage onNavigate={onNavigate} />;
+
     // --- Protected Routes: Hospital Admin ---
-    case "dashboard": 
+    case "dashboard":
       return ProtectedRoute(Dashboard);
-    case "equipment": 
+    case "equipment":
       return ProtectedRoute(EquipmentList);
-    case "add-equipment": 
+    case "add-equipment":
       return ProtectedRoute(AddEquipmentForm, {}, ["hospital"]);
-    case "schedule-maintenance": 
+    case "schedule-maintenance":
       return ProtectedRoute(ScheduleMaintenancePage, {}, ["hospital"]);
-    case "request-equipment": 
+    case "request-equipment":
       return ProtectedRoute(RequestEquipmentPage, {}, ["hospital"]);
-    case "maintenance": 
+    case "maintenance":
       return ProtectedRoute(MaintenanceSchedule);
-    
+
     // --- Protected Routes: Technician ---
-    case "tasks": 
+    case "tasks":
       return ProtectedRoute(TaskList);
-    case "update-task": 
+    case "update-task":
       return ProtectedRoute(UpdateTask, { task: pageData });
-    case "updatetask": // Fallback for case sensitivity
+    case "updatetask":
       return ProtectedRoute(UpdateTask, { task: pageData });
-    
+
     // --- Protected Routes: Supplier ---
-    case "orders": 
+    case "orders":
       return ProtectedRoute(OrdersList);
-    case "orderstatus": 
+    case "orderstatus":
       return ProtectedRoute(OrderStatus, { order: pageData });
-    
+
     // --- Fallback ---
-    default: 
+    default:
       return <LandingPage onNavigate={onNavigate} />;
   }
 }
