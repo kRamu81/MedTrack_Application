@@ -51,13 +51,8 @@ public class EquipmentService {
 
     /**
      * Deletes an equipment record by ID.
-     * Throws ResourceNotFoundException if no equipment exists with the given ID,
-     * causing the global exception handler to return HTTP 404.
      */
     public void deleteEquipment(Long id) {
-        if (!equipmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Equipment not found with id: " + id);
-        }
         equipmentRepository.deleteById(id);
     }
 

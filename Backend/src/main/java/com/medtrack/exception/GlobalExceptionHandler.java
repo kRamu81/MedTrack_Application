@@ -52,14 +52,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    // Handles resource not found (e.g. delete/get by non-existent ID) -> 404 Not Found
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleResourceNotFound(ResourceNotFoundException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
         Map<String, String> response = new HashMap<>();

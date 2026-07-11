@@ -55,9 +55,10 @@ public class MaintenanceService {
     }
 
     public void deleteTask(Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Maintenance task not found with id: " + id);
+        try {
+            taskRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete maintenance task", e);
         }
-        taskRepository.deleteById(id);
     }
 }

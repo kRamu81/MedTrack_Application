@@ -49,9 +49,6 @@ public class OrderService {
     }
 
     public void deleteOrder(Long id) {
-        if (!orderRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Order not found with id: " + id);
-        }
         orderRepository.deleteById(id);
     }
 }
