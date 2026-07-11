@@ -21,7 +21,13 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<EquipmentOrder>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+        List<EquipmentOrder> orders = orderService.getAllOrders();
+
+        if (orders.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{id}")
@@ -32,7 +38,8 @@ public class OrderController {
     @PostMapping
     @PreAuthorize("hasRole('HOSPITAL')")
     public ResponseEntity<EquipmentOrder> placeOrder(@RequestBody EquipmentOrder order) {
-        return ResponseEntity.ok(orderService.placeOrder(order));
+        EquipmentOrder createdOrder = orderService.placeOrder(order);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
     }
     @GetMapping("/{id}/purchase-order.pdf")
     @PreAuthorize("hasRole('HOSPITAL')")
@@ -51,9 +58,10 @@ public class OrderController {
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('SUPPLIER')")
     public ResponseEntity<EquipmentOrder> updateStatus(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @RequestParam String status,
             @RequestParam(required = false) String notes) {
+
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status, notes));
     }
 
