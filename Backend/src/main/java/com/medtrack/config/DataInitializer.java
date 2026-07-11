@@ -98,7 +98,7 @@ public class DataInitializer implements CommandLineRunner {
                     .maintenanceType("Inspection")
                     .deadline(LocalDate.now().plusDays(5))
                     .priority("Normal")
-                    .status("Scheduled")
+                    .status(MaintenanceStatus.SCHEDULED)
                     .description("Routine quarterly inspection of magnet cooling system.")
                     .build());
 
@@ -109,7 +109,7 @@ public class DataInitializer implements CommandLineRunner {
                     .maintenanceType("Corrective")
                     .deadline(LocalDate.now().plusDays(1))
                     .priority("Critical")
-                    .status("In Progress")
+                    .status(MaintenanceStatus.IN_PROGRESS)
                     .description("Oxygen sensor failure reported. Requires calibration.")
                     .build());
         }
