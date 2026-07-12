@@ -29,8 +29,6 @@ public class HospitalController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
 
-        Hospital createdHospital = hospitalService.createHospitalProfile(hospital, userEmail);
-
         try {
             Hospital createdHospital = hospitalService.createHospitalProfile(hospital, userEmail);
             return new ResponseEntity<>(createdHospital, HttpStatus.CREATED);
