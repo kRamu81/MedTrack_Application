@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * ForgotPasswordRequest is a Data Transfer Object (DTO) for capturing the email
- * address during the forgot password request.
+ * Data Transfer Object for capturing the email address during forgot password requests.
+ * Used to target the specific account that requires a verification pin reset sequence.
  */
 @Data
 @NoArgsConstructor
@@ -17,6 +17,9 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Payload required to initiate the password recovery flow")
 public class ForgotPasswordRequest {
 
+    /**
+     * Account email address to receive recovery instructions and OTP pins.
+     */
     @NotBlank(message = "Email must not be blank")
     @Email(message = "Email must be valid")
     @Schema(description = "Registered email address associated with the user account", example = "hospital_admin@medtrack.com", requiredMode = Schema.RequiredMode.REQUIRED)
