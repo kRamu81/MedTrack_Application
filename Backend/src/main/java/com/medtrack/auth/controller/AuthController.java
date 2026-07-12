@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * AuthController exposes the REST endpoints for user authentication operations,
- * specifically handling new user registration, user login, token refresh, and logout requests.
+ * Controller exposing endpoints for user session lifecycles and recovery workflows.
+ * Mapped under "/api/auth" to process registrations, logins, token rotation, and password resets.
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -35,10 +35,9 @@ public class AuthController {
     private final UserService userService;
 
     /**
-     * Registers a new user within the application database.
-     *
-     * @param registerRequest the {@link RegisterRequest} DTO.
-     * @return a {@link ResponseEntity} wrapping the {@link AuthResponse}.
+     * Registers a new user within the database.
+     * Persists hashed credentials, triggers downstream events (e.g. Kafka event triggers),
+     * and returns initial authorization credentials.
      */
     @PostMapping("/register")
     @Operation(summary = "Register a new user account", description = "Creates a new user profile in the database, generates JWT/refresh tokens, and publishes a UserRegisteredEvent to Kafka.")
@@ -51,10 +50,9 @@ public class AuthController {
     }
 
     /**
-     * Authenticates an existing user using their email, password, and role.
-     *
-     * @param loginRequest the {@link LoginRequest} DTO.
-     * @return a {@link ResponseEntity} wrapping the {@link AuthResponse}.
+     * Authenticates credentials matching a registered identity profile.
+     * Verifies username, hashed password matches, and system access role claims.
+     * Resets failed login attempt counts upon successful processing.
      */
     @PostMapping("/login")
     @Operation(summary = "Authenticate user credentials", description = "Validates user email, password, and role. Resets failed login attempts and returns active access/refresh tokens.")
@@ -67,10 +65,8 @@ public class AuthController {
     }
 
     /**
-     * Issues a new access token and a rotated refresh token using a valid refresh token.
-     *
-     * @param request the request DTO containing the current refresh token
-     * @return the {@link AuthResponse} containing the new tokens
+     * Rotates refresh tokens and issues fresh short-lived access tokens.
+     * Implements rotation patterns to invalidate previous refresh credentials to prevent replay.
      */
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh access and rotation tokens", description = "Revokes the supplied refresh token, rotates security tokens, and returns a new access token pairing.")
@@ -83,10 +79,7 @@ public class AuthController {
     }
 
     /**
-     * Revokes the provided refresh token, performing a user logout.
-     *
-     * @param request the request DTO containing the refresh token to revoke
-     * @return HTTP 204 No Content
+     * Revokes active refresh token sessions to securely log out users.
      */
     @PostMapping("/logout")
     @Operation(summary = "Revoke session and log out", description = "Invalidates the active refresh token session, revoking access.")
@@ -100,10 +93,8 @@ public class AuthController {
     }
 
     /**
-     * Initiates the forgot password workflow by generating and sending an OTP to the user's email.
-     *
-     * @param request the {@link ForgotPasswordRequest} DTO
-     * @return a success response message
+     * Begins account password recovery sequence.
+     * Generates a secure, temporary 6-digit verification pin and sends it via email.
      */
     @PostMapping("/forgot-password")
     @Operation(summary = "Initiate forgot password workflow", description = "Validates the user email and emails a 6-digit verification OTP valid for 10 minutes.")
@@ -117,10 +108,7 @@ public class AuthController {
     }
 
     /**
-     * Verifies the provided OTP code.
-     *
-     * @param request the {@link VerifyOtpRequest} DTO
-     * @return a success response message
+     * Validates verification pin validity against recovery session status.
      */
     @PostMapping("/verify-otp")
     @Operation(summary = "Verify OTP code", description = "Validates the 6-digit OTP code against the user's active recovery session.")
@@ -134,10 +122,8 @@ public class AuthController {
     }
 
     /**
-     * Resets the password using a verified OTP.
-     *
-     * @param request the {@link ResetPasswordRequest} DTO
-     * @return a success response message
+     * Overwrites user password using a pre-validated verification pin recovery state.
+     * Marks the verification pin as consumed upon successful replacement to prevent replay.
      */
     @PostMapping("/reset-password")
     @Operation(summary = "Reset account password", description = "Replaces the password using a verified OTP. The OTP is marked as used.")
