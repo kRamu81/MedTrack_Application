@@ -50,6 +50,7 @@ public class OrderController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<EquipmentOrder> getOrderById(@PathVariable Long id) {
+        validateId(id);
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
@@ -77,6 +78,8 @@ public class OrderController {
     @GetMapping("/{id}/purchase-order.pdf")
     @PreAuthorize("hasRole('HOSPITAL')")
     public ResponseEntity<byte[]> downloadPurchaseOrder(@PathVariable Long id) {
+        validateId(id);
+
         EquipmentOrder order = orderService.getOrderById(id);
         byte[] pdf = orderService.generatePurchaseOrderPdf(id);
         String orderCode = order.getOrderCode() == null ? String.valueOf(id) : order.getOrderCode();
@@ -104,6 +107,7 @@ public class OrderController {
             @RequestParam String status,
             @RequestParam(required = false) String notes) {
 
+        validateId(id);
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status, notes));
     }
 
@@ -117,7 +121,20 @@ public class OrderController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('HOSPITAL')")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+        validateId(id);
         orderService.deleteOrder(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Validates that a resource ID is a positive number.
+     *
+     * @param id the resource identifier
+     * @throws IllegalArgumentException if the ID is less than or equal to zero
+     */
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid resource ID.");
+        }
     }
 }

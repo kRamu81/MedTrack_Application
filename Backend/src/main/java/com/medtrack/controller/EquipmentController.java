@@ -39,6 +39,7 @@ public class EquipmentController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Equipment> getEquipmentById(@PathVariable Long id, Principal principal) {
+        validateId(id);
         return ResponseEntity.ok(equipmentService.getEquipmentById(id, principal.getName()));
     }
 
@@ -68,6 +69,7 @@ public class EquipmentController {
     public ResponseEntity<Equipment> updateEquipment(@PathVariable Long id,
                                                      @Valid @RequestBody Equipment equipment,
                                                      Principal principal) {
+        validateId(id);
         return ResponseEntity.ok(equipmentService.updateEquipment(id, equipment, principal.getName()));
     }
 
@@ -81,7 +83,20 @@ public class EquipmentController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('HOSPITAL')")
     public ResponseEntity<Void> deleteEquipment(@PathVariable Long id, Principal principal) {
+        validateId(id);
         equipmentService.deleteEquipment(id, principal.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Validates that a resource ID is a positive number.
+     *
+     * @param id the resource identifier
+     * @throws IllegalArgumentException if the ID is less than or equal to zero
+     */
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid resource ID.");
+        }
     }
 }
