@@ -12,6 +12,7 @@ import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import VerifyOtpPage from "../pages/auth/VerifyOtpPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import Dashboard from "../pages/hospital/Dashboard";
+import AnalyticsDashboard from "../pages/hospital/AnalyticsDashboard";
 import EquipmentList from "../pages/hospital/EquipmentList";
 import MaintenanceSchedule from "../pages/hospital/MaintenanceSchedule";
 import TaskList from "../pages/technician/TaskList";
@@ -96,6 +97,8 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
       return ProtectedRoute(RequestEquipmentPage, {}, ["hospital"]);
     case "maintenance":
       return ProtectedRoute(MaintenanceSchedule);
+    case "analytics":
+      return ProtectedRoute(AnalyticsDashboard, {}, ["hospital"]);
 
     // --- Protected Routes: Technician ---
     case "tasks":

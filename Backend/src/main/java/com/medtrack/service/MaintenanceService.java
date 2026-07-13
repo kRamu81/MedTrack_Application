@@ -57,8 +57,82 @@ public class MaintenanceService {
         task.setStatus(taskDetails.getStatus());
         task.setNotes(taskDetails.getNotes());
         task.setHoursWorked(taskDetails.getHoursWorked());
+        task.setPartsUsed(taskDetails.getPartsUsed());
+        task.setSignature(taskDetails.getSignature());
+        if (taskDetails.getRecurrencePeriodDays() != null) {
+            task.setRecurrencePeriodDays(taskDetails.getRecurrencePeriodDays());
+        }
 
-        return taskRepository.save(task);
+        MaintenanceTask savedTask = taskRepository.save(task);
+
+        // If the task transitioned to Completed and has a recurrence period, spawn the next task
+        if (savedTask.getStatus() == com.medtrack.model.MaintenanceStatus.COMPLETED
+                && savedTask.getRecurrencePeriodDays() != null
+                && savedTask.getRecurrencePeriodDays() > 0) {
+
+            MaintenanceTask nextTask = MaintenanceTask.builder()
+                    .taskCode("MNT-" + java.util.UUID.randomUUID().toString())
+                    .equipmentId(savedTask.getEquipmentId())
+                    .equipment(savedTask.getEquipment())
+                    .hospital(savedTask.getHospital())
+                    .hospitalId(savedTask.getHospitalId())
+                    .maintenanceType(savedTask.getMaintenanceType() != null ? savedTask.getMaintenanceType() : "Recurring Preventive Maintenance")
+                    .deadline(java.time.LocalDate.now().plusDays(savedTask.getRecurrencePeriodDays()))
+                    .assignedTechnician(savedTask.getAssignedTechnician())
+                    .description("Auto-scheduled recurring maintenance task based on completion of task: " + savedTask.getTaskCode())
+                    .priority(savedTask.getPriority())
+                    .status(com.medtrack.model.MaintenanceStatus.SCHEDULED)
+                    .recurrencePeriodDays(savedTask.getRecurrencePeriodDays())
+                    .build();
+
+            taskRepository.save(nextTask);
+        }
+
+        return savedTask;
+    }
+
+    public String exportTasksToICal(Authentication authentication) {
+        List<MaintenanceTask> tasks = getAllTasks(authentication);
+        StringBuilder ical = new StringBuilder();
+        ical.append("BEGIN:VCALENDAR\r\n")
+                .append("VERSION:2.0\r\n")
+                .append("PRODID:-//MedTrack//Equipment Maintenance Feed//EN\r\n")
+                .append("CALSCALE:GREGORIAN\r\n")
+                .append("METHOD:PUBLISH\r\n");
+
+        java.time.format.DateTimeFormatter basicDate = java.time.format.DateTimeFormatter.BASIC_ISO_DATE;
+        java.time.format.DateTimeFormatter stampTime = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
+        String nowStamp = java.time.LocalDateTime.now().format(stampTime);
+
+        for (MaintenanceTask task : tasks) {
+            if (task.getDeadline() == null) {
+                continue;
+            }
+            String dtStart = task.getDeadline().format(basicDate);
+            String dtEnd = task.getDeadline().plusDays(1).format(basicDate);
+            String summary = (task.getEquipment() != null ? task.getEquipment() : "Equipment") + " - " + (task.getMaintenanceType() != null ? task.getMaintenanceType() : "Maintenance");
+            String status = task.getStatus() == com.medtrack.model.MaintenanceStatus.COMPLETED ? "COMPLETED" : "NEEDS-ACTION";
+
+            String description = String.format("Task Code: %s\\nStatus: %s\\nTechnician: %s\\nPriority: %s\\nDescription: %s",
+                    task.getTaskCode(),
+                    task.getStatus().getDisplayName(),
+                    task.getAssignedTechnician() != null ? task.getAssignedTechnician() : "Unassigned",
+                    task.getPriority() != null ? task.getPriority() : "Normal",
+                    task.getDescription() != null ? task.getDescription().replace("\n", "\\n").replace("\r", "") : "");
+
+            ical.append("BEGIN:VEVENT\r\n")
+                    .append("UID:").append(task.getTaskCode() != null ? task.getTaskCode() : "task-" + task.getId()).append("@medtrack.com\r\n")
+                    .append("DTSTAMP:").append(nowStamp).append("\r\n")
+                    .append("DTSTART;VALUE=DATE:").append(dtStart).append("\r\n")
+                    .append("DTEND;VALUE=DATE:").append(dtEnd).append("\r\n")
+                    .append("SUMMARY:").append(summary).append("\r\n")
+                    .append("DESCRIPTION:").append(description).append("\r\n")
+                    .append("STATUS:").append(status).append("\r\n")
+                    .append("END:VEVENT\r\n");
+        }
+
+        ical.append("END:VCALENDAR\r\n");
+        return ical.toString();
     }
 
     public void deleteTask(Long id, Authentication authentication) {

@@ -32,3 +32,11 @@ export const updateTask = async (id, data) => {
   const response = await API.put(`/api/maintenance/${id}`, data);
   return response.data;
 };
+
+// Export all tasks to iCal .ics file format
+export const exportTasksToICal = async () => {
+  const response = await API.get("/api/maintenance/export/calendar.ics", {
+    responseType: "text",
+  });
+  return response.data;
+};

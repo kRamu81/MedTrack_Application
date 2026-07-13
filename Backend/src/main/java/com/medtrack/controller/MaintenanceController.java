@@ -99,4 +99,20 @@ public class MaintenanceController {
         maintenanceService.deleteTask(id, authentication);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Exports all maintenance tasks for the logged-in hospital in RFC-5545 iCalendar format.
+     * Accessible only to users with the HOSPITAL role.
+     *
+     * @return the raw calendar feed content (.ics)
+     */
+    @GetMapping("/export/calendar.ics")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    public ResponseEntity<String> exportCalendar(Authentication authentication) {
+        String icalFeed = maintenanceService.exportTasksToICal(authentication);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/calendar; charset=utf-8")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"maintenance.ics\"")
+                .body(icalFeed);
+    }
 }

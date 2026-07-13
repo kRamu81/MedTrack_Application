@@ -48,6 +48,11 @@ public class MaintenanceTask {
 
     private String partsUsed;
 
+    @Column(columnDefinition = "TEXT")
+    private String signature;
+
+    private Integer recurrencePeriodDays;
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }
