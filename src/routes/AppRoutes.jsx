@@ -21,6 +21,7 @@ import OrderStatus from "../pages/supplier/OrderStatus";
 
 // --- Connected Imports ---
 import AddEquipmentForm from "../pages/hospital/AddEquipmentForm";
+import EditEquipmentForm from "../pages/hospital/EditEquipmentForm";
 import ScheduleMaintenancePage from "../pages/hospital/ScheduleMaintenancePage";
 import RequestEquipmentPage from "../pages/hospital/RequestEquipmentPage";
 
@@ -87,6 +88,8 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
       return ProtectedRoute(EquipmentList);
     case "add-equipment":
       return ProtectedRoute(AddEquipmentForm, {}, ["hospital"]);
+    case "edit-equipment":
+      return ProtectedRoute(EditEquipmentForm, { equipmentId: pageData }, ["hospital"]);
     case "schedule-maintenance":
       return ProtectedRoute(ScheduleMaintenancePage, {}, ["hospital"]);
     case "request-equipment":
