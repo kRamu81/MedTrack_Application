@@ -51,7 +51,9 @@ public class MaintenanceController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('HOSPITAL', 'TECHNICIAN')")
-    public ResponseEntity<MaintenanceTask> getTaskById(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<MaintenanceTask> getTaskById(@PathVariable Long id,
+                                                       Authentication authentication) {
+        validateId(id);
         return ResponseEntity.ok(maintenanceService.getTaskById(id, authentication));
     }
 
@@ -83,6 +85,7 @@ public class MaintenanceController {
     public ResponseEntity<MaintenanceTask> updateTask(@PathVariable Long id,
                                                       @RequestBody MaintenanceTask task,
                                                       Authentication authentication) {
+        validateId(id);
         return ResponseEntity.ok(maintenanceService.updateTask(id, task, authentication));
     }
 
@@ -95,8 +98,22 @@ public class MaintenanceController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('HOSPITAL')")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id,
+                                           Authentication authentication) {
+        validateId(id);
         maintenanceService.deleteTask(id, authentication);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Validates that a resource ID is a positive number.
+     *
+     * @param id the resource identifier
+     * @throws IllegalArgumentException if the ID is less than or equal to zero
+     */
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid resource ID.");
+        }
     }
 }
