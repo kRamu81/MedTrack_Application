@@ -61,11 +61,8 @@ public class UserService {
      */
     private static final List<String> VALID_ROLES = List.of("HOSPITAL", "TECHNICIAN", "SUPPLIER");
 
-    /**
-     * Token lifetime in milliseconds. This value must correspond directly with {@link JwtUtil#EXPIRATION_MS}
-     * to keep client-side session timeout synchronization synchronization accurate.
-     */
-    private static final long TOKEN_EXPIRATION_MS = 1000 * 60 * 15;
+    @Value("${app.jwt.expiration-ms:900000}")
+    private long jwtExpirationMs;
 
     /**
      * Repository interface for performing CRUD operations on the User table.
@@ -285,7 +282,7 @@ public class UserService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .refreshToken(refreshToken)
-                .expiresIn(TOKEN_EXPIRATION_MS)
+                .expiresIn(jwtExpirationMs)
                 .build();
     }
 
@@ -325,9 +322,16 @@ public class UserService {
      */
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
-        String email = request.getEmail();
+        String email = request.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Invalidate any existing unused OTP tokens for this email
+        List<PasswordResetToken> activeTokens = passwordResetTokenRepository.findByEmailAndUsed(email, false);
+        for (PasswordResetToken activeToken : activeTokens) {
+            activeToken.setUsed(true);
+        }
+        passwordResetTokenRepository.saveAll(activeTokens);
 
         // Generate secure random numeric OTP
         SecureRandom random = new SecureRandom();
@@ -362,7 +366,7 @@ public class UserService {
      */
     @Transactional
     public void verifyOtp(VerifyOtpRequest request) {
-        String email = request.getEmail();
+        String email = request.getEmail().trim().toLowerCase();
         String otp = request.getOtp();
 
         // Find token by email and OTP
@@ -390,7 +394,7 @@ public class UserService {
      */
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
-        String email = request.getEmail();
+        String email = request.getEmail().trim().toLowerCase();
         String otp = request.getOtp();
         String newPassword = request.getNewPassword();
 
@@ -423,5 +427,8 @@ public class UserService {
         // Invalidate OTP (mark as used)
         token.setUsed(true);
         passwordResetTokenRepository.save(token);
+
+        // Revoke all active sessions (refresh tokens) for the user
+        refreshTokenService.revokeAllForUser(user.getId());
     }
 }

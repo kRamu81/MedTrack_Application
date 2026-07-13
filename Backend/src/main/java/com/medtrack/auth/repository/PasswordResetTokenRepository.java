@@ -22,6 +22,15 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     Optional<PasswordResetToken> findByEmailAndOtp(String email, String otp);
 
     /**
+     * Finds password reset tokens by email and used status.
+     *
+     * @param email the email address
+     * @param used the usage status
+     * @return a {@link java.util.List} of matching {@link PasswordResetToken} entities
+     */
+    java.util.List<PasswordResetToken> findByEmailAndUsed(String email, boolean used);
+
+    /**
      * Finds the latest password reset token for a given email address.
      *
      * @param email the email address
