@@ -21,7 +21,7 @@ public class JwtUtil {
     @Value("${app.jwt.secret:medtrack-super-secret-key-change-this-in-production-1234567890}")
     private String secret;
 
-    @Value("${app.jwt.expiration-ms:604800000}") // Default to 7 days in ms
+    @Value("${app.jwt.expiration-ms:900000}") // Default to 15 minutes in ms
     private long expirationMs;
 
     /**
