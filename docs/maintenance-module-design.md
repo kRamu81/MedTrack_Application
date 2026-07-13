@@ -24,9 +24,9 @@ The current backend can create, fetch, update, and delete maintenance tasks thro
 
 ### MaintenanceTask.java
 
-`MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used. Its `status` field now uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`.
+`MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used. Its `status` field uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`. It also stores `hospitalId`, which is populated by the backend and used as a stable ownership key.
 
-Current limitation: equipment, hospital, and technician details are mostly stored as plain text. The task is not yet properly connected to the `Equipment` entity through a database relationship.
+Current limitation: equipment and technician details are still stored as strings. The task is not yet connected to the `Equipment` entity through a database relationship, and technician assignment is not connected to a `User` entity.
 
 ### MaintenanceTaskRepository.java
 
@@ -36,9 +36,14 @@ It also defines simple query methods:
 
 - `findByTaskCode(String taskCode)`
 - `findByAssignedTechnician(String assignedTechnician)`
+- `findByHospitalId(Long hospitalId)`
+- `findByIdAndHospitalId(Long id, Long hospitalId)`
+- `findByIdAndAssignedTechnician(Long id, String assignedTechnician)`
 - `findByStatus(MaintenanceStatus status)`
 
-Current limitation: it does not yet provide equipment-based, hospital-based, or strongly user-based maintenance queries.
+The hospital and technician ownership queries are already used by the service to prevent one user from reading or changing another user's tasks.
+
+Current limitation: it does not yet provide equipment-based queries or strongly user-based technician queries.
 
 ### MaintenanceStatus.java
 
@@ -58,13 +63,14 @@ The enum uses Jackson conversion annotations so the REST API continues to accept
 
 It currently supports:
 
-- fetching all tasks
-- fetching one task by id
-- scheduling a task
-- updating a task
-- deleting a task
+- fetching only the authenticated hospital's or technician's tasks
+- fetching one task only when it belongs to the authenticated hospital or assigned technician
+- scheduling a task with hospital ownership derived from the authenticated user
+- generating a task code when one is not supplied
+- allowing a technician to update only a task assigned to their login email
+- allowing a hospital to delete only its own task
 
-Current limitation: scheduling does not verify that the equipment exists, does not check hospital ownership, does not validate allowed status transitions, and does not verify technician assignment. Updating also does not currently persist all technician report fields consistently.
+Current limitation: scheduling does not verify that the equipment exists or belongs to the hospital, does not validate required fields, and does not verify technician assignment. Updating does not validate allowed status transitions or non-negative hours and does not currently persist `partsUsed`.
 
 ### MaintenanceController.java
 
@@ -78,7 +84,9 @@ Current endpoints:
 - `PUT /api/maintenance/{id}`
 - `DELETE /api/maintenance/{id}`
 
-Current limitation: the controller is a thin CRUD layer. It does not yet support filtered queries such as technician-specific or equipment-specific maintenance records.
+The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The list endpoint is already automatically scoped to the authenticated hospital or technician.
+
+Current limitation: the controller does not expose optional status or equipment filters and does not apply request-body validation.
 
 ## Target Design
 
@@ -198,10 +206,16 @@ PUT     technician users
 DELETE  hospital users
 ```
 
+Current service-level checks ensure:
+
+- hospitals can list, read, and delete only their own maintenance tasks
+- technicians can list, read, and update only tasks assigned to their login email
+- hospital ownership is derived from the authenticated user rather than request JSON
+
 Future service-level checks should also ensure:
 
 - hospitals only schedule maintenance for equipment they own
-- technicians only update assigned tasks
+- assigned technician accounts exist and have the technician role
 - unauthenticated users cannot access maintenance records
 
 ## Integration Notes
@@ -227,16 +241,76 @@ The current frontend field names should be preserved unless frontend changes are
 
 ## Next Implementation Steps
 
-1. [Completed] Add a `MaintenanceStatus` enum.
-2. [Completed] Refactor `MaintenanceTask` to use the enum for status.
-3. Improve `MaintenanceTask` relationship with `Equipment`.
-4. Add repository query methods for filters.
-5. Improve scheduling logic in `MaintenanceService`.
-6. Improve technician update logic in `MaintenanceService`.
-7. Add validation for required fields and invalid status transitions.
-8. Improve exception messages and HTTP responses.
-9. Verify role-based authorization using backend tests or Postman.
-10. Connect the hospital maintenance list page to backend data.
+### Verified completed
+
+- [x] Add a `MaintenanceStatus` enum.
+- [x] Refactor `MaintenanceTask.status` to use `MaintenanceStatus` with `EnumType.STRING`.
+- [x] Add a server-controlled `hospitalId` ownership key to `MaintenanceTask`.
+- [x] Add hospital-, technician-, and status-based repository query methods.
+- [x] Scope list and item reads to the authenticated hospital or assigned technician.
+- [x] Derive the scheduling hospital from the authenticated user instead of request JSON.
+- [x] Scope task deletion to the authenticated hospital.
+- [x] Scope technician updates to tasks assigned to the authenticated technician.
+- [x] Persist technician updates for `status`, `notes`, and `hoursWorked`.
+- [x] Apply controller role guards and positive-ID validation.
+
+### Next two tasks
+
+1. [ ] **Connect maintenance to real equipment and validate scheduling.** Replace the string-only equipment reference with a `@ManyToOne` relationship, add equipment-based repository queries, and make `scheduleTask` reject missing equipment, equipment that does not exist, or equipment owned by another hospital.
+2. [ ] **Complete and validate technician updates.** Persist `partsUsed`, reject negative `hoursWorked`, enforce the documented status transitions, and prevent normal edits after completion.
+
+### Implementation structure for the next two tasks
+
+Only the Maintenance entity, repository, service, and controller need to be changed for this implementation. `EquipmentRepository` already provides `findByEquipmentCode` and `findByIdAndHospitalId`, so the Maintenance service can consume those existing methods without changing the Equipment module.
+
+#### `MaintenanceTask` entity
+
+- Add a lazy `@ManyToOne` reference to `Equipment` using a dedicated join column.
+- Keep the current API-facing `equipmentId` and `equipment` values during this step so the existing frontend contract is not broken. In the current data, `equipmentId` is an equipment code such as `EQ-001`, not the numeric database primary key.
+- Make `deadline` and `maintenanceType` required.
+- Add a non-negative constraint for `hoursWorked`.
+- Keep the existing `MaintenanceStatus` enum and server-controlled hospital ownership.
+
+#### `MaintenanceTaskRepository`
+
+- Keep all existing ownership-scoped methods.
+- Add an equipment relationship query for maintenance history.
+- Add combined ownership filters only when needed, for example hospital plus status or hospital plus equipment. Every filtered query must remain hospital- or technician-scoped.
+
+#### `MaintenanceService`
+
+- During scheduling, resolve `task.equipmentId` through `EquipmentRepository.findByEquipmentCode`.
+- Compare the resolved equipment's hospital ID with the authenticated hospital ID before saving.
+- Set the real equipment relationship and server-derived hospital fields; never trust hospital ownership from request JSON.
+- Validate required scheduling fields and technician assignment before saving.
+- During technician updates, copy only allowed fields: `status`, `notes`, `hoursWorked`, and `partsUsed`.
+- Enforce status transitions in one service method so all callers follow the same lifecycle.
+- Reject negative hours and reject normal updates once a task is completed.
+
+#### `MaintenanceController`
+
+- Keep the existing `/api/maintenance` paths and role guards.
+- Add `@Valid` to scheduling and update request bodies after entity constraints are added.
+- Continue passing `Authentication` into the service; do not accept hospital or technician ownership as controller query parameters.
+- Keep the current positive-ID checks and response status codes.
+
+#### Verification required before commit
+
+- A hospital can schedule maintenance only for its own equipment code.
+- A different hospital cannot read, schedule against, or delete that maintenance record.
+- A technician can read and update only an assigned task.
+- Valid status transitions succeed; invalid transitions and negative hours return `400`.
+- `partsUsed` persists after an update.
+- Existing maintenance endpoint paths and human-readable status JSON remain compatible.
+
+### Work after the next two tasks
+
+- [ ] Verify assigned technicians exist and have the technician role.
+- [ ] Add request validation and consistent validation error responses.
+- [ ] Add maintenance repository, service, and controller tests for ownership and status transitions.
+- [ ] Add optional status and equipment filters without weakening ownership scoping.
+- [ ] Decide whether to add a `CANCELLED` status.
+- [ ] Connect and verify the hospital maintenance list page against the backend API.
 
 ## Definition Of Done For Design Step
 
