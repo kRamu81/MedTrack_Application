@@ -159,6 +159,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/maintenance/**").hasRole("TECHNICIAN")
                 .requestMatchers(HttpMethod.DELETE, "/api/maintenance/**").hasRole("HOSPITAL")
 
+                // Shipment tracking boundaries:
+                // GET requests: Any authenticated user.
+                // Write/Modify: Restricted to Suppliers.
+                .requestMatchers(HttpMethod.GET, "/api/shipments/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/shipments").hasRole("SUPPLIER")
+                .requestMatchers(HttpMethod.PUT, "/api/shipments/**").hasRole("SUPPLIER")
+
                 // All other endpoints require authentication.
                 .anyRequest().authenticated()
             )

@@ -15,6 +15,8 @@ public interface ShipmentTrackingRepository extends JpaRepository<ShipmentTracki
 
     Optional<ShipmentTracking> findByShipmentTrackingNumber(String shipmentTrackingNumber);
 
+    Optional<ShipmentTracking> findByOrderId(Long orderId);
+
     List<ShipmentTracking> findBySupplierId(Long supplierId);
 
     List<ShipmentTracking> findByEstimatedDeliveryDateBefore(LocalDateTime dateTime);
