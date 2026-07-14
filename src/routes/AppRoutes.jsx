@@ -74,7 +74,7 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "login":
       return <LoginPage onNavigate={onNavigate} />;
     case "register":
-      return <RegisterPage onNavigate={onNavigate} />;
+      return <RegisterPage onNavigate={onNavigate} defaultRole={pageData} />;
     case "forgot-password":
       return <ForgotPasswordPage onNavigate={onNavigate} />;
     case "verify-otp":
