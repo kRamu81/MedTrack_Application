@@ -17,4 +17,7 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
     Optional<MaintenanceTask> findByIdAndHospitalId(Long id, Long hospitalId);
     Optional<MaintenanceTask> findByIdAndAssignedTechnician(Long id, String assignedTechnician);
     List<MaintenanceTask> findByStatus(MaintenanceStatus status);
+
+    // Equipment history remains hospital-scoped so it cannot leak another hospital's records.
+    List<MaintenanceTask> findByEquipmentRecord_IdAndHospitalId(Long equipmentId, Long hospitalId);
 }

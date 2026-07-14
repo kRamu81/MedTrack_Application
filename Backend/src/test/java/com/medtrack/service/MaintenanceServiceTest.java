@@ -3,9 +3,11 @@ package com.medtrack.service;
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.model.Hospital;
+import com.medtrack.model.Equipment;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.repository.HospitalRepository;
+import com.medtrack.repository.EquipmentRepository;
 import com.medtrack.repository.MaintenanceTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,9 @@ public class MaintenanceServiceTest {
     private HospitalRepository hospitalRepository;
 
     @Mock
+    private EquipmentRepository equipmentRepository;
+
+    @Mock
     private Authentication authentication;
 
     @InjectMocks
@@ -48,6 +53,7 @@ public class MaintenanceServiceTest {
     private User mockUser;
     private Hospital mockHospital;
     private MaintenanceTask mockTask;
+    private Equipment mockEquipment;
     private final String email = "hospital@medtrack.com";
 
     @BeforeEach
@@ -78,6 +84,14 @@ public class MaintenanceServiceTest {
                 .status(MaintenanceStatus.IN_PROGRESS)
                 .recurrencePeriodDays(90)
                 .build();
+
+        mockEquipment = Equipment.builder()
+                .id(100L)
+                .equipmentCode("EQ-100")
+                .name("MRI Scanner")
+                .department("Radiology")
+                .hospital(mockHospital)
+                .build();
     }
 
     @Test
@@ -85,21 +99,55 @@ public class MaintenanceServiceTest {
         when(authentication.getName()).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
         when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(equipmentRepository.findByEquipmentCode("EQ-100")).thenReturn(Optional.of(mockEquipment));
         when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MaintenanceTask taskToSchedule = MaintenanceTask.builder()
+                .id(999L)
+                .taskCode("CLIENT-CODE")
                 .equipmentId("EQ-100")
-                .equipment("MRI Scanner")
+                .maintenanceType("Preventive")
                 .deadline(LocalDate.now())
+                .priority("Normal")
+                .status(MaintenanceStatus.COMPLETED)
+                .notes("Client-forged report")
+                .hoursWorked(4.0)
                 .build();
 
         MaintenanceTask result = maintenanceService.scheduleTask(taskToSchedule, authentication);
 
         assertNotNull(result);
+        assertNull(result.getId());
         assertEquals(mockHospital.getId(), result.getHospitalId());
         assertEquals(mockHospital.getName(), result.getHospital());
         assertNotNull(result.getTaskCode());
         assertTrue(result.getTaskCode().startsWith("MNT-"));
+        assertSame(mockEquipment, result.getEquipmentRecord());
+        assertEquals(MaintenanceStatus.SCHEDULED, result.getStatus());
+        assertNull(result.getNotes());
+        assertNull(result.getHoursWorked());
+    }
+
+    @Test
+    void scheduleTask_RejectsEquipmentOwnedByAnotherHospital() {
+        Hospital anotherHospital = Hospital.builder().id(99L).name("Other Hospital").build();
+        mockEquipment.setHospital(anotherHospital);
+
+        when(authentication.getName()).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(equipmentRepository.findByEquipmentCode("EQ-100")).thenReturn(Optional.of(mockEquipment));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .equipmentId("EQ-100")
+                .maintenanceType("Preventive")
+                .deadline(LocalDate.now())
+                .priority("Normal")
+                .build();
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> maintenanceService.scheduleTask(request, authentication));
+        verify(taskRepository, never()).save(any());
     }
 
     @Test
@@ -144,6 +192,55 @@ public class MaintenanceServiceTest {
         assertEquals("MRI Scanner", nextTask.getEquipment());
         assertEquals("tech@medtrack.com", nextTask.getAssignedTechnician());
         assertTrue(nextTask.getDescription().contains("Auto-scheduled recurring maintenance task"));
+    }
+
+    @Test
+    void updateTask_RejectsNegativeHours() {
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .status(MaintenanceStatus.IN_PROGRESS)
+                .hoursWorked(-1.0)
+                .build();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> maintenanceService.updateTask(50L, request, authentication));
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void updateTask_RejectsInvalidStatusTransition() {
+        mockTask.setStatus(MaintenanceStatus.SCHEDULED);
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .build();
+
+        assertThrows(com.medtrack.exception.InvalidStatusTransitionException.class,
+                () -> maintenanceService.updateTask(50L, request, authentication));
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void updateTask_RejectsEditingCompletedTaskWithoutCreatingRecurrence() {
+        mockTask.setStatus(MaintenanceStatus.COMPLETED);
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .notes("Edited after completion")
+                .build();
+
+        assertThrows(com.medtrack.exception.InvalidStatusTransitionException.class,
+                () -> maintenanceService.updateTask(50L, request, authentication));
+        verify(taskRepository, never()).save(any());
     }
 
     @Test

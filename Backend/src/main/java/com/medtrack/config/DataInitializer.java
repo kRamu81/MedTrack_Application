@@ -103,6 +103,8 @@ public class DataInitializer implements CommandLineRunner {
         if (maintenanceTaskRepository.count() == 0) {
             maintenanceTaskRepository.save(MaintenanceTask.builder()
                     .taskCode("MNT-5001")
+                    // Required API-facing equipment reference after maintenance validation was added.
+                    .equipmentId("EQ-1001")
                     .equipment("MRI Scanner X100")
                     .hospital("City General Hospital")
                     .maintenanceType("Inspection")
@@ -114,6 +116,7 @@ public class DataInitializer implements CommandLineRunner {
 
             maintenanceTaskRepository.save(MaintenanceTask.builder()
                     .taskCode("MNT-5002")
+                    .equipmentId("EQ-1002")
                     .equipment("Portable Ventilator")
                     .hospital("City General Hospital")
                     .maintenanceType("Corrective")

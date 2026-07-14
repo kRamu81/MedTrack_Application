@@ -2,6 +2,7 @@ package com.medtrack.controller;
 
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.service.MaintenanceService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +67,8 @@ public class MaintenanceController {
      */
     @PostMapping
     @PreAuthorize("hasRole('HOSPITAL')")
-    public ResponseEntity<MaintenanceTask> scheduleTask(@RequestBody MaintenanceTask task,
+    // Bean validation rejects malformed scheduling requests before business logic runs.
+    public ResponseEntity<MaintenanceTask> scheduleTask(@Valid @RequestBody MaintenanceTask task,
                                                         Authentication authentication) {
         MaintenanceTask createdTask = maintenanceService.scheduleTask(task, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);

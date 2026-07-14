@@ -89,7 +89,8 @@ UPDATE maintenance_tasks SET status = 'IN_PROGRESS' WHERE status = 'In Progress'
 
 ## Remaining Work
 
-- Define and enforce valid status transitions.
+- Valid status transitions are now enforced in `MaintenanceService`.
+- Completed tasks are immutable, and recurring work is generated only on the transition to `COMPLETED`.
 - Decide whether to add a `CANCELLED` status.
 - Add tests for JSON conversion, persistence, and invalid values.
-- Implement admin assignment and technician-specific progress updates.
+- Consider replacing email-based technician assignment with a direct user relationship.
