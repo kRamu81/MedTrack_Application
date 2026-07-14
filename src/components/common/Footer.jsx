@@ -36,10 +36,10 @@ export default function Footer({ onNavigate }) {
             {/* Column 2: Suppliers */}
             <div>
               <h4 className="text-primary font-bold text-[15px] mb-5">Suppliers</h4>
-              <ul className="space-y-4 text-[14px] font-medium text-secondary">
-                <li><a href="#" className="hover:text-primary transition-colors">Free Supplier Account</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Supplier Centre</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Suppliers Blog</a></li>
+              <ul className="space-y-4 text-[14px] font-medium text-secondary flex flex-col items-start">
+                <li><button onClick={() => onNavigate && onNavigate("register", "Supplier")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Free Supplier Account</button></li>
+                <li><button onClick={() => onNavigate && onNavigate("supplier-centre")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Supplier Centre</button></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Suppliers Blog</a></li>
               </ul>
             </div>
 

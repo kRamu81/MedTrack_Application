@@ -10,6 +10,7 @@ import ContactPage from "./pages/ContactPage";
 import AwardsPage from "./pages/AwardsPage";
 import ResearchPage from "./pages/ResearchPage";
 import GuidesPage from "./pages/GuidesPage";
+import SupplierCentrePage from "./pages/SupplierCentrePage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -50,6 +51,7 @@ const getRouteStateFromPath = () => {
     awards: "awards",
     research: "research",
     guides: "guides",
+    "supplier-centre": "supplier-centre",
   };
 
   return {
@@ -121,6 +123,8 @@ function AppContent() {
             <ResearchPage />
           ) : currentPage === "guides" ? (
             <GuidesPage />
+          ) : currentPage === "supplier-centre" ? (
+            <SupplierCentrePage onNavigate={handleNavigate} />
           ) : (
             <AppRoutes
               currentPage={currentPage}
