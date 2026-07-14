@@ -29,7 +29,7 @@ export default function Footer({ onNavigate }) {
                 <li><button onClick={() => onNavigate && onNavigate("blog")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Blog</button></li>
                 <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Research</a></li>
                 <li><button onClick={() => onNavigate && onNavigate("contact")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Contact Us</button></li>
-                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Guides</a></li>
+                <li><button onClick={() => onNavigate && onNavigate("guides")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Guides</button></li>
               </ul>
             </div>
 
