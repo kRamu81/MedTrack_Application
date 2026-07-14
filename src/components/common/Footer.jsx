@@ -27,7 +27,7 @@ export default function Footer({ onNavigate }) {
                 <li><button onClick={() => onNavigate && onNavigate("about")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">About / Press</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("awards")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Awards</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("blog")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Blog</button></li>
-                <li><button onClick={() => onNavigate && onNavigate("research")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Research</button></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Research</a></li>
                 <li><button onClick={() => onNavigate && onNavigate("contact")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Contact Us</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("guides")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Guides</button></li>
               </ul>
@@ -39,7 +39,7 @@ export default function Footer({ onNavigate }) {
               <ul className="space-y-4 text-[14px] font-medium text-secondary flex flex-col items-start">
                 <li><button onClick={() => onNavigate && onNavigate("register", "Supplier")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Free Supplier Account</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("supplier-centre")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Supplier Centre</button></li>
-                <li><button onClick={() => onNavigate && onNavigate("blog", "Supply Chain")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Suppliers Blog</button></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Suppliers Blog</a></li>
               </ul>
             </div>
 

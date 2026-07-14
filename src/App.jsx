@@ -9,9 +9,6 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
 import AwardsPage from "./pages/AwardsPage";
-import ResearchPage from "./pages/ResearchPage";
-import GuidesPage from "./pages/GuidesPage";
-import SupplierCentrePage from "./pages/SupplierCentrePage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -21,13 +18,6 @@ const getRouteStateFromPath = () => {
     .replace(/^\/+|\/+$/g, "");
 
   if (!path) return { page: "landing", data: null };
-
-  if (path.toLowerCase() === "supplier-blog") {
-    return {
-      page: "blog",
-      data: "Supply Chain",
-    };
-  }
 
   if (path.startsWith("blog/")) {
     return {
@@ -73,9 +63,6 @@ const getRouteStateFromPath = () => {
     contact: "contact",
     help: "help",
     awards: "awards",
-    research: "research",
-    guides: "guides",
-    "supplier-centre": "supplier-centre",
   };
 
   return {
@@ -147,15 +134,9 @@ function AppContent() {
           ) : currentPage === "contact" ? (
             <ContactPage />
           ) : currentPage === "help" ? (
-            <HelpPage onNavigate={handleNavigate} />
+            <HelpPage />
           ) : currentPage === "awards" ? (
             <AwardsPage />
-          ) : currentPage === "research" ? (
-            <ResearchPage />
-          ) : currentPage === "guides" ? (
-            <GuidesPage />
-          ) : currentPage === "supplier-centre" ? (
-            <SupplierCentrePage onNavigate={handleNavigate} />
           ) : (
             <AppRoutes
               currentPage={currentPage}
