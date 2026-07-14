@@ -4,9 +4,9 @@ import BLOG_POSTS, { BLOG_CATEGORIES } from "../data/blogPosts";
 
 const POSTS_PER_PAGE = 6;
 
-export default function Blog({ onNavigate }) {
+export default function Blog({ onNavigate, initialCategory }) {
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory || "All");
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
 
   const filteredPosts = useMemo(() => {

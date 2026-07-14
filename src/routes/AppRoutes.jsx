@@ -70,7 +70,7 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "landing":
       return <LandingPage onNavigate={onNavigate} />;
     case "blog":
-      return <Blog onNavigate={onNavigate} />;
+      return <Blog onNavigate={onNavigate} initialCategory={pageData} />;
     case "blog-post":
       return <BlogPost onNavigate={onNavigate} slug={pageData} />;
     case "careers":
