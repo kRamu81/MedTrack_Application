@@ -25,7 +25,7 @@ export default function Footer({ onNavigate }) {
               <h4 className="text-primary font-bold text-[15px] mb-5">MedTrack</h4>
               <ul className="space-y-4 text-[14px] font-medium text-secondary flex flex-col items-start">
                 <li><button onClick={() => onNavigate && onNavigate("about")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">About / Press</button></li>
-                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Awards</a></li>
+                <li><button onClick={() => onNavigate && onNavigate("awards")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Awards</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("blog")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Blog</button></li>
                 <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Research</a></li>
                 <li><button onClick={() => onNavigate && onNavigate("contact")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Contact Us</button></li>

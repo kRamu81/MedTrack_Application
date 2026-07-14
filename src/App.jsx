@@ -8,6 +8,7 @@ import AppRoutes from "./routes/AppRoutes";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
+import AwardsPage from "./pages/AwardsPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -54,6 +55,7 @@ const getRouteStateFromPath = () => {
     about: "about",
     contact: "contact",
     help: "help",
+    awards: "awards",
   };
 
   return {
@@ -123,6 +125,8 @@ function AppContent() {
             <ContactPage />
           ) : currentPage === "help" ? (
             <HelpPage />
+          ) : currentPage === "awards" ? (
+            <AwardsPage />
           ) : (
             <AppRoutes
               currentPage={currentPage}
