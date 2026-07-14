@@ -51,3 +51,8 @@ export const exportTasksToICal = async () => {
   });
   return response.data;
 };
+
+export const deleteTask = async (id) => {
+  const response = await API.delete(`/api/maintenance/${id}`);
+  return response.data;
+};
