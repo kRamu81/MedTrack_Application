@@ -146,6 +146,7 @@ public class SecurityConfig {
                 // Write/Modify: Restricted to Hospital admins.
                 // Status changes: Restricted to Suppliers.
                 .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/orders/*/invoice/email").hasRole("SUPPLIER")
                 .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("HOSPITAL")
                 .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("SUPPLIER")
                 .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("HOSPITAL")
@@ -158,6 +159,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/maintenance/**").hasRole("HOSPITAL")
                 .requestMatchers(HttpMethod.PUT, "/api/maintenance/**").hasRole("TECHNICIAN")
                 .requestMatchers(HttpMethod.DELETE, "/api/maintenance/**").hasRole("HOSPITAL")
+
+                // Shipment tracking boundaries:
+                // GET requests: Any authenticated user.
+                // Write/Modify: Restricted to Suppliers.
+                .requestMatchers(HttpMethod.GET, "/api/shipments/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/shipments").hasRole("SUPPLIER")
+                .requestMatchers(HttpMethod.PUT, "/api/shipments/**").hasRole("SUPPLIER")
 
                 // All other endpoints require authentication.
                 .anyRequest().authenticated()

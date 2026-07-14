@@ -27,7 +27,7 @@ export default function Footer({ onNavigate }) {
                 <li><button onClick={() => onNavigate && onNavigate("about")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">About / Press</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("awards")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Awards</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("blog")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Blog</button></li>
-                <li><button onClick={() => onNavigate && onNavigate("research")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Research</button></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Research</a></li>
                 <li><button onClick={() => onNavigate && onNavigate("contact")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Contact Us</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("guides")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Guides</button></li>
               </ul>
@@ -46,14 +46,14 @@ export default function Footer({ onNavigate }) {
             {/* Column 3: Information */}
             <div>
               <h4 className="text-primary font-bold text-[15px] mb-5">Information</h4>
-              <ul className="space-y-4 text-[14px] font-medium text-secondary">
-                <li><a href="#" className="hover:text-primary transition-colors">Help</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Guidelines</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Use</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy and Ad Choices</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Do Not Sell Or Share My Information</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Cookie Consent Tool</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
+              <ul className="space-y-4 text-[14px] font-medium text-secondary flex flex-col items-start">
+                <li><button onClick={() => onNavigate && onNavigate("help")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Help</button></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Guidelines</a></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Terms of Use</a></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Privacy and Ad Choices</a></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Do Not Sell Or Share My Information</a></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Cookie Consent Tool</a></li>
+                <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary transition-colors">Security</a></li>
               </ul>
             </div>
 
@@ -62,7 +62,7 @@ export default function Footer({ onNavigate }) {
               <h4 className="text-primary font-bold text-[15px] mb-5">Work With Us</h4>
               <ul className="space-y-4 text-[14px] font-medium text-secondary">
                 <li><a href="#" className="hover:text-primary transition-colors">Advertisers</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
+                <li><button onClick={() => onNavigate && onNavigate('careers')} className="hover:text-primary transition-colors">Careers</button></li>
               </ul>
             </div>
 

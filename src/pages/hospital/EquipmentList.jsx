@@ -3,6 +3,8 @@ import {
   getAllEquipment,
   deleteEquipment,
   getEquipmentById,
+  importEquipmentCsv,
+  getEquipmentQrCode,
 } from "../../services/EquipmentService";
 import { useAuth } from "../../context/AuthContext";
 
@@ -95,9 +97,94 @@ export default function EquipmentList({ onNavigate }) {
   const [equipmentDetails, setEquipmentDetails] = useState(null);
   const [detailsError, setDetailsError] = useState(null);
 
+  // CSV Import States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
+  const [importError, setImportError] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  // QR Code States
+  const [qrCode, setQrCode] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState(null);
+
   useEffect(() => {
     fetchEquipment();
   }, []);
+
+  const downloadCsvTemplate = () => {
+    const headers = "Name,Model,Serial Number,Department,Category,Status,Purchase Date\n";
+    const sampleRow = "MRI Scanner,GE Signa HDxt,SN-9281,Radiology,Imaging,Operational,2025-06-12\n";
+    const blob = new Blob([headers + sampleRow], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "medtrack_equipment_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.name.endsWith(".csv")) {
+        setImportFile(file);
+        setImportError(null);
+      } else {
+        setImportError("Please upload a valid .csv file.");
+      }
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.name.endsWith(".csv")) {
+        setImportFile(file);
+        setImportError(null);
+      } else {
+        setImportError("Please upload a valid .csv file.");
+      }
+    }
+  };
+
+  const handleImportSubmit = async (e) => {
+    e.preventDefault();
+    if (!importFile) {
+      setImportError("Please select a CSV file first.");
+      return;
+    }
+    setImporting(true);
+    setImportSummary(null);
+    setImportError(null);
+    try {
+      const summary = await importEquipmentCsv(importFile);
+      setImportSummary(summary);
+      if (summary.successCount > 0) {
+        fetchEquipment();
+      }
+    } catch (err) {
+      console.error("Import failed:", err);
+      setImportError(err.response?.data?.message || "Failed to process import. Please check template columns.");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const mergeEquipment = (fetchedEquipment = []) => {
     const equipmentMap = new Map();
@@ -131,6 +218,10 @@ export default function EquipmentList({ onNavigate }) {
     setDetailsLoading(true);
     setDetailsError(null);
     setEquipmentDetails(null);
+    setQrCode(null);
+    setQrError(null);
+
+    const isFallbackItem = String(id).startsWith("EQ-00");
 
     try {
       const publicEquipmentDetails = PUBLIC_EQUIPMENT.find(
@@ -139,11 +230,24 @@ export default function EquipmentList({ onNavigate }) {
 
       if (publicEquipmentDetails) {
         setEquipmentDetails(publicEquipmentDetails);
-        return;
+      } else {
+        const data = await getEquipmentById(id);
+        setEquipmentDetails(data);
       }
 
-      const data = await getEquipmentById(id);
-      setEquipmentDetails(data);
+      // Fetch QR Code if it's a database item
+      if (!isFallbackItem) {
+        setQrLoading(true);
+        try {
+          const qrData = await getEquipmentQrCode(id);
+          setQrCode(qrData.qrCode);
+        } catch (err) {
+          console.error("Failed to load QR code", err);
+          setQrError("QR Code generation failed");
+        } finally {
+          setQrLoading(false);
+        }
+      }
     } catch (error) {
       console.error("Error fetching equipment details:", error);
       const errMsg =
@@ -248,12 +352,25 @@ export default function EquipmentList({ onNavigate }) {
           </select>
 
           {user?.role === "hospital" && (
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg text-base font-semibold cursor-pointer shadow-md transition-colors"
-              onClick={() => onNavigate("add-equipment")}
-            >
-              + Add Equipment
-            </button>
+            <div className="flex gap-2">
+              <button
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-subtle px-6 py-3 rounded-lg text-base font-semibold cursor-pointer shadow-sm transition-colors"
+                onClick={() => {
+                  setImportFile(null);
+                  setImportSummary(null);
+                  setImportError(null);
+                  setShowImportModal(true);
+                }}
+              >
+                📥 Bulk Import
+              </button>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg text-base font-semibold cursor-pointer shadow-md transition-colors"
+                onClick={() => onNavigate("add-equipment")}
+              >
+                + Add Equipment
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -353,12 +470,20 @@ export default function EquipmentList({ onNavigate }) {
                   {/* Hide delete button for default public items */}
                   {user?.role === "hospital" &&
                     !String(item.id).startsWith("EQ-00") && (
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer font-semibold text-sm transition-colors hover:bg-red-100 dark:hover:bg-red-900/40"
-                      >
-                        Delete
-                      </button>
+                      <>
+                        <button
+                          onClick={() => onNavigate("edit-equipment", item.id)}
+                          className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white border-none rounded-lg cursor-pointer font-semibold text-sm transition-colors shadow-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer font-semibold text-sm transition-colors hover:bg-red-100 dark:hover:bg-red-900/40"
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
                 </div>
               </div>
@@ -454,6 +579,49 @@ export default function EquipmentList({ onNavigate }) {
                   </div>
                 </div>
 
+                {/* QR Code Section */}
+                <div className="mt-6 mb-6 p-4 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-subtle flex flex-col items-center justify-center gap-3">
+                  <span className="text-[11px] text-secondary font-bold uppercase tracking-wider text-center">
+                    Physical Asset QR Tag
+                  </span>
+                  {qrLoading && (
+                    <div className="w-32 h-32 flex items-center justify-center border border-dashed border-subtle rounded-xl bg-surface">
+                      <div className="w-6 h-6 border-2 border-subtle border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  {qrError && (
+                    <div className="w-32 h-32 flex flex-col items-center justify-center border border-dashed border-red-200 text-red-500 text-xs text-center p-2 rounded-xl bg-red-50/50">
+                      <span>⚠️</span>
+                      <span className="mt-1 font-semibold">{qrError}</span>
+                    </div>
+                  )}
+                  {qrCode && (
+                    <div className="flex flex-col items-center gap-3 w-full">
+                      <img
+                        src={`data:image/png;base64,${qrCode}`}
+                        alt="Equipment QR Code"
+                        className="w-40 h-40 object-contain border border-subtle p-2 rounded-xl bg-white shadow-sm"
+                      />
+                      <button
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = `data:image/png;base64,${qrCode}`;
+                          link.download = `QR-${equipmentDetails.name.replace(/\s+/g, "-")}-${equipmentDetails.id}.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white border-none rounded-lg cursor-pointer text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                      >
+                        📥 Download QR Tag
+                      </button>
+                    </div>
+                  )}
+                  {!qrCode && !qrLoading && !qrError && (
+                    <span className="text-xs text-slate-400 font-medium">QR code not available for default public items</span>
+                  )}
+                </div>
+
                 <div className="flex justify-end">
                   <button
                     onClick={() => setSelectedEquipmentId(null)}
@@ -464,6 +632,138 @@ export default function EquipmentList({ onNavigate }) {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* CSV Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-card rounded-3xl p-8 max-w-2xl w-full shadow-2xl relative border border-subtle">
+            <button
+              onClick={() => setShowImportModal(false)}
+              className="absolute top-5 right-5 w-9 h-9 rounded-full bg-hover text-secondary border-none flex items-center justify-center text-xl font-bold cursor-pointer transition-colors hover:bg-subtle"
+            >
+              &times;
+            </button>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
+                📥
+              </div>
+              <div>
+                <h2 className="text-2xl font-extrabold text-primary m-0">
+                  Bulk CSV Import
+                </h2>
+                <p className="text-secondary text-sm mt-1">
+                  Onboard multiple medical assets in a single batch.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className="space-y-6">
+              <div
+                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${
+                  dragActive ? "border-blue-600 bg-blue-50/20" : "border-subtle hover:bg-hover"
+                }`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("csv-file-input").click()}
+              >
+                <input
+                  id="csv-file-input"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <span className="text-4xl">📊</span>
+                {importFile ? (
+                  <div className="text-center">
+                    <p className="text-primary font-bold text-base">{importFile.name}</p>
+                    <p className="text-secondary text-xs mt-1">{(importFile.size / 1024).toFixed(2)} KB</p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-primary font-bold text-sm">Drag and drop your CSV file here, or click to browse</p>
+                    <p className="text-secondary text-xs mt-1">Only .csv files are supported</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between items-center bg-hover p-4 rounded-xl text-sm">
+                <span className="text-secondary font-medium">Need the correct column structure?</span>
+                <button
+                  type="button"
+                  onClick={downloadCsvTemplate}
+                  className="text-blue-600 dark:text-blue-400 font-bold border-none bg-transparent hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  📥 Download CSV Template
+                </button>
+              </div>
+
+              {importError && (
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm font-semibold">
+                  ⚠️ {importError}
+                </div>
+              )}
+
+              {importSummary && (
+                <div className="border border-subtle rounded-2xl p-5 bg-hover space-y-4 max-h-60 overflow-y-auto">
+                  <h4 className="text-base font-bold text-primary m-0 flex items-center gap-2">
+                    📊 Import Summary
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 p-3 rounded-xl text-center">
+                      <span className="text-emerald-600 dark:text-emerald-400 text-2xl font-extrabold">{importSummary.successCount}</span>
+                      <p className="text-[11px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold mt-1 mb-0">Succeeded</p>
+                    </div>
+                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 p-3 rounded-xl text-center">
+                      <span className="text-rose-600 dark:text-rose-400 text-2xl font-extrabold">{importSummary.failureCount}</span>
+                      <p className="text-[11px] uppercase tracking-wider text-rose-600 dark:text-rose-400 font-bold mt-1 mb-0">Failed</p>
+                    </div>
+                  </div>
+
+                  {importSummary.failures && importSummary.failures.length > 0 && (
+                    <div className="pt-2">
+                      <span className="text-xs text-secondary font-bold uppercase tracking-wider">Failed Row Log</span>
+                      <div className="mt-2 space-y-2">
+                        {importSummary.failures.map((f, i) => (
+                          <div key={i} className="text-xs border-b border-subtle pb-2 last:border-none">
+                            <div className="flex justify-between font-bold text-red-600">
+                              <span>Row {f.rowNumber}</span>
+                              <span>{f.reason}</span>
+                            </div>
+                            <code className="block mt-1 text-slate-500 bg-surface p-1 rounded font-mono overflow-x-auto truncate">
+                              {f.rowData}
+                            </code>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-6 py-3 text-secondary font-bold hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={importing || !importFile}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl border-none cursor-pointer shadow-md transition-colors disabled:opacity-50"
+                >
+                  {importing ? "Processing..." : "Start Import"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

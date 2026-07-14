@@ -72,6 +72,7 @@ public class UserServiceTest {
         ReflectionTestUtils.setField(refreshTokenService, "refreshExpirationDays", 7L);
         userService = new UserService(userRepository, passwordEncoder, jwtUtil, refreshTokenService, authenticationManager, passwordResetTokenRepository, emailService, kafkaEventPublisher);
         ReflectionTestUtils.setField(userService, "lockDurationMinutes", 30);
+        ReflectionTestUtils.setField(userService, "jwtExpirationMs", 900000L);
     }
 
     @Test

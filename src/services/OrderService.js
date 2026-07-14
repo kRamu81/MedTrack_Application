@@ -28,3 +28,23 @@ export const updateOrderStatus = async (id, status, notes = "") => {
 
   return response.data;
 };
+
+// Fetch supplier scorecard KPI metrics
+export const getSupplierMetrics = async () => {
+  const response = await API.get("/api/orders/supplier/metrics");
+  return response.data;
+};
+
+// Download commercial invoice as PDF blob
+export const downloadInvoicePdf = async (id) => {
+  const response = await API.get(`/api/orders/${id}/invoice.pdf`, {
+    responseType: "blob"
+  });
+  return response.data;
+};
+
+// Email invoice to hospital admin
+export const emailInvoice = async (id) => {
+  const response = await API.post(`/api/orders/${id}/invoice/email`);
+  return response.data;
+};

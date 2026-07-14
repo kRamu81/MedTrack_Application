@@ -24,6 +24,7 @@ export default function Navbar({ onNavigate, currentPage }) {
   { label: "Suppliers", page: "suppliers" },
   { label: "Blog", page: "blog" },
   { label: "For employers", page: "about" },
+  { label: "Careers", page: "careers" },
 ];
 
   // Dashboard links after login

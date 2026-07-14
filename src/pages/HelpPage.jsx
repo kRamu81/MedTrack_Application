@@ -512,7 +512,7 @@ export default function HelpPage({ onNavigate }) {
                       key={idx}
                       className="bg-card border border-subtle rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-200"
                     >
-                      <div className="aspect-video bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center relative">
+                      <div className="aspect-video bg-slate-100 dark:bg-slate-800/55 flex items-center justify-center relative">
                         <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center text-lg font-bold shadow-lg cursor-pointer hover:scale-105 transition-transform">
                           ▶
                         </div>

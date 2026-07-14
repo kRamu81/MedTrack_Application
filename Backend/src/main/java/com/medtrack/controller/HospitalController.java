@@ -11,6 +11,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for managing hospital profiles.
+ * Provides endpoints for creating and managing
+ * hospital-related information.
+ */
 @RestController
 @RequestMapping("/api/hospital")
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -20,7 +25,12 @@ public class HospitalController {
     private final HospitalService hospitalService;
 
     /**
-     * Create a hospital profile linked to the authenticated user.
+     * Creates a hospital profile for the authenticated hospital user.
+     * Accessible only to users with the HOSPITAL role.
+     *
+     * @param hospital the hospital profile details to be created
+     * @return the newly created hospital profile with HTTP 201 Created,
+     *         or HTTP 400 Bad Request if profile creation fails
      */
     @PostMapping("/create")
     @PreAuthorize("hasRole('HOSPITAL')")
@@ -28,8 +38,6 @@ public class HospitalController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
-
-        Hospital createdHospital = hospitalService.createHospitalProfile(hospital, userEmail);
 
         try {
             Hospital createdHospital = hospitalService.createHospitalProfile(hospital, userEmail);

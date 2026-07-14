@@ -6,18 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LoginResponse is the exact JSON payload returned by POST /api/auth/login.
- *
- * <p>Shape:
- * <pre>
- * {
- *   "success": true,
- *   "message": "Login successful",
- *   "user": { "id", "name", "email", "phone", "organization", "role" },
- *   "token": "jwt_token_here"
- * }
- * </pre>
- * </p>
+ * Data Transfer Object representing the JSON payload returned upon successful credentials verification.
+ * Encapsulates verification status, contextual message, user profile metadata, and the bearer access token.
  */
 @Data
 @Builder
@@ -25,20 +15,28 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginResponse {
 
-    /** Always {@code true} on a 200 response. */
+    /**
+     * Session validation status indicator.
+     */
     private boolean success;
 
-    /** Human-readable status message. */
+    /**
+     * Contextual session verification response message.
+     */
     private String message;
 
-    /** Nested user profile object. */
+    /**
+     * Nested profile metadata matching the authenticated entity.
+     */
     private UserPayload user;
 
-    /** Signed JWT access token. */
+    /**
+     * Signed short-lived authentication token for secure route headers.
+     */
     private String token;
 
     /**
-     * Nested user profile embedded inside the login response.
+     * Nested class containing profile details exposed to client applications.
      */
     @Data
     @Builder
@@ -46,22 +44,22 @@ public class LoginResponse {
     @AllArgsConstructor
     public static class UserPayload {
 
-        /** Database primary key of the user. */
+        /** Database primary key identifier. */
         private Long id;
 
-        /** Full display name. */
+        /** Full name display value. */
         private String name;
 
-        /** Login email address. */
+        /** Registered email contact. */
         private String email;
 
-        /** Optional phone number. */
+        /** Optional phone contact. */
         private String phone;
 
-        /** Optional organisation / clinic name. */
+        /** Assigned hospital organization or affiliate identity. */
         private String organization;
 
-        /** Uppercase role string: HOSPITAL | TECHNICIAN | SUPPLIER. */
+        /** Access privileges role claim. */
         private String role;
     }
 }

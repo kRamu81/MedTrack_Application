@@ -86,6 +86,7 @@ public class PasswordResetTest {
                 .build();
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findByEmailAndUsed(email, false)).thenReturn(java.util.Collections.emptyList());
         when(passwordResetTokenRepository.save(any(PasswordResetToken.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -232,6 +233,7 @@ public class PasswordResetTest {
         assertTrue(token.isUsed());
         verify(userRepository).save(user);
         verify(passwordResetTokenRepository).save(token);
+        verify(refreshTokenRepository).deleteByUserId(user.getId());
     }
 
     @Test
@@ -255,5 +257,63 @@ public class PasswordResetTest {
         assertEquals("OTP has not been verified", ex.getMessage());
         verify(userRepository, never()).save(any());
         verify(passwordResetTokenRepository, never()).save(any());
+    }
+
+    @Test
+    void forgotPassword_InvalidatesOldTokens() {
+        String email = "test@example.com";
+        ForgotPasswordRequest request = new ForgotPasswordRequest(email);
+
+        User user = User.builder()
+                .id(1L)
+                .email(email)
+                .name("Test User")
+                .accountStatus(AccountStatus.ACTIVE)
+                .build();
+
+        PasswordResetToken oldToken = PasswordResetToken.builder()
+                .email(email)
+                .otp("654321")
+                .used(false)
+                .build();
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findByEmailAndUsed(email, false))
+                .thenReturn(new java.util.ArrayList<>(java.util.List.of(oldToken)));
+        when(passwordResetTokenRepository.save(any(PasswordResetToken.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.forgotPassword(request);
+
+        assertTrue(oldToken.isUsed());
+        verify(passwordResetTokenRepository).saveAll(any());
+    }
+
+    @Test
+    void forgotPassword_NormalizesEmail_Success() {
+        String email = " Test@Example.Com ";
+        String normalizedEmail = "test@example.com";
+        ForgotPasswordRequest request = new ForgotPasswordRequest(email);
+
+        User user = User.builder()
+                .id(1L)
+                .email(normalizedEmail)
+                .name("Test User")
+                .accountStatus(AccountStatus.ACTIVE)
+                .build();
+
+        when(userRepository.findByEmail(normalizedEmail)).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findByEmailAndUsed(normalizedEmail, false)).thenReturn(java.util.Collections.emptyList());
+        when(passwordResetTokenRepository.save(any(PasswordResetToken.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.forgotPassword(request);
+
+        ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
+        verify(passwordResetTokenRepository).save(tokenCaptor.capture());
+        PasswordResetToken token = tokenCaptor.getValue();
+
+        assertEquals(normalizedEmail, token.getEmail());
+        verify(userRepository).findByEmail(normalizedEmail);
     }
 }
