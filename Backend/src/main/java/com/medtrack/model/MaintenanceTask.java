@@ -9,7 +9,9 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,6 +40,8 @@ public class MaintenanceTask {
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "equipment_record_id")
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Equipment equipmentRecord;
 
     private String hospital;
