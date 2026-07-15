@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateTask, getTaskById } from "../../services/MaintenanceService";
 import { useAuth } from "../../context/AuthContext";
 
@@ -19,7 +19,11 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
     parts: initialTask?.partsUsed ? initialTask.partsUsed.split(", ") : [],
     hours: initialTask?.hoursWorked || "",
     image: null,
+    recurrencePeriodDays: initialTask?.recurrencePeriodDays || "0",
   });
+
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const [part, setPart] = useState("");
   const [preview, setPreview] = useState(null);
@@ -40,6 +44,7 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
         parts: task.partsUsed ? task.partsUsed.split(", ") : [],
         hours: task.hoursWorked || "",
         image: null,
+        recurrencePeriodDays: task.recurrencePeriodDays || "0",
       });
       setTaskIdInput(task.id || "");
     }
@@ -105,6 +110,52 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
     setPreview(URL.createObjectURL(file));
   };
 
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#0f172a"; // slate-900 line color
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = "round";
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -114,11 +165,29 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
       setSyncing(true);
       setError(null);
 
+      let signatureData = null;
+      if (form.status === "Completed") {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          const buffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+          const isBlank = !buffer.some(color => color !== 0);
+          if (isBlank) {
+            setError("Technician signature is required to complete this task.");
+            setSyncing(false);
+            return;
+          }
+          signatureData = canvas.toDataURL("image/png");
+        }
+      }
+
       const payload = {
         status: form.status,
         notes: form.notes,
         partsUsed: form.parts.join(", "),
-        hoursWorked: form.hours,
+        hoursWorked: form.hours ? parseFloat(form.hours) : null,
+        signature: signatureData,
+        recurrencePeriodDays: parseInt(form.recurrencePeriodDays, 10) || 0,
       };
 
       await updateTask(task.id, payload);
@@ -228,7 +297,7 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
                     </select>
                   </div>
 
-                  <div>
+                   <div>
                     <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
                       Time Invested Hours
                     </label>
@@ -246,6 +315,29 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
                       disabled={!isTechnician}
                       className="w-full p-4 bg-slate-50 border rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 disabled:opacity-70"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                      Preventive Maintenance Recurrence
+                    </label>
+                    <select
+                      value={form.recurrencePeriodDays}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          recurrencePeriodDays: e.target.value,
+                        }))
+                      }
+                      disabled={!isTechnician}
+                      className="w-full p-4 bg-slate-50 border rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 disabled:opacity-70"
+                    >
+                      <option value="0">One-Time (No Recurrence)</option>
+                      <option value="30">Every 30 Days (Monthly)</option>
+                      <option value="90">Every 90 Days (Quarterly)</option>
+                      <option value="180">Every 180 Days (Bi-Annual)</option>
+                      <option value="365">Every 365 Days (Annual)</option>
+                    </select>
                   </div>
 
                   <div>
@@ -319,6 +411,39 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
                       ))}
                     </div>
                   </div>
+
+                  {form.status === "Completed" && (
+                    <div className="border border-slate-200 p-5 rounded-2xl bg-slate-50 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <label className="block text-xs font-black uppercase tracking-widest text-slate-500">
+                          Technician Signature Sign-Off (Required)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={clearSignature}
+                          className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold border-none rounded-md cursor-pointer transition-colors"
+                        >
+                          Clear Pad
+                        </button>
+                      </div>
+                      <canvas
+                        ref={canvasRef}
+                        width={500}
+                        height={140}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        className="w-full bg-white border border-slate-300 rounded-xl cursor-crosshair shadow-inner"
+                      />
+                      <span className="text-[10px] text-slate-400 font-medium block">
+                        Sign inside the box using mouse pointer or touch screen.
+                      </span>
+                    </div>
+                  )}
 
                   {isTechnician ? (
                     <div className="pt-4 border-t border-slate-100 flex flex-col md:flex-row gap-4 items-center">
@@ -404,6 +529,19 @@ export default function UpdateTask({ onNavigate, task: initialTask }) {
                     {task.description || "No description provided."}
                   </p>
                 </div>
+
+                {task.signature && (
+                  <div>
+                    <span className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
+                      Technician Signature Sign-off
+                    </span>
+                    <img
+                      src={task.signature}
+                      alt="Technician Signature"
+                      className="w-full max-w-[200px] h-auto object-contain bg-white border border-slate-700 p-2 rounded-xl mt-1"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

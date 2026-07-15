@@ -218,11 +218,12 @@ export default function Dashboard({ onNavigate }) {
         {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-lg font-bold text-primary mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
               { label: "Add Equipment", page: "add-equipment", icon: "➕", desc: "New Inventory Item", hospitalOnly: true },
               { label: "Schedule Service", page: "schedule-maintenance", icon: "📅", desc: "Plan Maintenance", hospitalOnly: true },
               { label: "Request Order", page: "request-equipment", icon: "📦", desc: "Place Equipment Order", hospitalOnly: true },
+              { label: "View Analytics", page: "analytics", icon: "📊", desc: "BI & Intelligence Hub", hospitalOnly: true },
               { label: "View Inventory", page: "equipment", icon: "📋", desc: "Full Equipment List", hospitalOnly: false },
             ].filter(action => !action.hospitalOnly || user?.role === "hospital").map((action) => (
               <button

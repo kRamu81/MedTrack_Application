@@ -89,6 +89,38 @@ public class EquipmentController {
     }
 
     /**
+     * Imports equipment from an uploaded CSV file.
+     * Accessible only to users with the HOSPITAL role.
+     *
+     * @param file the CSV file to import
+     * @param principal the authenticated user's security principal
+     * @return the import summary
+     */
+    @PostMapping("/import")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    public ResponseEntity<com.medtrack.dto.EquipmentImportSummary> importEquipment(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            Principal principal) {
+        return ResponseEntity.ok(equipmentService.importEquipmentFromCsv(file, principal.getName()));
+    }
+
+    /**
+     * Generates a QR Code for a specific equipment record.
+     * Accessible to any authenticated user.
+     *
+     * @param id the equipment identifier
+     * @param principal the authenticated user's security principal
+     * @return a JSON object containing the base64 encoded QR Code string
+     */
+    @GetMapping("/{id}/qr-code")
+    public ResponseEntity<java.util.Map<String, String>> getQrCode(
+            @PathVariable Long id,
+            Principal principal) {
+        String base64Qr = equipmentService.generateQrCodeBase64(id, principal.getName());
+        return ResponseEntity.ok(java.util.Map.of("qrCode", base64Qr));
+    }
+
+    /**
      * Validates that a resource ID is a positive number.
      *
      * @param id the resource identifier

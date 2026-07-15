@@ -1,6 +1,7 @@
 package com.medtrack.controller;
 
 import com.medtrack.model.EquipmentOrder;
+import com.medtrack.dto.SupplierMetricsDto;
 import com.medtrack.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -40,6 +41,16 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(orders);
+    }
+
+    /**
+     * Retrieves KPI scorecard metrics for suppliers (on-time rate, averages, counts).
+     *
+     * @return the calculated supplier metrics DTO
+     */
+    @GetMapping("/supplier/metrics")
+    public ResponseEntity<SupplierMetricsDto> getSupplierMetrics() {
+        return ResponseEntity.ok(orderService.getSupplierMetrics());
     }
 
     /**
@@ -109,6 +120,41 @@ public class OrderController {
 
         validateId(id);
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status, notes));
+    }
+
+    /**
+     * Downloads the commercial invoice for the order as a PDF document.
+     * Accessible to both HOSPITAL and SUPPLIER roles.
+     *
+     * @param id the order identifier
+     * @return a PDF file containing the commercial invoice
+     */
+    @GetMapping("/{id}/invoice.pdf")
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable Long id) {
+        EquipmentOrder order = orderService.getOrderById(id);
+        byte[] pdf = orderService.generateInvoicePdf(id);
+        String orderCode = order.getOrderCode() == null ? String.valueOf(id) : order.getOrderCode();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=invoice-" + orderCode + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    /**
+     * Emails the commercial invoice to the hospital admin who created the order.
+     * Accessible only to the SUPPLIER role.
+     *
+     * @param id the order identifier
+     * @return HTTP 200 OK when email is sent successfully
+     */
+    @PostMapping("/{id}/invoice/email")
+    @PreAuthorize("hasRole('SUPPLIER')")
+    public ResponseEntity<Void> emailInvoice(@PathVariable Long id) {
+        orderService.emailInvoice(id);
+        return ResponseEntity.ok().build();
     }
 
     /**

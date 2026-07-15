@@ -24,9 +24,9 @@ The current backend can create, fetch, update, and delete maintenance tasks thro
 
 ### MaintenanceTask.java
 
-`MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used. Its `status` field now uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`.
+`MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used. Its `status` field uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`. It also stores `hospitalId`, which is populated by the backend and used as a stable ownership key.
 
-Current limitation: equipment, hospital, and technician details are mostly stored as plain text. The task is not yet properly connected to the `Equipment` entity through a database relationship.
+The task now keeps the existing API-facing equipment code/name fields and also stores a lazy `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. Technician assignment remains an email string, but scheduling now verifies that a supplied account exists and has the technician role.
 
 ### MaintenanceTaskRepository.java
 
@@ -36,9 +36,14 @@ It also defines simple query methods:
 
 - `findByTaskCode(String taskCode)`
 - `findByAssignedTechnician(String assignedTechnician)`
+- `findByHospitalId(Long hospitalId)`
+- `findByIdAndHospitalId(Long id, Long hospitalId)`
+- `findByIdAndAssignedTechnician(Long id, String assignedTechnician)`
 - `findByStatus(MaintenanceStatus status)`
 
-Current limitation: it does not yet provide equipment-based, hospital-based, or strongly user-based maintenance queries.
+The hospital and technician ownership queries are already used by the service to prevent one user from reading or changing another user's tasks.
+
+An ownership-scoped equipment-history query is now available through `findByEquipmentRecord_IdAndHospitalId`. Technician queries remain email-based because the authenticated technician identity and current frontend assignment field are both emails.
 
 ### MaintenanceStatus.java
 
@@ -58,13 +63,21 @@ The enum uses Jackson conversion annotations so the REST API continues to accept
 
 It currently supports:
 
-- fetching all tasks
-- fetching one task by id
-- scheduling a task
-- updating a task
-- deleting a task
+- fetching only the authenticated hospital's or technician's tasks
+- fetching one task only when it belongs to the authenticated hospital or assigned technician
+- scheduling a task with hospital ownership derived from the authenticated user
+- always generating the task code on the server
+- allowing a technician to update only a task assigned to their login email
+- allowing a hospital to delete only its own task
+- resolving maintenance against equipment owned by the authenticated hospital
+- validating scheduling fields and assigned technician accounts
+- enforcing the documented status lifecycle and non-negative work values
+- preventing edits after completion
+- persisting technician reports including parts and signatures
+- creating one recurring task only when a task transitions to `COMPLETED`
+- exporting hospital tasks as an iCalendar feed
 
-Current limitation: scheduling does not verify that the equipment exists, does not check hospital ownership, does not validate allowed status transitions, and does not verify technician assignment. Updating also does not currently persist all technician report fields consistently.
+Current limitation: the API still uses the entity as its request model, although the service clears client-controlled identity, ownership, status, and report fields before insert. Dedicated create/update DTOs can be introduced later if the public API expands.
 
 ### MaintenanceController.java
 
@@ -77,8 +90,11 @@ Current endpoints:
 - `POST /api/maintenance`
 - `PUT /api/maintenance/{id}`
 - `DELETE /api/maintenance/{id}`
+- `GET /api/maintenance/export/calendar.ics`
 
-Current limitation: the controller is a thin CRUD layer. It does not yet support filtered queries such as technician-specific or equipment-specific maintenance records.
+The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The list endpoint is already automatically scoped to the authenticated hospital or technician.
+
+Scheduling requests now use Bean Validation. Technician updates use service-level validation because their partial payload intentionally does not contain required scheduling fields. Optional status and equipment filters are not yet exposed.
 
 ## Target Design
 
@@ -107,13 +123,15 @@ One Equipment can have many MaintenanceTask records.
 Many MaintenanceTask records belong to one Equipment.
 ```
 
-Future backend mapping should use:
+The backend mapping now uses a dedicated relationship field while retaining the legacy API fields:
 
 ```java
 @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "equipment_id", nullable = false)
-private Equipment equipment;
+@JoinColumn(name = "equipment_record_id")
+private Equipment equipmentRecord;
 ```
+
+The relationship remains nullable temporarily so existing database rows can be backfilled before a non-null constraint is introduced.
 
 This will make maintenance records depend on real equipment records instead of only storing equipment details as strings.
 
@@ -198,11 +216,13 @@ PUT     technician users
 DELETE  hospital users
 ```
 
-Future service-level checks should also ensure:
+Current service-level checks ensure:
 
-- hospitals only schedule maintenance for equipment they own
-- technicians only update assigned tasks
-- unauthenticated users cannot access maintenance records
+- hospitals can list, read, and delete only their own maintenance tasks
+- technicians can list, read, and update only tasks assigned to their login email
+- hospital ownership is derived from the authenticated user rather than request JSON
+
+Additional future security work can replace the email assignment string with a direct `User` relationship. Unauthenticated access remains enforced by Spring Security.
 
 ## Integration Notes
 
@@ -227,16 +247,39 @@ The current frontend field names should be preserved unless frontend changes are
 
 ## Next Implementation Steps
 
-1. [Completed] Add a `MaintenanceStatus` enum.
-2. [Completed] Refactor `MaintenanceTask` to use the enum for status.
-3. Improve `MaintenanceTask` relationship with `Equipment`.
-4. Add repository query methods for filters.
-5. Improve scheduling logic in `MaintenanceService`.
-6. Improve technician update logic in `MaintenanceService`.
-7. Add validation for required fields and invalid status transitions.
-8. Improve exception messages and HTTP responses.
-9. Verify role-based authorization using backend tests or Postman.
-10. Connect the hospital maintenance list page to backend data.
+### Verified completed
+
+- [x] Add a `MaintenanceStatus` enum.
+- [x] Refactor `MaintenanceTask.status` to use `MaintenanceStatus` with `EnumType.STRING`.
+- [x] Add a server-controlled `hospitalId` ownership key to `MaintenanceTask`.
+- [x] Add hospital-, technician-, and status-based repository query methods.
+- [x] Scope list and item reads to the authenticated hospital or assigned technician.
+- [x] Derive the scheduling hospital from the authenticated user instead of request JSON.
+- [x] Scope task deletion to the authenticated hospital.
+- [x] Scope technician updates to tasks assigned to the authenticated technician.
+- [x] Persist technician updates for `status`, `notes`, and `hoursWorked`.
+- [x] Apply controller role guards and positive-ID validation.
+- [x] Link new maintenance tasks to hospital-owned equipment records.
+- [x] Validate scheduling fields and technician assignment.
+- [x] Prevent client-controlled task identity, ownership, and initial report state.
+- [x] Enforce valid status transitions, non-negative work values, and completion immutability.
+- [x] Prevent duplicate recurring tasks after completion.
+
+### Completed on 2026-07-14
+
+1. [x] **Connected maintenance to real equipment and secured scheduling.** Added a lazy equipment relationship and an ownership-scoped history query. Scheduling resolves either the canonical equipment code or the numeric ID currently sent by the UI, verifies hospital ownership, validates required fields and technician roles, and replaces all client-supplied identity/ownership values with server values.
+2. [x] **Validated technician updates and recurrence.** Technician report fields persist, negative hours/recurrence are rejected, status transitions follow the documented lifecycle, completed records are immutable, and recurrence is created exactly once on the transition to `COMPLETED`.
+
+Focused verification is implemented in `MaintenanceServiceTest`: owned-equipment scheduling, cross-hospital rejection, technician ownership, negative-hour rejection, completion immutability, recurrence creation, calendar export, scoped lists, and scoped deletion.
+
+### Recommended future work
+
+- [ ] Add controller integration tests for validation and role guards.
+- [ ] Add optional status and equipment filters without weakening ownership scoping.
+- [ ] Decide whether to add a `CANCELLED` status.
+- [ ] Replace the technician email string with a direct `User` relationship.
+- [ ] Add a database migration/backfill for legacy maintenance rows before making the equipment relationship non-nullable.
+- [ ] Connect and verify the hospital maintenance list page against the backend API.
 
 ## Definition Of Done For Design Step
 

@@ -7,6 +7,10 @@ import Footer from "./components/common/Footer";
 import AppRoutes from "./routes/AppRoutes";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import GuidelinesPage from "./pages/GuidelinesPage";
+import HelpPage from "./pages/HelpPage";
+import AwardsPage from "./pages/AwardsPage";
+import TermsPage from "./pages/TermsPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -31,6 +35,13 @@ const getRouteStateFromPath = () => {
     };
   }
 
+  if (path.startsWith("apply/")) {
+    return {
+      page: "apply",
+      data: decodeURIComponent(path.slice("apply/".length)),
+    };
+  }
+
   const routeMap = {
     blog: "blog",
     register: "register",
@@ -52,6 +63,10 @@ const getRouteStateFromPath = () => {
     orderstatus: "orderstatus",
     about: "about",
     contact: "contact",
+    guidelines: "guidelines",
+    help: "help",
+    awards: "awards",
+    terms: "terms",
   };
 
   return {
@@ -78,6 +93,8 @@ function AppContent() {
         ? `${basePath}/blog/${encodeURIComponent(data)}`
         : page === "edit-equipment" && data
         ? `${basePath}/edit-equipment/${encodeURIComponent(data)}`
+        : page === "apply" && data
+        ? `${basePath}/apply/${encodeURIComponent(data)}`
         : `${basePath}/${page}`;
 
     window.history.pushState({}, "", nextPath);
@@ -101,6 +118,7 @@ function AppContent() {
     "forgot-password",
     "verify-otp",
     "reset-password",
+    "apply"
   ];
   const isAuthPage = noLayoutPages.includes(currentPage);
 
@@ -119,6 +137,14 @@ function AppContent() {
             <AboutPage />
           ) : currentPage === "contact" ? (
             <ContactPage />
+          ) : currentPage === "guidelines" ? (
+            <GuidelinesPage />
+          ) : currentPage === "help" ? (
+            <HelpPage />
+          ) : currentPage === "awards" ? (
+            <AwardsPage />
+          ) : currentPage === "terms" ? (
+            <TermsPage />
           ) : (
             <AppRoutes
               currentPage={currentPage}
@@ -128,7 +154,7 @@ function AppContent() {
           )}
         </main>
 
-        {!isAuthPage && <Footer />}
+        {!isAuthPage && <Footer onNavigate={handleNavigate} />}
       </div>
     </ReactLenis>
   );

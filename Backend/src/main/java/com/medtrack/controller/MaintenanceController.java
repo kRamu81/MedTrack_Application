@@ -2,6 +2,7 @@ package com.medtrack.controller;
 
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.service.MaintenanceService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +67,8 @@ public class MaintenanceController {
      */
     @PostMapping
     @PreAuthorize("hasRole('HOSPITAL')")
-    public ResponseEntity<MaintenanceTask> scheduleTask(@RequestBody MaintenanceTask task,
+    // Bean validation rejects malformed scheduling requests before business logic runs.
+    public ResponseEntity<MaintenanceTask> scheduleTask(@Valid @RequestBody MaintenanceTask task,
                                                         Authentication authentication) {
         MaintenanceTask createdTask = maintenanceService.scheduleTask(task, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
@@ -103,6 +105,22 @@ public class MaintenanceController {
         validateId(id);
         maintenanceService.deleteTask(id, authentication);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Exports all maintenance tasks for the logged-in hospital in RFC-5545 iCalendar format.
+     * Accessible only to users with the HOSPITAL role.
+     *
+     * @return the raw calendar feed content (.ics)
+     */
+    @GetMapping("/export/calendar.ics")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    public ResponseEntity<String> exportCalendar(Authentication authentication) {
+        String icalFeed = maintenanceService.exportTasksToICal(authentication);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/calendar; charset=utf-8")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"maintenance.ics\"")
+                .body(icalFeed);
     }
 
     /**

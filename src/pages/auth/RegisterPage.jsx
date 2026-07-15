@@ -59,9 +59,9 @@ const roles = [
   },
 ];
 
-export default function RegisterPage({ onNavigate }) {
+export default function RegisterPage({ onNavigate, defaultRole }) {
   const { login } = useAuth();
-  const [selectedRole, setSelectedRole] = useState("Hospital");
+  const [selectedRole, setSelectedRole] = useState(defaultRole || "Hospital");
   const [fullName, setFullName] = useState("");
   const [hospitalName, setHospitalName] = useState("");
   const [email, setEmail] = useState("");
