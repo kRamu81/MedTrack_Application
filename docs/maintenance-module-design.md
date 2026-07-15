@@ -133,6 +133,8 @@ private Equipment equipmentRecord;
 
 The relationship remains nullable temporarily so existing database rows can be backfilled before a non-null constraint is introduced.
 
+The relationship is excluded from Lombok-generated `toString`, `equals`, and `hashCode` traversal. This avoids accidentally initializing the lazy equipment proxy or recursing through connected JPA entities while preserving the legacy JSON contract through `@JsonIgnore`.
+
 This will make maintenance records depend on real equipment records instead of only storing equipment details as strings.
 
 ## Status Lifecycle
@@ -267,7 +269,7 @@ The current frontend field names should be preserved unless frontend changes are
 
 ### Completed on 2026-07-14
 
-1. [x] **Connected maintenance to real equipment and secured scheduling.** Added a lazy equipment relationship and an ownership-scoped history query. Scheduling resolves either the canonical equipment code or the numeric ID currently sent by the UI, verifies hospital ownership, validates required fields and technician roles, and replaces all client-supplied identity/ownership values with server values.
+1. [x] **Connected maintenance to real equipment and secured scheduling.** Added a lazy equipment relationship and an ownership-scoped history query. Scheduling resolves either the canonical equipment code or, only when no matching code exists, the numeric ID currently sent by the UI. It verifies hospital ownership without reinterpreting another hospital's numeric-looking equipment code, validates required fields and technician roles, and replaces all client-supplied identity/ownership values with server values.
 2. [x] **Validated technician updates and recurrence.** Technician report fields persist, negative hours/recurrence are rejected, status transitions follow the documented lifecycle, completed records are immutable, and recurrence is created exactly once on the transition to `COMPLETED`.
 
 Focused verification is implemented in `MaintenanceServiceTest`: owned-equipment scheduling, cross-hospital rejection, technician ownership, negative-hour rejection, completion immutability, recurrence creation, calendar export, scoped lists, and scoped deletion.

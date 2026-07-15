@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -152,9 +153,18 @@ public class MaintenanceService {
 
     private Equipment resolveOwnedEquipment(String equipmentReference, Long hospitalId) {
         // Prefer the stable equipment code, while accepting the numeric ID used by the current UI.
-        Equipment equipment = equipmentRepository.findByEquipmentCode(equipmentReference)
-                .filter(item -> item.getHospital() != null && hospitalId.equals(item.getHospital().getId()))
-                .orElseGet(() -> resolveOwnedEquipmentByNumericId(equipmentReference, hospitalId));
+        // If a code exists but belongs to another hospital, do not reinterpret that code as a
+        // database ID because it could resolve to an unrelated asset.
+        Optional<Equipment> equipmentByCode = equipmentRepository.findByEquipmentCode(equipmentReference);
+        Equipment equipment;
+        if (equipmentByCode.isPresent()) {
+            equipment = equipmentByCode.get();
+            if (equipment.getHospital() == null || !hospitalId.equals(equipment.getHospital().getId())) {
+                throw new ResourceNotFoundException("Equipment not found or does not belong to your hospital");
+            }
+        } else {
+            equipment = resolveOwnedEquipmentByNumericId(equipmentReference, hospitalId);
+        }
 
         if (equipment.getEquipmentCode() == null || equipment.getEquipmentCode().isBlank()) {
             throw new IllegalArgumentException("Selected equipment does not have an equipment code");
@@ -187,6 +197,9 @@ public class MaintenanceService {
         MaintenanceStatus currentStatus = task.getStatus();
         MaintenanceStatus requestedStatus = taskDetails.getStatus();
 
+        if (currentStatus == null) {
+            throw new InvalidStatusTransitionException("Maintenance task has no current status");
+        }
         if (currentStatus == MaintenanceStatus.COMPLETED) {
             throw new InvalidStatusTransitionException("Completed maintenance tasks cannot be edited");
         }
