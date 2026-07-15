@@ -7,6 +7,7 @@ import Footer from "./components/common/Footer";
 import AppRoutes from "./routes/AppRoutes";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import GuidelinesPage from "./pages/GuidelinesPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -44,6 +45,7 @@ const getRouteStateFromPath = () => {
     orderstatus: "orderstatus",
     about: "about",
     contact: "contact",
+    guidelines: "guidelines",
   };
 
   return {
@@ -109,6 +111,8 @@ function AppContent() {
             <AboutPage />
           ) : currentPage === "contact" ? (
             <ContactPage />
+          ) : currentPage === "guidelines" ? (
+            <GuidelinesPage />
           ) : (
             <AppRoutes
               currentPage={currentPage}
@@ -118,7 +122,7 @@ function AppContent() {
           )}
         </main>
 
-        {!isAuthPage && <Footer />}
+        {!isAuthPage && <Footer onNavigate={handleNavigate} />}
       </div>
     </ReactLenis>
   );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   return (
     <footer className="bg-slate-50 dark:bg-slate-900/40 text-secondary mt-auto border-t border-subtle">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 pt-16 pb-8">
@@ -24,12 +24,12 @@ export default function Footer() {
             <div>
               <h4 className="text-primary font-bold text-[15px] mb-5">MedTrack</h4>
               <ul className="space-y-4 text-[14px] font-medium text-secondary">
-                <li><a href="#" className="hover:text-primary transition-colors">About / Press</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Awards</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Research</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Guides</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("about"); }} className="hover:text-primary transition-colors">About / Press</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("awards"); }} className="hover:text-primary transition-colors">Awards</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("blog"); }} className="hover:text-primary transition-colors">Blog</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("research"); }} className="hover:text-primary transition-colors">Research</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("contact"); }} className="hover:text-primary transition-colors">Contact Us</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("guides"); }} className="hover:text-primary transition-colors">Guides</a></li>
               </ul>
             </div>
 
@@ -47,13 +47,13 @@ export default function Footer() {
             <div>
               <h4 className="text-primary font-bold text-[15px] mb-5">Information</h4>
               <ul className="space-y-4 text-[14px] font-medium text-secondary">
-                <li><a href="#" className="hover:text-primary transition-colors">Help</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Guidelines</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Use</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy and Ad Choices</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Do Not Sell Or Share My Information</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Cookie Consent Tool</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("help"); }} className="hover:text-primary transition-colors">Help</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("guidelines"); }} className="hover:text-primary transition-colors">Guidelines</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("terms"); }} className="hover:text-primary transition-colors">Terms of Use</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("privacy"); }} className="hover:text-primary transition-colors">Privacy and Ad Choices</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("donotsell"); }} className="hover:text-primary transition-colors">Do Not Sell Or Share My Information</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("cookies"); }} className="hover:text-primary transition-colors">Cookie Consent Tool</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate("security"); }} className="hover:text-primary transition-colors">Security</a></li>
               </ul>
             </div>
 
