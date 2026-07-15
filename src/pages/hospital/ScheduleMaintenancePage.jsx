@@ -142,12 +142,13 @@ export default function ScheduleMaintenancePage({ onNavigate }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Technician</label>
+              {/* The backend matches assignment to the technician's authenticated login email. */}
               <input 
                 type="text" 
                 name="assignedTechnician" 
                 value={formData.assignedTechnician} 
                 onChange={onChange} 
-                placeholder="Name or ID" 
+                placeholder="Technician login email"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               />
             </div>

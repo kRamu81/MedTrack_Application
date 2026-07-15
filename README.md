@@ -151,10 +151,20 @@ Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for full details on how t
 
 ##  Top Contributors
 
+A huge thank you to everyone who has contributed to **MedTrack Application**! Your contributions help make this project better every day. 💙
+
 <a href="https://github.com/kRamu81/MedTrack_Application/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=kRamu81/MedTrack_Application" alt="Contributors" />
+  <img src="https://contrib.rocks/image?repo=kRamu81/MedTrack_Application&max=500&columns=12" alt="Contributors" />
 </a>
+
+<p align="center">
+  <b> Every contribution matters — from bug fixes to major features.</b><br>
+  <i>Become a contributor and help us build the future of MedTrack!</i>
+</p>
+
+
 <!-- contributors -->
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

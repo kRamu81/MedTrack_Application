@@ -7,8 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * AuthResponse is a Data Transfer Object (DTO) that represents the response payload
- * returned to the client upon successful authentication (either login or registration).
+ * Data Transfer Object representing the payload returned after authentication.
+ * Wraps security tokens and identity metadata mapping back to the client.
  */
 @Data
 @Builder
@@ -26,6 +26,9 @@ public class AuthResponse {
     @Schema(description = "Detailed profile of the authenticated user")
     private UserResponse user;
 
+    /**
+     * Signed short-lived JWT token used to authenticate request contexts.
+     */
     @Schema(description = "Signed JWT access token for verifying authorization headers on secure routes", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String token;
 
@@ -48,6 +51,9 @@ public class AuthResponse {
     @Schema(description = "Token expiration duration in milliseconds", example = "604800000")
     private Long expiresIn;
 
+    /**
+     * Unique identifier utilized to request refreshed access credentials.
+     */
     @Schema(description = "UUID string used as a rotation token to fetch fresh access tokens", example = "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d")
     private String refreshToken;
 }

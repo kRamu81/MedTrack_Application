@@ -8,6 +8,8 @@ import AppRoutes from "./routes/AppRoutes";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import GuidelinesPage from "./pages/GuidelinesPage";
+import HelpPage from "./pages/HelpPage";
+import AwardsPage from "./pages/AwardsPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -25,6 +27,20 @@ const getRouteStateFromPath = () => {
     };
   }
 
+  if (path.startsWith("edit-equipment/")) {
+    return {
+      page: "edit-equipment",
+      data: decodeURIComponent(path.slice("edit-equipment/".length)),
+    };
+  }
+
+  if (path.startsWith("apply/")) {
+    return {
+      page: "apply",
+      data: decodeURIComponent(path.slice("apply/".length)),
+    };
+  }
+
   const routeMap = {
     blog: "blog",
     register: "register",
@@ -35,6 +51,7 @@ const getRouteStateFromPath = () => {
     dashboard: "dashboard",
     equipment: "equipment",
     "add-equipment": "add-equipment",
+    "edit-equipment": "edit-equipment",
     "schedule-maintenance": "schedule-maintenance",
     "request-equipment": "request-equipment",
     maintenance: "maintenance",
@@ -46,6 +63,8 @@ const getRouteStateFromPath = () => {
     about: "about",
     contact: "contact",
     guidelines: "guidelines",
+    help: "help",
+    awards: "awards",
   };
 
   return {
@@ -70,6 +89,10 @@ function AppContent() {
     const nextPath =
       page === "blog-post" && data
         ? `${basePath}/blog/${encodeURIComponent(data)}`
+        : page === "edit-equipment" && data
+        ? `${basePath}/edit-equipment/${encodeURIComponent(data)}`
+        : page === "apply" && data
+        ? `${basePath}/apply/${encodeURIComponent(data)}`
         : `${basePath}/${page}`;
 
     window.history.pushState({}, "", nextPath);
@@ -93,6 +116,7 @@ function AppContent() {
     "forgot-password",
     "verify-otp",
     "reset-password",
+    "apply"
   ];
   const isAuthPage = noLayoutPages.includes(currentPage);
 
@@ -113,6 +137,10 @@ function AppContent() {
             <ContactPage />
           ) : currentPage === "guidelines" ? (
             <GuidelinesPage />
+          ) : currentPage === "help" ? (
+            <HelpPage />
+          ) : currentPage === "awards" ? (
+            <AwardsPage />
           ) : (
             <AppRoutes
               currentPage={currentPage}

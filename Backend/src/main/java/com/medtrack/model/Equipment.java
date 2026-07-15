@@ -59,6 +59,8 @@ public class Equipment {
 
     private LocalDate purchaseDate;
 
+    private LocalDate warrantyExpiry;
+
     /**
      * Many Equipment items belong to one Hospital.
      */
