@@ -11,6 +11,7 @@ import GuidelinesPage from "./pages/GuidelinesPage";
 import HelpPage from "./pages/HelpPage";
 import AwardsPage from "./pages/AwardsPage";
 import TermsPage from "./pages/TermsPage";
+import GuidesPage from "./pages/GuidesPage";
 import SecurityPage from "./pages/SecurityPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -68,6 +69,7 @@ const getRouteStateFromPath = () => {
     help: "help",
     awards: "awards",
     terms: "terms",
+    guides: "guides",
     security: "security",
   };
 
@@ -147,6 +149,8 @@ function AppContent() {
             <AwardsPage />
           ) : currentPage === "terms" ? (
             <TermsPage />
+          ) : currentPage === "guides" ? (
+            <GuidesPage />
           ) : currentPage === "security" ? (
             <SecurityPage />
           ) : (

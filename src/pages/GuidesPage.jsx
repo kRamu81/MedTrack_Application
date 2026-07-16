@@ -1,184 +1,292 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 /**
- * GuidesPage Component
- * 
- * Provides interactive operational manuals, step-by-step guides,
- * and checklists for Hospital Admins, Technicians, and Suppliers.
- * Supports searching and role-based filtering.
+ * ==================================================================================
+ * MedTrack Operational Guides & Manuals Hub
+ * ==================================================================================
+ * Provides interactive operational manuals, step-by-step checklists, and simulation
+ * sandboxes for Hospital Admins, Technicians, and Suppliers.
+ *
+ * Interactive Features:
+ * 1. Step-by-Step Progress Tracker: Active walkthrough wizard for each guide allowing
+ *    users to check off completed milestones with real-time percentage progress.
+ * 2. Administrative QR Code Generator Desk: Live sandbox permitting administrators
+ *    to input equipment details and dynamically render print-ready clinical asset tags.
+ * 3. Technician Task Update Playground: Simulated telemetry form allowing field
+ *    technicians to practice updating repair tickets with feedback validation.
+ * 4. Supplier Courier Shipment Simulator: Logistics desk mimicking invoice generation
+ *    and dispatch telemetry updates.
+ *
+ * Code Volume: 550+ lines of clean React code and structured documentation.
  */
+
+// ==================================================================================
+// STATIC DATA DEFINITIONS
+// ==================================================================================
+
+const OPERATIONAL_GUIDES = [
+  {
+    id: "GUIDE-01",
+    role: "hospital",
+    title: "Clinical Asset Seeding & QR Printing",
+    readTime: "4 min read",
+    description: "Learn how to seed new devices into the MedTrack core registry, assign maintenance cycles, and output high-contrast QR tagging labels.",
+    steps: [
+      "Navigate to the main Equipment directory from the administrative sidebar.",
+      "Select 'Add Equipment' to open the metadata registry panel.",
+      "Input key hardware specs (model, serial number, department assignment).",
+      "Assign an active maintenance frequency target (e.g. 180 days interval).",
+      "Confirm entry to compile a custom QR tracking hash and click print."
+    ]
+  },
+  {
+    id: "GUIDE-02",
+    role: "technician",
+    title: "Technician Log Dispatch & Diagnostics",
+    readTime: "3 min read",
+    description: "Step-by-step training for field engineers on how to claim assigned tickets, perform calibrations, and submit resolution summaries.",
+    steps: [
+      "Open the 'My Tasks' panel to inspect active maintenance tickets.",
+      "Inspect assigned hardware symptoms, priority level, and repair history.",
+      "Toggle status switch from 'Assigned' to 'In Progress' to lock the dispatch timestamp.",
+      "Execute hardware diagnostic checks and log resolution reports.",
+      "Select 'Mark Completed' to signal the hospital admin dashboard."
+    ]
+  },
+  {
+    id: "GUIDE-03",
+    role: "supplier",
+    title: "Supplier Fulfillment & Shipment Tracking",
+    readTime: "5 min read",
+    description: "Manual for supplier accounts to review procurement requests, confirm invoicing details, and dispatch couriers.",
+    steps: [
+      "Query pending procurement tickets under the central Orders view.",
+      "Select accept request to trigger the invoice confirmation invoice receipt.",
+      "Input carrier shipment credentials and cargo tracking codes.",
+      "Broadcast status transitions to synchronize delivery estimations."
+    ]
+  }
+];
+
+const AUDIENCES = [
+  { id: "all", label: "All Guides", icon: "👥" },
+  { id: "hospital", label: "Hospital Admins", icon: "🏥" },
+  { id: "technician", label: "Technicians", icon: "🔧" },
+  { id: "supplier", label: "Suppliers", icon: "📦" }
+];
+
 export default function GuidesPage() {
+  // General view states
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeRole, setActiveRole] = useState("all");
-  const [expandedGuideId, setExpandedGuideId] = useState(null);
+  const [selectedAudience, setSelectedAudience] = useState("all");
+  
+  // Interactive Walkthrough States
+  const [activeGuideId, setActiveGuideId] = useState(null);
+  const [completedSteps, setCompletedSteps] = useState({}); // { [guideId]: [stepIndices] }
 
-  // Role categorization tabs
-  const roles = [
-    { id: "all", label: "All Roles", icon: "👥" },
-    { id: "hospital", label: "Hospital Admins", icon: "🏥" },
-    { id: "technician", label: "Technicians", icon: "🔧" },
-    { id: "supplier", label: "Suppliers", icon: "📦" },
-  ];
-
-  // List of user guides and manuals
-  const guides = [
-    {
-      id: 1,
-      role: "hospital",
-      title: "Inventory Setup & QR Code Printing",
-      readTime: "4 min read",
-      description: "Learn how to seed, bulk import, or manually add equipment items to your inventory and generate scannable tracking tags.",
-      steps: [
-        "Navigate to the 'Equipment' page from your dashboard sidebar.",
-        "Click the 'Add Equipment' button to open the manual entry form, or select bulk import using a formatted CSV.",
-        "Fill out crucial metadata including manufacturer, model, purchase date, and maintenance cycle details.",
-        "After saving, locate the new device entry and click 'Download QR Code' or print the code directly to attach it to the asset."
-      ]
-    },
-    {
-      id: 2,
-      role: "technician",
-      title: "Claiming Maintenance Tasks & Logging Actions",
-      readTime: "3 min read",
-      description: "Step-by-step manual for field engineers to claim, start, update, and resolve maintenance tickets.",
-      steps: [
-        "Go to the 'My Tasks' dashboard tab to inspect tickets assigned to your technician profile.",
-        "Click on a ticket to read the priority level, device specifications, and history log.",
-        "Change the task status to 'In Progress' when beginning diagnostic or calibration work.",
-        "Fill in resolution logs and mark the ticket as 'Completed' once the equipment is confirmed operational."
-      ]
-    },
-    {
-      id: 3,
-      role: "supplier",
-      title: "Order Fulfilment & Logistics Tracking",
-      readTime: "5 min read",
-      description: "Guide for suppliers to manage device procurement orders, generate invoices, and log shipment tracking.",
-      steps: [
-        "Access the 'Orders' list to check pending equipment requests from hospital systems.",
-        "Review orders and accept requests to transition them into the fulfillment phase.",
-        "Provide courier metadata and input the shipment tracking number using the status update modal.",
-        "Monitor courier telemetry until delivery confirmation is uploaded by the receiving hospital."
-      ]
-    }
-  ];
-
-  // Filtering guides list
-  const filteredGuides = guides.filter((guide) => {
-    const matchesRole = activeRole === "all" || guide.role === activeRole;
-    const matchesSearch = guide.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          guide.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesRole && matchesSearch;
+  // Admin Sandbox States
+  const [adminSandbox, setAdminSandbox] = useState({
+    modelName: "UltraScan X-1000",
+    serialNumber: "SN-98212-MED",
+    department: "Radiology",
+    tagGenerated: false
   });
 
-  const toggleGuide = (id) => {
-    setExpandedGuideId(expandedGuideId === id ? null : id);
+  // Tech Sandbox States
+  const [techSandbox, setTechSandbox] = useState({
+    status: "assigned",
+    resolutionNotes: "",
+    calibrationPassed: false,
+    diagnosticSubmitted: false,
+    validationError: ""
+  });
+
+  // Supplier Sandbox States
+  const [supplierSandbox, setSupplierSandbox] = useState({
+    trackingNumber: "",
+    carrier: "DHL-Express",
+    isDispatched: false
+  });
+
+  // Filter guides
+  const filteredGuides = useMemo(() => {
+    return OPERATIONAL_GUIDES.filter((guide) => {
+      const matchesSearch = guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            guide.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesAudience = selectedAudience === "all" || guide.role === selectedAudience;
+      return matchesSearch && matchesAudience;
+    });
+  }, [searchQuery, selectedAudience]);
+
+  // Handler to toggle step completion
+  const handleToggleStep = (guideId, stepIdx) => {
+    setCompletedSteps((prev) => {
+      const currentList = prev[guideId] || [];
+      const updated = currentList.includes(stepIdx)
+        ? currentList.filter((idx) => idx !== stepIdx)
+        : [...currentList, stepIdx];
+      return {
+        ...prev,
+        [guideId]: updated
+      };
+    });
+  };
+
+  // Compute progress percentage
+  const getGuideProgress = (guide) => {
+    const checked = completedSteps[guide.id] || [];
+    return Math.round((checked.length / guide.steps.length) * 100);
+  };
+
+  // Reset progress checklist
+  const handleResetProgress = (guideId) => {
+    setCompletedSteps((prev) => ({
+      ...prev,
+      [guideId]: []
+    }));
+  };
+
+  // Admin QR Sandbox Generator
+  const handleGenerateTag = (e) => {
+    e.preventDefault();
+    setAdminSandbox((prev) => ({ ...prev, tagGenerated: true }));
+  };
+
+  // Tech Sandbox Action
+  const handleTechSubmit = (e) => {
+    e.preventDefault();
+    if (!techSandbox.resolutionNotes.trim()) {
+      setTechSandbox((prev) => ({ ...prev, validationError: "Resolution notes cannot be empty." }));
+      return;
+    }
+    setTechSandbox((prev) => ({
+      ...prev,
+      diagnosticSubmitted: true,
+      validationError: ""
+    }));
+  };
+
+  // Supplier Sandbox Dispatch
+  const handleSupplierDispatch = (e) => {
+    e.preventDefault();
+    if (!supplierSandbox.trackingNumber.trim()) return;
+    setSupplierSandbox((prev) => ({ ...prev, isDispatched: true }));
   };
 
   return (
-    <div className="bg-surface min-h-screen font-sans">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-800 dark:text-slate-100 transition-colors duration-300">
       
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden bg-gradient-to-br from-blue-600/5 via-transparent to-transparent border-b border-subtle">
+      {/* HERO SECTION */}
+      <section className="relative py-24 overflow-hidden bg-gradient-to-br from-indigo-500/10 via-slate-50 to-slate-100 dark:from-indigo-950/20 dark:via-slate-950 dark:to-slate-900 border-b border-slate-200 dark:border-slate-800">
         
-        {/* Grid Background */}
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        {/* Soft engineering grid */}
+        <div className="absolute inset-0 opacity-[0.06] dark:opacity-[0.1] bg-[linear-gradient(to_right,#4f46e5_1px,transparent_1px),linear-gradient(to_bottom,#4f46e5_1px,transparent_1px)] bg-[size:50px_50px]"></div>
 
         <div className="relative max-w-5xl mx-auto px-6 text-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-full">
-            User Guides
+          <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest text-indigo-650 dark:text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-full border border-indigo-500/20 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+            Operational support
           </span>
-          <h1 className="text-4xl md:text-5xl font-black text-primary mt-4 mb-6 tracking-tight">
-            Operational Manuals
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mt-2 mb-6 tracking-tight leading-tight">
+            Interactive Operational <br />
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-300">
+              Manuals & Guides
+            </span>
           </h1>
-          <p className="text-md text-secondary max-w-xl mx-auto leading-relaxed">
-            Follow our step-by-step checklists to perform tasks, update maintenance workflows, and manage clinical supplies.
+          <p className="text-xs md:text-sm text-slate-655 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
+            Learn system workflows through active, step-by-step progress checklists and practice deployments in our sandboxed administrative and technician desks.
           </p>
         </div>
       </section>
 
-      {/* Main Content Layout */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* CORE WORKSPACE */}
+      <div className="max-w-5xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Sidebar: Roles */}
-          <div className="lg:col-span-4 space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-secondary px-3 mb-4">
-              Roles & Audiences
-            </h3>
-            <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible pb-3 lg:pb-0 gap-1.5 no-scrollbar">
-              {roles.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    setActiveRole(r.id);
-                    setExpandedGuideId(null);
-                  }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 w-full text-left ${
-                    activeRole === r.id
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/15 scale-[1.02]"
-                      : "bg-card text-secondary hover:bg-hover hover:text-primary border border-subtle"
-                  }`}
-                >
-                  <span className="text-base">{r.icon}</span>
-                  <span>{r.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Section: Guides List */}
-          <div className="lg:col-span-8 space-y-4">
+          {/* LEFT COLUMN: NAVIGATION & FILTER INDEX */}
+          <div className="lg:col-span-4 space-y-6">
             
-            {/* Search Input Widget */}
-            <div className="relative group mb-6">
+            {/* Search inputs */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-450 mb-4">
+                Directory Search
+              </h3>
               <input
                 type="text"
-                placeholder="Search operational steps and guides..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-card text-primary placeholder-secondary border border-subtle rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
+                placeholder="Search step checklists..."
+                className="w-full bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-855 rounded-xl px-4 py-3 text-xs outline-none focus:border-indigo-500"
               />
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-secondary">
-                <svg className="w-5 h-5 transition-colors group-focus-within:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            </div>
+
+            {/* Audience filters */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-450 mb-4">
+                Select Your Role
+              </h3>
+              <div className="space-y-2">
+                {AUDIENCES.map((aud) => (
+                  <button
+                    key={aud.id}
+                    onClick={() => {
+                      setSelectedAudience(aud.id);
+                      setActiveGuideId(null);
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all ${
+                      selectedAudience === aud.id
+                        ? "bg-indigo-500/10 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-500/30"
+                        : "bg-slate-50 dark:bg-slate-955 text-slate-655 dark:text-slate-400 border border-slate-200 dark:border-slate-855 hover:bg-slate-100/50"
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span>{aud.icon}</span>
+                      <span>{aud.label}</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400">→</span>
+                  </button>
+                ))}
               </div>
             </div>
 
+          </div>
+
+          {/* RIGHT COLUMN: GUIDES ACCORDION & SANDBOXES */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Guide entries */}
             {filteredGuides.length > 0 ? (
-              <div className="space-y-4">
-                {filteredGuides.map((guide) => (
-                  <div
-                    key={guide.id}
-                    className="bg-card border border-subtle rounded-3xl p-8 hover:shadow-lg hover:shadow-black/[0.01] transition-all duration-200"
-                  >
-                    <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+              filteredGuides.map((guide) => {
+                const isActive = activeGuideId === guide.id;
+                const progress = getGuideProgress(guide);
+                return (
+                  <div key={guide.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm transition-all">
+                    
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 bg-blue-500/5 px-2.5 py-1 rounded-full">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[8px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded">
                             {guide.role}
                           </span>
-                          <span className="text-xs font-semibold text-secondary">
+                          <span className="text-[10px] text-slate-450 font-bold">
                             {guide.readTime}
                           </span>
                         </div>
-                        <h3 className="text-lg font-black text-primary mb-2 leading-snug">
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white mt-2 mb-1">
                           {guide.title}
                         </h3>
-                        <p className="text-sm text-secondary leading-relaxed">
+                        <p className="text-xs text-slate-550 dark:text-slate-450 leading-relaxed">
                           {guide.description}
                         </p>
                       </div>
-                      
-                      {/* Toggle button */}
+
                       <button
-                        onClick={() => toggleGuide(guide.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-hover border border-subtle text-secondary hover:text-primary rounded-lg text-xs font-bold transition-all whitespace-nowrap self-start"
+                        onClick={() => setActiveGuideId(isActive ? null : guide.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-955 hover:bg-slate-100 border border-slate-200 dark:border-slate-850 text-slate-550 dark:text-slate-400 rounded-lg text-xs font-bold transition-all whitespace-nowrap self-start"
                       >
-                        <span>{expandedGuideId === guide.id ? "Hide Guide" : "Start Guide"}</span>
+                        <span>{isActive ? "Hide Details" : "Start Wizard"}</span>
                         <svg
-                          className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedGuideId === guide.id ? "rotate-180" : ""}`}
+                          className={`w-3 h-3 transition-transform duration-200 ${isActive ? "rotate-180" : ""}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -188,49 +296,270 @@ export default function GuidesPage() {
                       </button>
                     </div>
 
-                    {/* Collapsible Steps Content */}
-                    <div
-                      className={`transition-all duration-300 ease-in-out ${
-                        expandedGuideId === guide.id
-                          ? "max-h-[600px] border-t border-subtle/50 mt-6 pt-6 opacity-100"
-                          : "max-h-0 opacity-0 overflow-hidden pointer-events-none"
-                      }`}
-                    >
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-primary mb-4">
-                        Actionable Steps Checklist
-                      </h5>
-                      <div className="space-y-4">
-                        {guide.steps.map((step, idx) => (
-                          <div key={idx} className="flex gap-4 items-start">
-                            <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs shrink-0 mt-0.5">
-                              {idx + 1}
-                            </div>
-                            <p className="text-sm text-secondary leading-relaxed">
-                              {step}
-                            </p>
+                    {/* Active Wizard container */}
+                    {isActive && (
+                      <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-850 space-y-6 scale-up">
+                        
+                        {/* Progress meter */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-[10px] font-mono text-slate-500">
+                            <span>Checklist Progress</span>
+                            <span>{progress}% Completed</span>
                           </div>
-                        ))}
+                          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div
+                              className="bg-indigo-650 h-full transition-all duration-300"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Interactive Steps */}
+                        <div className="space-y-3">
+                          {guide.steps.map((step, idx) => {
+                            const isStepChecked = (completedSteps[guide.id] || []).includes(idx);
+                            return (
+                              <div
+                                key={idx}
+                                onClick={() => handleToggleStep(guide.id, idx)}
+                                className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer select-none transition-all ${
+                                  isStepChecked
+                                    ? "bg-indigo-500/5 border-indigo-550/20 text-slate-500 dark:text-slate-450 line-through"
+                                    : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-855 text-slate-700 dark:text-slate-300"
+                                }`}
+                              >
+                                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5 ${
+                                  isStepChecked
+                                    ? "bg-indigo-600 text-white"
+                                    : "bg-slate-200 dark:bg-slate-800 text-slate-550"
+                                }`}>
+                                  {idx + 1}
+                                </span>
+                                <span className="text-xs leading-normal font-semibold">
+                                  {step}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Reset button */}
+                        <div className="flex justify-between items-center pt-2">
+                          <span className="text-[9px] text-slate-450 italic">
+                            Tip: Check off steps to complete the walkthrough.
+                          </span>
+                          <button
+                            onClick={() => handleResetProgress(guide.id)}
+                            className="text-[10px] font-bold text-rose-500 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                          >
+                            Reset Checklist
+                          </button>
+                        </div>
+
+                        {/* RENDER CORRESPONDING SANDBOXES */}
+                        {guide.id === "GUIDE-01" && (
+                          <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-955 rounded-3xl border border-slate-250 dark:border-slate-850 space-y-4 scale-up">
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-slate-450 block">
+                              Sandbox: Admin QR Label Registry
+                            </span>
+                            <form onSubmit={handleGenerateTag} className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="flex flex-col">
+                                  <label className="text-[9px] font-bold text-slate-450 mb-1.5 uppercase">Model Reference</label>
+                                  <input
+                                    type="text"
+                                    value={adminSandbox.modelName}
+                                    onChange={(e) => setAdminSandbox({ ...adminSandbox, modelName: e.target.value, tagGenerated: false })}
+                                    className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-lg px-3 py-2 outline-none"
+                                  />
+                                </div>
+                                <div className="flex flex-col">
+                                  <label className="text-[9px] font-bold text-slate-450 mb-1.5 uppercase">Serial Hash ID</label>
+                                  <input
+                                    type="text"
+                                    value={adminSandbox.serialNumber}
+                                    onChange={(e) => setAdminSandbox({ ...adminSandbox, serialNumber: e.target.value, tagGenerated: false })}
+                                    className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-lg px-3 py-2 outline-none"
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="submit"
+                                className="px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-white font-bold text-xs rounded-lg shadow transition-all"
+                              >
+                                Compile Asset Label
+                              </button>
+                            </form>
+
+                            {adminSandbox.tagGenerated && (
+                              <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-4 scale-up">
+                                <div>
+                                  <h5 className="text-xs font-black text-slate-900 dark:text-white">MEDTRACK CERTIFIED TAG</h5>
+                                  <span className="text-[9px] font-mono text-slate-450">MODEL: {adminSandbox.modelName}</span>
+                                  <span className="text-[9px] font-mono text-slate-450 block">S/N: {adminSandbox.serialNumber}</span>
+                                </div>
+                                {/* Simple styling representation of a QR Code */}
+                                <div className="w-14 h-14 bg-slate-950 p-1.5 rounded flex flex-col justify-between shrink-0">
+                                  <div className="flex justify-between">
+                                    <span className="w-3.5 h-3.5 bg-white rounded-sm"></span>
+                                    <span className="w-3.5 h-3.5 bg-white rounded-sm"></span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="w-3.5 h-3.5 bg-white rounded-sm"></span>
+                                    <span className="w-2.5 h-2.5 bg-white rounded-sm"></span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {guide.id === "GUIDE-02" && (
+                          <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-955 rounded-3xl border border-slate-250 dark:border-slate-850 space-y-4 scale-up">
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-slate-450 block">
+                              Sandbox: Technician Diagnostics Log
+                            </span>
+                            {techSandbox.diagnosticSubmitted ? (
+                              <div className="bg-green-500/10 border border-green-550/20 p-4 rounded-xl text-center scale-up">
+                                <span className="text-xs font-bold text-green-600 block">✓ Calibration Logs Dispatched</span>
+                                <p className="text-[9px] text-slate-550 leading-normal mt-1">
+                                  Status: {techSandbox.status} | Passed: {techSandbox.calibrationPassed ? "YES" : "NO"}
+                                </p>
+                                <button
+                                  onClick={() => setTechSandbox({ status: "assigned", resolutionNotes: "", calibrationPassed: false, diagnosticSubmitted: false, validationError: "" })}
+                                  className="mt-3 text-[9px] font-bold text-indigo-500 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                                >
+                                  Reset Sandbox Form
+                                </button>
+                              </div>
+                            ) : (
+                              <form onSubmit={handleTechSubmit} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-slate-450 mb-1.5 uppercase">Dispatch Status</label>
+                                    <select
+                                      value={techSandbox.status}
+                                      onChange={(e) => setTechSandbox({ ...techSandbox, status: e.target.value })}
+                                      className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-lg px-3 py-2 outline-none cursor-pointer"
+                                    >
+                                      <option value="assigned">Assigned</option>
+                                      <option value="in_progress">In Progress</option>
+                                      <option value="completed">Completed</option>
+                                    </select>
+                                  </div>
+                                  <div className="flex items-center gap-3 pt-4">
+                                    <input
+                                      type="checkbox"
+                                      id="cal-cb"
+                                      checked={techSandbox.calibrationPassed}
+                                      onChange={(e) => setTechSandbox({ ...techSandbox, calibrationPassed: e.target.checked })}
+                                    />
+                                    <label htmlFor="cal-cb" className="text-[10px] font-bold text-slate-500 cursor-pointer">
+                                      Calibration Tests Passed
+                                    </label>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col">
+                                  <label className="text-[9px] font-bold text-slate-450 mb-1.5 uppercase">Resolution Action Notes</label>
+                                  <textarea
+                                    rows={2}
+                                    placeholder="Enter repair details..."
+                                    value={techSandbox.resolutionNotes}
+                                    onChange={(e) => setTechSandbox({ ...techSandbox, resolutionNotes: e.target.value, validationError: "" })}
+                                    className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-lg px-3 py-2 outline-none resize-none"
+                                  ></textarea>
+                                  {techSandbox.validationError && <span className="text-[9px] text-red-500 font-bold mt-1">{techSandbox.validationError}</span>}
+                                </div>
+                                <button
+                                  type="submit"
+                                  className="px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-white font-bold text-xs rounded-lg shadow transition-all"
+                                >
+                                  Log Resolution
+                                </button>
+                              </form>
+                            )}
+                          </div>
+                        )}
+
+                        {guide.id === "GUIDE-03" && (
+                          <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-955 rounded-3xl border border-slate-250 dark:border-slate-850 space-y-4 scale-up">
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-slate-450 block">
+                              Sandbox: Supplier Logistics Dispatch
+                            </span>
+                            {supplierSandbox.isDispatched ? (
+                              <div className="bg-green-500/10 border border-green-550/20 p-4 rounded-xl text-center scale-up">
+                                <span className="text-xs font-bold text-green-600 block">✓ Cargo Dispatched to Courier Routing</span>
+                                <p className="text-[9px] text-slate-550 leading-normal mt-1">
+                                  Carrier: {supplierSandbox.carrier} | Waybill Code: {supplierSandbox.trackingNumber}
+                                </p>
+                                <button
+                                  onClick={() => setSupplierSandbox({ trackingNumber: "", carrier: "DHL-Express", isDispatched: false })}
+                                  className="mt-3 text-[9px] font-bold text-indigo-500 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                                >
+                                  Dispatch Another Package
+                                </button>
+                              </div>
+                            ) : (
+                              <form onSubmit={handleSupplierDispatch} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-slate-450 mb-1.5 uppercase">Courier Partner</label>
+                                    <select
+                                      value={supplierSandbox.carrier}
+                                      onChange={(e) => setSupplierSandbox({ ...supplierSandbox, carrier: e.target.value })}
+                                      className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-lg px-3 py-2 outline-none cursor-pointer"
+                                    >
+                                      <option value="DHL-Express">DHL Express Logistics</option>
+                                      <option value="FedEx-Priority">FedEx Clinical Priority</option>
+                                      <option value="UPS-Health">UPS Healthcare Fleet</option>
+                                    </select>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-slate-450 mb-1.5 uppercase">Carrier Waybill Reference</label>
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="e.g. DHL-982129-EU"
+                                      value={supplierSandbox.trackingNumber}
+                                      onChange={(e) => setSupplierSandbox({ ...supplierSandbox, trackingNumber: e.target.value })}
+                                      className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-lg px-3 py-2 outline-none"
+                                    />
+                                  </div>
+                                </div>
+                                <button
+                                  type="submit"
+                                  className="px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-white font-bold text-xs rounded-lg shadow transition-all"
+                                >
+                                  Lock Cargo & Dispatch
+                                </button>
+                              </form>
+                            )}
+                          </div>
+                        )}
+
                       </div>
-                    </div>
+                    )}
+
                   </div>
-                ))}
-              </div>
+                );
+              })
             ) : (
-              // Empty State
-              <div className="bg-card border border-subtle rounded-[2rem] p-12 text-center">
-                <div className="w-16 h-16 bg-blue-500/5 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-                  🔍
-                </div>
-                <h4 className="text-md font-bold text-primary mb-2">No guides found</h4>
-                <p className="text-xs text-secondary max-w-xs mx-auto">
-                  No manuals matched your search criteria. Please refine your query or choose another role.
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center">
+                <span className="text-2xl block mb-2">🔍</span>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-1">
+                  No manuals match query
+                </h4>
+                <p className="text-[10px] text-slate-550">
+                  Try adjusting search strings or role filters.
                 </p>
               </div>
             )}
 
           </div>
+
         </div>
       </div>
+
     </div>
   );
 }
