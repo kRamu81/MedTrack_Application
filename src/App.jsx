@@ -11,6 +11,7 @@ import GuidelinesPage from "./pages/GuidelinesPage";
 import HelpPage from "./pages/HelpPage";
 import AwardsPage from "./pages/AwardsPage";
 import TermsPage from "./pages/TermsPage";
+import DoNotSellPage from "./pages/DoNotSellPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 const getRouteStateFromPath = () => {
@@ -67,6 +68,7 @@ const getRouteStateFromPath = () => {
     help: "help",
     awards: "awards",
     terms: "terms",
+    donotsell: "donotsell",
   };
 
   return {
@@ -145,6 +147,8 @@ function AppContent() {
             <AwardsPage />
           ) : currentPage === "terms" ? (
             <TermsPage />
+          ) : currentPage === "donotsell" ? (
+            <DoNotSellPage />
           ) : (
             <AppRoutes
               currentPage={currentPage}
