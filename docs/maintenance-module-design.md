@@ -26,7 +26,7 @@ The current backend can create, fetch, update, and delete maintenance tasks thro
 
 `MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, and parts used. Its `status` field uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`. It also stores `hospitalId`, which is populated by the backend and used as a stable ownership key.
 
-The task now keeps the existing API-facing equipment code/name fields and also stores a lazy `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. Technician assignment remains an email string, but scheduling now verifies that a supplied account exists and has the technician role.
+The task keeps the existing API-facing equipment code/name fields and also stores a lazy, required `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. A versioned Flyway migration backfills legacy rows before enforcing the non-null relationship. Technician assignment remains an email string, but scheduling verifies that a supplied account exists and has the technician role.
 
 ### MaintenanceTaskRepository.java
 
@@ -92,9 +92,11 @@ Current endpoints:
 - `DELETE /api/maintenance/{id}`
 - `GET /api/maintenance/export/calendar.ics`
 
-The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The list endpoint is already automatically scoped to the authenticated hospital or technician.
+The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The list endpoint is automatically scoped to the authenticated hospital or technician and consistently returns HTTP 200 with a JSON array, including `[]` when no tasks exist.
 
 Scheduling requests now use Bean Validation. Technician updates use service-level validation because their partial payload intentionally does not contain required scheduling fields. Optional status and equipment filters are not yet exposed.
+
+Controller integration tests verify scheduling, updates, deletion, empty lists, invalid payloads, invalid status text and transitions, positive ID validation, role guards, and hospital-only calendar export. Method-security failures are mapped to HTTP 403 instead of being converted to a generic HTTP 400 response.
 
 ## Target Design
 
@@ -126,12 +128,12 @@ Many MaintenanceTask records belong to one Equipment.
 The backend mapping now uses a dedicated relationship field while retaining the legacy API fields:
 
 ```java
-@ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "equipment_record_id")
+@ManyToOne(fetch = FetchType.LAZY, optional = false)
+@JoinColumn(name = "equipment_record_id", nullable = false)
 private Equipment equipmentRecord;
 ```
 
-The relationship remains nullable temporarily so existing database rows can be backfilled before a non-null constraint is introduced.
+The relationship is now non-nullable. Existing rows are upgraded through the vendor-specific Flyway migration before the entity constraint is applied.
 
 The relationship is excluded from Lombok-generated `toString`, `equals`, and `hashCode` traversal. This avoids accidentally initializing the lazy equipment proxy or recursing through connected JPA entities while preserving the legacy JSON contract through `@JsonIgnore`.
 
@@ -266,6 +268,12 @@ The current frontend field names should be preserved unless frontend changes are
 - [x] Prevent client-controlled task identity, ownership, and initial report state.
 - [x] Enforce valid status transitions, non-negative work values, and completion immutability.
 - [x] Prevent duplicate recurring tasks after completion.
+- [x] Add a Flyway migration that normalizes legacy statuses and backfills equipment/hospital ownership.
+- [x] Make the `equipmentRecord` relationship non-nullable after the migration.
+- [x] Update seed data to create real hospital, equipment, and maintenance relationships.
+- [x] Return HTTP 200 with an empty array for an empty maintenance list.
+- [x] Add maintenance controller integration tests for validation and role guards.
+- [x] Add migration integration tests for successful backfill and unmatched legacy records.
 
 ### Completed on 2026-07-14
 
@@ -274,13 +282,18 @@ The current frontend field names should be preserved unless frontend changes are
 
 Focused verification is implemented in `MaintenanceServiceTest`: owned-equipment scheduling, cross-hospital rejection, technician ownership, negative-hour rejection, completion immutability, recurrence creation, calendar export, scoped lists, and scoped deletion.
 
+### Completed on 2026-07-16
+
+1. [x] **Added a versioned maintenance database backfill.** Flyway support and H2/MySQL migration scripts normalize legacy status strings, resolve `equipment_record_id` from the canonical equipment code, restore `hospital_id` from equipment ownership when necessary, and enforce a required equipment relationship. The migration intentionally fails when a legacy task cannot be matched, preventing silent data loss or an invalid relationship state.
+2. [x] **Hardened the backend maintenance API contract.** Empty task lists now return HTTP 200 with `[]`, access-denied exceptions return HTTP 403, seeded data uses real hospital/equipment relationships, and controller integration tests cover the maintenance endpoints and role boundaries.
+
+Migration behavior is verified by `MaintenanceMigrationIntegrationTest`. Controller and method-security behavior is verified by `MaintenanceControllerIntegrationTest`. The complete backend Maven test suite passes.
+
 ### Recommended future work
 
-- [ ] Add controller integration tests for validation and role guards.
 - [ ] Add optional status and equipment filters without weakening ownership scoping.
 - [ ] Decide whether to add a `CANCELLED` status.
 - [ ] Replace the technician email string with a direct `User` relationship.
-- [ ] Add a database migration/backfill for legacy maintenance rows before making the equipment relationship non-nullable.
 - [ ] Connect and verify the hospital maintenance list page against the backend API.
 
 ## Definition Of Done For Design Step

@@ -78,20 +78,33 @@ Unknown values such as `"Started"` are rejected because they are not members of 
 
 ## Database Consideration
 
-`EnumType.STRING` stores Java enum names in the database. Existing persistent rows containing display values such as `Scheduled` or `In Progress` may need a migration to `SCHEDULED` or `IN_PROGRESS`. The development H2 database is recreated and seeded, but a persistent MySQL database should be checked before deployment.
+`EnumType.STRING` stores Java enum names in the database. Existing persistent rows containing display values such as `Scheduled` or `In Progress` are now normalized by the versioned maintenance migration.
 
-Example migration:
+The migration handles all currently supported display values:
 
-```sql
-UPDATE maintenance_tasks SET status = 'SCHEDULED' WHERE status = 'Scheduled';
-UPDATE maintenance_tasks SET status = 'IN_PROGRESS' WHERE status = 'In Progress';
+```text
+Scheduled    -> SCHEDULED
+In Progress -> IN_PROGRESS
+Needs Part  -> NEEDS_PART
+On Hold     -> ON_HOLD
+Completed   -> COMPLETED
 ```
+
+Vendor-specific scripts are stored under:
+
+- `Backend/src/main/resources/db/migration/h2/`
+- `Backend/src/main/resources/db/migration/mysql/`
+
+The same migration backfills the required `equipment_record_id` relationship and missing `hospital_id` values. It fails when a legacy task cannot be matched to equipment, so operators must resolve unmatched rows instead of silently deploying incomplete data.
+
+Flyway is enabled with `FLYWAY_ENABLED=true`. It remains disabled by default because the current local H2 workflow still lets Hibernate create a new development schema. Deployment and verification steps are recorded in `docs/maintenance-backend-migration.md`.
 
 ## Remaining Work
 
 - Decide whether to add a `CANCELLED` status.
-- Add tests for JSON conversion, persistence, and invalid values.
 - Consider replacing email-based technician assignment with a direct user relationship.
+
+Invalid JSON status values are covered by the maintenance controller integration tests. Migration persistence and unmatched-row behavior are covered by `MaintenanceMigrationIntegrationTest`.
 
 ## Lifecycle Enforcement
 
