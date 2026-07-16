@@ -1,0 +1,103 @@
+package com.medtrack.supplier.controller;
+
+import com.medtrack.exception.GlobalExceptionHandler;
+import com.medtrack.model.EquipmentOrder;
+import com.medtrack.supplier.service.SupplierOrderService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@ExtendWith(MockitoExtension.class)
+public class SupplierControllerTest {
+
+    private MockMvc mockMvc;
+
+    @Mock
+    private SupplierOrderService supplierOrderService;
+
+    @InjectMocks
+    private SupplierController supplierController;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(supplierController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
+
+    @Test
+    void getSupplierOrders_Success() throws Exception {
+        EquipmentOrder order = EquipmentOrder.builder()
+                .id(1L)
+                .orderCode("ORD-101")
+                .status("PENDING")
+                .shippingStatus("Processing")
+                .equipmentName("Ventilator")
+                .hospital("City Hospital")
+                .build();
+
+        Page<EquipmentOrder> page = new PageImpl<>(Collections.singletonList(order), PageRequest.of(0, 10), 1);
+
+        when(supplierOrderService.getSupplierOrders(
+                eq(0), eq(10), eq("orderDate"), eq("desc"),
+                eq("PENDING"), eq("Processing"), eq(100L), eq("Ventilator"))).thenReturn(page);
+
+        mockMvc.perform(get("/api/supplier/orders")
+                .param("page", "0")
+                .param("size", "10")
+                .param("sortBy", "orderDate")
+                .param("sortDir", "desc")
+                .param("status", "PENDING")
+                .param("shippingStatus", "Processing")
+                .param("supplierId", "100")
+                .param("search", "Ventilator")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].orderCode").value("ORD-101"))
+                .andExpect(jsonPath("$.content[0].equipmentName").value("Ventilator"));
+    }
+
+    @Test
+    void getSupplierOrders_EmptyResult_Returns204() throws Exception {
+        Page<EquipmentOrder> emptyPage = new PageImpl<>(Collections.emptyList());
+
+        when(supplierOrderService.getSupplierOrders(
+                eq(0), eq(10), eq("orderDate"), eq("desc"),
+                eq(null), eq(null), eq(null), eq(null))).thenReturn(emptyPage);
+
+        mockMvc.perform(get("/api/supplier/orders"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void getSupplierOrders_InvalidParams_Returns400() throws Exception {
+        when(supplierOrderService.getSupplierOrders(
+                eq(-1), eq(10), eq("orderDate"), eq("desc"),
+                eq(null), eq(null), eq(null), eq(null)))
+                .thenThrow(new IllegalArgumentException("Page index must not be less than zero"));
+
+        mockMvc.perform(get("/api/supplier/orders")
+                .param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Page index must not be less than zero"));
+    }
+}
