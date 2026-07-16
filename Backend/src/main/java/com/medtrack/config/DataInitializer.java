@@ -6,25 +6,31 @@ import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.model.*;
 import com.medtrack.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 
 /**
  * Bootstraps initial state for the local and testing H2 database environments on application startup.
  * Provides default users with different authorization roles (admin, technician, supplier),
  * sample medical equipment profiles, maintenance schedules, and initial equipment procurement orders.
  *
- * Designed with idempotent checks (count-based guards) to prevent data duplication across system restarts.
+ * Designed with idempotent business-key checks to prevent data duplication across system restarts.
  */
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(
+        name = "app.data-initializer.enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final HospitalRepository hospitalRepository;
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceTaskRepository maintenanceTaskRepository;
     private final EquipmentOrderRepository equipmentOrderRepository;
@@ -35,7 +41,7 @@ public class DataInitializer implements CommandLineRunner {
         // 1. Seed Users (Roles: Admin, Technician, Supplier)
         // Ensure default accounts exist for localized developer testing.
         // Hashing passwords using PasswordEncoder to ensure security best practices even in transient H2 databases.
-        if (userRepository.count() == 0) {
+        if (userRepository.findByEmail("hospital@medtrack.com").isEmpty()) {
             userRepository.save(User.builder()
                     .name("Admin User")
                     .username("admin")
@@ -47,6 +53,8 @@ public class DataInitializer implements CommandLineRunner {
                     .accountStatus(AccountStatus.ACTIVE)
                     .build());
 
+        }
+        if (userRepository.findByEmail("tech@medtrack.com").isEmpty()) {
             userRepository.save(User.builder()
                     .name("John Tech")
                     .username("technician")
@@ -58,6 +66,8 @@ public class DataInitializer implements CommandLineRunner {
                     .accountStatus(AccountStatus.ACTIVE)
                     .build());
 
+        }
+        if (userRepository.findByEmail("supplier@medtrack.com").isEmpty()) {
             userRepository.save(User.builder()
                     .name("Global Supplies")
                     .username("supplier")
@@ -70,10 +80,19 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
+        User hospitalUser = userRepository.findByEmail("hospital@medtrack.com")
+                .orElseThrow(() -> new IllegalStateException("Seed hospital user was not created"));
+        Hospital hospital = hospitalRepository.findByUserId(hospitalUser.getId())
+                .orElseGet(() -> hospitalRepository.save(Hospital.builder()
+                        .name("City General Hospital")
+                        .location("Local Development")
+                        .user(hospitalUser)
+                        .build()));
+
         // 2. Seed Equipment Profiles
         // Inserts a baseline of medical devices mapped to distinct hospital units (Radiology, ICU).
         // Includes varied operating statuses (Operational, Maintenance) for filtering validations.
-        if (equipmentRepository.count() == 0) {
+        if (equipmentRepository.findByEquipmentCode("EQ-1001").isEmpty()) {
             equipmentRepository.save(Equipment.builder()
                     .name("MRI Scanner X100")
                     .equipmentCode("EQ-1001")
@@ -83,8 +102,11 @@ public class DataInitializer implements CommandLineRunner {
                     .status("Operational")
                     .category("Imaging")
                     .purchaseDate(LocalDate.now().minusYears(2))
+                    .hospital(hospital)
                     .build());
 
+        }
+        if (equipmentRepository.findByEquipmentCode("EQ-1002").isEmpty()) {
             equipmentRepository.save(Equipment.builder()
                     .name("Portable Ventilator")
                     .equipmentCode("EQ-1002")
@@ -94,6 +116,7 @@ public class DataInitializer implements CommandLineRunner {
                     .status("Maintenance")
                     .category("Respiratory")
                     .purchaseDate(LocalDate.now().minusMonths(6))
+                    .hospital(hospital)
                     .build());
         }
 
@@ -101,12 +124,19 @@ public class DataInitializer implements CommandLineRunner {
         // Populates initial maintenance workflows referencing the seeded equipment.
         // Utilizes the type-safe MaintenanceStatus enum configuration introduced in recent updates.
         if (maintenanceTaskRepository.count() == 0) {
+            Equipment mriScanner = equipmentRepository.findByEquipmentCode("EQ-1001")
+                    .orElseThrow(() -> new IllegalStateException("Seed MRI equipment was not created"));
+            Equipment ventilator = equipmentRepository.findByEquipmentCode("EQ-1002")
+                    .orElseThrow(() -> new IllegalStateException("Seed ventilator equipment was not created"));
+
             maintenanceTaskRepository.save(MaintenanceTask.builder()
                     .taskCode("MNT-5001")
                     // Required API-facing equipment reference after maintenance validation was added.
                     .equipmentId("EQ-1001")
                     .equipment("MRI Scanner X100")
-                    .hospital("City General Hospital")
+                    .equipmentRecord(mriScanner)
+                    .hospital(hospital.getName())
+                    .hospitalId(hospital.getId())
                     .maintenanceType("Inspection")
                     .deadline(LocalDate.now().plusDays(5))
                     .priority("Normal")
@@ -118,11 +148,14 @@ public class DataInitializer implements CommandLineRunner {
                     .taskCode("MNT-5002")
                     .equipmentId("EQ-1002")
                     .equipment("Portable Ventilator")
-                    .hospital("City General Hospital")
+                    .equipmentRecord(ventilator)
+                    .hospital(hospital.getName())
+                    .hospitalId(hospital.getId())
                     .maintenanceType("Corrective")
                     .deadline(LocalDate.now().plusDays(1))
                     .priority("Critical")
                     .status(MaintenanceStatus.IN_PROGRESS)
+                    .assignedTechnician("tech@medtrack.com")
                     .description("Oxygen sensor failure reported. Requires calibration.")
                     .build());
         }

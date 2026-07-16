@@ -36,9 +36,9 @@ public class MaintenanceTask {
     private String equipmentId;
     private String equipment;
 
-    // Keeps the existing API strings while adding a real, queryable equipment relationship.
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "equipment_record_id")
+    // Every migrated and newly-created task must reference a real equipment record.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "equipment_record_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

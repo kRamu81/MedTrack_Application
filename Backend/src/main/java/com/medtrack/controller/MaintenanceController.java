@@ -28,20 +28,14 @@ public class MaintenanceController {
     /**
      * Retrieves all maintenance tasks.
      *
-     * @return a list of maintenance tasks if available,
-     *         or HTTP 204 No Content when no tasks exist
+     * @return a list of maintenance tasks. An empty result is returned as HTTP 200
+     *         with an empty JSON array so API clients have one stable response shape.
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('HOSPITAL', 'TECHNICIAN')")
     public ResponseEntity<List<MaintenanceTask>> getAllTasks(Authentication authentication) {
         // Forward the trusted identity so the service can enforce record ownership.
-        List<MaintenanceTask> tasks = maintenanceService.getAllTasks(authentication);
-
-        if (tasks.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(maintenanceService.getAllTasks(authentication));
     }
 
     /**
