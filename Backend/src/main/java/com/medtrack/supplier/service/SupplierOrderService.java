@@ -2,6 +2,9 @@ package com.medtrack.supplier.service;
 
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.repository.EquipmentOrderRepository;
+import com.medtrack.supplier.model.ShipmentStatus;
+import com.medtrack.exception.InvalidStatusTransitionException;
+import com.medtrack.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,5 +67,58 @@ public class SupplierOrderService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return orderRepository.findSupplierOrders(status, shippingStatus, supplierId, searchQuery, pageable);
+    }
+
+    @Transactional
+    public EquipmentOrder updateOrderStatus(Long orderId, String newStatus) {
+        if (orderId == null || orderId <= 0) {
+            throw new IllegalArgumentException("Invalid resource ID.");
+        }
+        if (newStatus == null || newStatus.isEmpty()) {
+            throw new IllegalArgumentException("Status cannot be blank");
+        }
+
+        ShipmentStatus requestedStatus;
+        try {
+            requestedStatus = ShipmentStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + newStatus);
+        }
+
+        EquipmentOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        String currentStatusStr = order.getStatus();
+        ShipmentStatus currentStatus;
+        try {
+            currentStatus = ShipmentStatus.valueOf(currentStatusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidStatusTransitionException(
+                    "Legacy order status is not valid for transitions: " + currentStatusStr);
+        }
+
+        if (currentStatus == requestedStatus) {
+            throw new InvalidStatusTransitionException("State transition from " + currentStatus + " to "
+                    + requestedStatus + " is same-state and not allowed.");
+        }
+
+        boolean isValidTransition = false;
+        if (currentStatus == ShipmentStatus.PENDING && requestedStatus == ShipmentStatus.CONFIRMED) {
+            isValidTransition = true;
+        } else if (currentStatus == ShipmentStatus.CONFIRMED && requestedStatus == ShipmentStatus.SHIPPED) {
+            isValidTransition = true;
+        } else if (currentStatus == ShipmentStatus.SHIPPED && requestedStatus == ShipmentStatus.DELIVERED) {
+            isValidTransition = true;
+        }
+
+        if (!isValidTransition) {
+            throw new InvalidStatusTransitionException(
+                    "Invalid status transition from " + currentStatus + " to " + requestedStatus);
+        }
+
+        order.setStatus(requestedStatus.name());
+        order.setUpdatedAt(LocalDateTime.now());
+
+        return orderRepository.save(order);
     }
 }

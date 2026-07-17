@@ -11,10 +11,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/supplier/orders")
+@RequestMapping("/api/supplier")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 @Tag(name = "Supplier Orders", description = "Endpoints for suppliers to query and retrieve localized equipment purchase orders.")
@@ -22,7 +23,7 @@ public class SupplierController {
 
     private final SupplierOrderService supplierOrderService;
 
-    @GetMapping
+    @GetMapping("/orders")
     @Operation(summary = "Get paginated, filtered supplier orders", description = "Allows suppliers to search and filter through synchronized equipment purchase orders.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved orders", content = @Content(schema = @Schema(implementation = Page.class))),
@@ -47,5 +48,21 @@ public class SupplierController {
         }
 
         return ResponseEntity.ok(orders);
+    }
+
+    @PutMapping("/order/update/{orderId}")
+    @PreAuthorize("hasRole('SUPPLIER')")
+    @Operation(summary = "Update supplier order status", description = "Allows suppliers to update order status confirming transition validation rules.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successfully updated order status", content = @Content(schema = @Schema(implementation = EquipmentOrder.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request, status transition, or malformed request parameters"),
+            @ApiResponse(responseCode = "404", description = "Supplier order not found")
+    })
+    public ResponseEntity<EquipmentOrder> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestParam String newStatus) {
+
+        EquipmentOrder updatedOrder = supplierOrderService.updateOrderStatus(orderId, newStatus);
+        return ResponseEntity.ok(updatedOrder);
     }
 }
