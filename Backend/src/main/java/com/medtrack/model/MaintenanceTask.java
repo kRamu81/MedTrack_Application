@@ -78,6 +78,9 @@ public class MaintenanceTask {
     @Column(columnDefinition = "TEXT")
     private String signature;
 
+    // Set by the service on the first valid transition to COMPLETED.
+    private LocalDateTime completedAt;
+
     @PositiveOrZero(message = "Recurrence period cannot be negative")
     private Integer recurrencePeriodDays;
 

@@ -67,7 +67,8 @@ public class AnalyticsServiceTest {
                 .status(MaintenanceStatus.COMPLETED)
                 .hoursWorked(3.0)
                 .createdAt(LocalDateTime.now().minusDays(5))
-                .deadline(LocalDate.now().minusDays(1)) // deadline met (simulated completion is createdAt + 2 days = minus 3 days, which is before deadline of minus 1 day)
+                .completedAt(LocalDateTime.now().minusDays(2))
+                .deadline(LocalDate.now().minusDays(1))
                 .build();
 
         MaintenanceTask task2 = MaintenanceTask.builder()
@@ -76,7 +77,8 @@ public class AnalyticsServiceTest {
                 .status(MaintenanceStatus.COMPLETED)
                 .hoursWorked(5.0)
                 .createdAt(LocalDateTime.now().minusDays(5))
-                .deadline(LocalDate.now().minusDays(4)) // deadline missed (simulated completion is createdAt + 2 days = minus 3 days, which is after deadline of minus 4 days)
+                .completedAt(LocalDateTime.now().minusDays(3))
+                .deadline(LocalDate.now().minusDays(4))
                 .build();
 
         MaintenanceTask task3 = MaintenanceTask.builder()
@@ -84,6 +86,13 @@ public class AnalyticsServiceTest {
                 .hospitalId(hospitalId)
                 .status(MaintenanceStatus.SCHEDULED)
                 .priority("CRITICAL") // critical pending
+                .build();
+
+        MaintenanceTask legacyCompletedTask = MaintenanceTask.builder()
+                .id(40L)
+                .hospitalId(hospitalId)
+                .status(MaintenanceStatus.COMPLETED)
+                .deadline(LocalDate.now().minusDays(10))
                 .build();
 
         // Mock Orders
@@ -116,7 +125,8 @@ public class AnalyticsServiceTest {
                 .build();
 
         when(equipmentRepository.findByHospitalId(hospitalId)).thenReturn(Arrays.asList(eq1, eq2));
-        when(taskRepository.findByHospitalId(hospitalId)).thenReturn(Arrays.asList(task1, task2, task3));
+        when(taskRepository.findByHospitalId(hospitalId))
+                .thenReturn(Arrays.asList(task1, task2, task3, legacyCompletedTask));
         when(orderRepository.findAll()).thenReturn(Arrays.asList(order1, order2, order3, order4));
 
         HospitalAnalyticsDto dto = analyticsService.getHospitalAnalytics(hospitalId);
@@ -131,7 +141,8 @@ public class AnalyticsServiceTest {
         assertEquals(0, BigDecimal.valueOf(25000.00).compareTo(dto.getSpendByCategory().get("Respiratory")));
         assertNull(dto.getSpendByCategory().get("Surgical")); // processing order shouldn't count
 
-        // SLA rate check: 1 of 2 completed is compliant -> 50%
+        // SLA rate check: 1 of 2 measurable completions is compliant. The legacy
+        // completed row without a trustworthy timestamp is excluded.
         assertEquals(50.0, dto.getSlaComplianceRate());
 
         // MTTR check: (3 + 5) / 2 = 4.0 hours

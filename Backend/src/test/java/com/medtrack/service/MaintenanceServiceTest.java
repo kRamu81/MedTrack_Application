@@ -112,6 +112,7 @@ public class MaintenanceServiceTest {
                 .status(MaintenanceStatus.COMPLETED)
                 .notes("Client-forged report")
                 .hoursWorked(4.0)
+                .completedAt(java.time.LocalDateTime.now().minusDays(1))
                 .build();
 
         MaintenanceTask result = maintenanceService.scheduleTask(taskToSchedule, authentication);
@@ -126,6 +127,7 @@ public class MaintenanceServiceTest {
         assertEquals(MaintenanceStatus.SCHEDULED, result.getStatus());
         assertNull(result.getNotes());
         assertNull(result.getHoursWorked());
+        assertNull(result.getCompletedAt());
     }
 
     @Test
@@ -176,6 +178,7 @@ public class MaintenanceServiceTest {
         assertNotNull(result);
         assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
         assertEquals("data:image/png;base64,drawingData", result.getSignature());
+        assertNotNull(result.getCompletedAt());
 
         // Verify save was called twice (once for completion, once for spawning the next scheduled task)
         verify(taskRepository, times(2)).save(taskCaptor.capture());
@@ -207,6 +210,25 @@ public class MaintenanceServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> maintenanceService.updateTask(50L, request, authentication));
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void updateTask_RejectsCompletionWithoutSignature() {
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .hoursWorked(1.0)
+                .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> maintenanceService.updateTask(50L, request, authentication));
+
+        assertEquals("Technician signature is required to complete the task", exception.getMessage());
+        assertNull(mockTask.getCompletedAt());
         verify(taskRepository, never()).save(any());
     }
 

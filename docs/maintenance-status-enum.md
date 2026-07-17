@@ -117,4 +117,6 @@ NEEDS_PART -> IN_PROGRESS
 ON_HOLD -> IN_PROGRESS
 ```
 
-Technicians may update report fields without changing a non-completed status, but completed tasks are immutable. Negative work hours are rejected, and recurring maintenance is generated only on the first transition to `COMPLETED`.
+Technicians may update report fields without changing a non-completed status, but completed tasks are immutable. The transition to `COMPLETED` requires a nonblank technician signature and records a server-controlled `completedAt` timestamp. Negative work hours are rejected, and recurring maintenance is generated only on the first transition to `COMPLETED`.
+
+Legacy completed rows may have a null completion timestamp. They remain readable, but maintenance SLA reporting excludes them rather than estimating when the work finished.

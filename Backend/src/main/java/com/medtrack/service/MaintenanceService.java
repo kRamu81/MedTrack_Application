@@ -81,6 +81,7 @@ public class MaintenanceService {
         task.setHoursWorked(null);
         task.setPartsUsed(null);
         task.setSignature(null);
+        task.setCompletedAt(null);
         task.setCreatedAt(LocalDateTime.now());
         return taskRepository.save(task);
     }
@@ -99,6 +100,10 @@ public class MaintenanceService {
         task.setHoursWorked(taskDetails.getHoursWorked());
         task.setPartsUsed(taskDetails.getPartsUsed());
         task.setSignature(taskDetails.getSignature());
+        if (previousStatus != MaintenanceStatus.COMPLETED
+                && taskDetails.getStatus() == MaintenanceStatus.COMPLETED) {
+            task.setCompletedAt(LocalDateTime.now());
+        }
         if (taskDetails.getRecurrencePeriodDays() != null) {
             task.setRecurrencePeriodDays(taskDetails.getRecurrencePeriodDays());
         }
@@ -211,6 +216,10 @@ public class MaintenanceService {
             throw new InvalidStatusTransitionException(
                     "Cannot change maintenance status from " + currentStatus.getDisplayName()
                             + " to " + requestedStatus.getDisplayName());
+        }
+        if (requestedStatus == MaintenanceStatus.COMPLETED
+                && (taskDetails.getSignature() == null || taskDetails.getSignature().isBlank())) {
+            throw new IllegalArgumentException("Technician signature is required to complete the task");
         }
         if (taskDetails.getHoursWorked() != null && taskDetails.getHoursWorked() < 0) {
             throw new IllegalArgumentException("Hours worked cannot be negative");
