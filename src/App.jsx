@@ -8,7 +8,7 @@ import AppRoutes from "./routes/AppRoutes";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import GuidelinesPage from "./pages/GuidelinesPage";
-import HelpPage from "./pages/HelpPage";
+import HelpCenterPage from "./pages/HelpCenterPage";
 import AwardsPage from "./pages/AwardsPage";
 import TermsPage from "./pages/TermsPage";
 import GuidesPage from "./pages/GuidesPage";
@@ -146,7 +146,7 @@ function AppContent() {
           ) : currentPage === "guidelines" ? (
             <GuidelinesPage />
           ) : currentPage === "help" ? (
-            <HelpPage />
+            <HelpCenterPage />
           ) : currentPage === "awards" ? (
             <AwardsPage />
           ) : currentPage === "terms" ? (
