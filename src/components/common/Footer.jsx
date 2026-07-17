@@ -54,6 +54,7 @@ export default function Footer({ onNavigate }) {
                 <li><button onClick={() => onNavigate && onNavigate("donotsell")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Do Not Sell Or Share My Information</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("cookies")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Cookie Consent Tool</button></li>
                 <li><button onClick={() => onNavigate && onNavigate("security")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">Security</button></li>
+                <li><button onClick={() => onNavigate && onNavigate("status")} className="hover:text-primary transition-colors text-left bg-transparent border-none p-0 cursor-pointer">System Status</button></li>
               </ul>
             </div>
 
