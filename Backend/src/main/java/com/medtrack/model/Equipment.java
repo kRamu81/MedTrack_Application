@@ -52,8 +52,9 @@ public class Equipment {
      * Status values: "Operational", "Maintenance", "Retired"
      * Matches AddEquipmentForm.jsx options
      */
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private String status = "Operational";
+    private EquipmentStatus status = EquipmentStatus.ACTIVE;
 
     private String category;
 

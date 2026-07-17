@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import com.medtrack.exception.ResourceNotFoundException;
+import java.time.temporal.ChronoUnit;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -47,6 +48,40 @@ public class EquipmentService {
     public List<Equipment> getAllEquipment(String username) {
         Hospital hospital = getHospitalForUser(username);
         return equipmentRepository.findByHospitalId(hospital.getId());
+    }
+
+    /**
+     * Retrieves all equipment whose warranty has already expired.
+     *
+     * @param username authenticated user's username
+     * @return list of equipment with expired warranties
+     */
+    public List<Equipment> getExpiredWarrantyEquipment(String username) {
+        Hospital hospital = getHospitalForUser(username);
+        LocalDate today = LocalDate.now();
+
+        return equipmentRepository.findByHospitalIdAndWarrantyExpiryBefore(
+                hospital.getId(),
+                today
+        );
+    }
+
+    /**
+     * Retrieves all equipment whose warranty will expire within the next 30 days.
+     *
+     * @param username authenticated user's username
+     * @return list of equipment with warranties expiring soon
+     */
+    public List<Equipment> getWarrantyExpiringSoon(String username) {
+        Hospital hospital = getHospitalForUser(username);
+        LocalDate today = LocalDate.now();
+        LocalDate threshold = today.plusDays(30);
+
+        return equipmentRepository.findByHospitalIdAndWarrantyExpiryBetween(
+                hospital.getId(),
+                today,
+                threshold
+        );
     }
 
     /**

@@ -119,6 +119,25 @@ public class EquipmentController {
         String base64Qr = equipmentService.generateQrCodeBase64(id, principal.getName());
         return ResponseEntity.ok(java.util.Map.of("qrCode", base64Qr));
     }
+    /**
+     * Retrieves equipment whose warranty has already expired.
+     */
+    @GetMapping("/warranty/expired")
+    public ResponseEntity<List<Equipment>> getExpiredWarrantyEquipment(Principal principal) {
+        return ResponseEntity.ok(
+                equipmentService.getExpiredWarrantyEquipment(principal.getName())
+        );
+    }
+
+    /**
+     * Retrieves equipment whose warranty will expire within the configured threshold.
+     */
+    @GetMapping("/warranty/expiring-soon")
+    public ResponseEntity<List<Equipment>> getWarrantyExpiringSoon(Principal principal) {
+        return ResponseEntity.ok(
+                equipmentService.getWarrantyExpiringSoon(principal.getName())
+        );
+    }
 
     /**
      * Validates that a resource ID is a positive number.
