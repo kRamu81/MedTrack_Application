@@ -10,6 +10,7 @@ import java.sql.Statement;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MaintenanceMigrationIntegrationTest {
@@ -23,7 +24,7 @@ class MaintenanceMigrationIntegrationTest {
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet result = statement.executeQuery("""
-                     SELECT status, equipment_record_id, hospital_id
+                     SELECT status, equipment_record_id, hospital_id, completed_at
                      FROM maintenance_tasks
                      WHERE id = 100
                      """)) {
@@ -31,6 +32,7 @@ class MaintenanceMigrationIntegrationTest {
             assertEquals("IN_PROGRESS", result.getString("status"));
             assertEquals(10L, result.getLong("equipment_record_id"));
             assertEquals(7L, result.getLong("hospital_id"));
+            assertNull(result.getTimestamp("completed_at"));
         }
     }
 
@@ -83,4 +85,3 @@ class MaintenanceMigrationIntegrationTest {
                 .migrate();
     }
 }
-

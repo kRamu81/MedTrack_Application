@@ -56,17 +56,17 @@ public class AnalyticsService {
                 .filter(t -> t.getStatus() == MaintenanceStatus.COMPLETED)
                 .toList();
 
-        long compliantCount = 0;
-        for (MaintenanceTask task : completedTasks) {
-            if (task.getCreatedAt() != null && task.getDeadline() != null) {
-                LocalDate completionDate = task.getCreatedAt().toLocalDate().plusDays(2);
-                if (!completionDate.isAfter(task.getDeadline())) {
-                    compliantCount++;
-                }
-            }
-        }
+        List<MaintenanceTask> measurableCompletedTasks = completedTasks.stream()
+                .filter(task -> task.getCompletedAt() != null && task.getDeadline() != null)
+                .toList();
+        long compliantCount = measurableCompletedTasks.stream()
+                .filter(task -> !task.getCompletedAt().toLocalDate().isAfter(task.getDeadline()))
+                .count();
 
-        double slaCompliance = completedTasks.isEmpty() ? 100.0 : (compliantCount * 100.0) / completedTasks.size();
+        // Legacy completed rows without an auditable completion timestamp are excluded.
+        double slaCompliance = measurableCompletedTasks.isEmpty()
+                ? 100.0
+                : (compliantCount * 100.0) / measurableCompletedTasks.size();
 
         double mttr = completedTasks.stream()
                 .filter(t -> t.getHoursWorked() != null)

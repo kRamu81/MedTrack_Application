@@ -2,7 +2,7 @@
 
 ## Scope
 
-This backend change makes every maintenance task reference a real equipment record.
+These backend migrations make every maintenance task reference a real equipment record and add an auditable completion timestamp.
 
 It includes:
 
@@ -13,11 +13,14 @@ It includes:
 - corrected development seed relationships
 - stable empty-list API responses
 - maintenance controller and migration integration tests
+- server-controlled maintenance completion timestamps
 
 ## Migration Files
 
 - `Backend/src/main/resources/db/migration/h2/V1__backfill_maintenance_equipment_relationship.sql`
 - `Backend/src/main/resources/db/migration/mysql/V1__backfill_maintenance_equipment_relationship.sql`
+- `Backend/src/main/resources/db/migration/h2/V2__add_maintenance_completion_timestamp.sql`
+- `Backend/src/main/resources/db/migration/mysql/V2__add_maintenance_completion_timestamp.sql`
 
 The scripts:
 
@@ -29,6 +32,8 @@ The scripts:
 6. Make `equipment_record_id` non-nullable.
 
 The final constraint is also a safety check. If any maintenance row cannot be matched to equipment, the migration fails instead of leaving a partially upgraded database.
+
+Migration version `2` adds the nullable `completed_at` column. Existing completed records are intentionally not backfilled because their actual completion time cannot be derived safely. New completion transitions populate it from the server clock, and SLA reporting excludes legacy completed rows where it is null.
 
 ## Pre-deployment Checks
 
@@ -64,7 +69,7 @@ For an existing persistent schema:
 1. Back up the database.
 2. Run the unmatched-row checks above.
 3. Set `FLYWAY_ENABLED=true`.
-4. Start the backend and confirm Flyway reports migration version `1`.
+4. Start the backend and confirm Flyway reports migration version `2`.
 5. Verify that every maintenance row has a non-null `equipment_record_id`.
 
 The configuration uses `baseline-on-migrate=true` and baseline version `0`. This allows migration version `1` to run against the existing unversioned MedTrack schema.
@@ -125,5 +130,7 @@ Integration tests that manage their own database state disable it.
 - hospital-only calendar export
 
 `MaintenanceServiceTest` continues to verify ownership scoping, scheduling, lifecycle enforcement, recurrence, calendar output, and deletion behavior.
+
+It also verifies that completion requires a technician signature, records `completedAt`, and rejects client control of that timestamp. `AnalyticsServiceTest` verifies that SLA compliance uses actual completion timestamps and excludes unverifiable legacy completions.
 
 The complete backend Maven test suite passes after these changes.
