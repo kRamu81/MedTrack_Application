@@ -17,7 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.medtrack.exception.ResourceNotFoundException;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class MaintenanceService {
+
+    private static final int ICAL_MAX_LINE_OCTETS = 75;
+    private static final DateTimeFormatter ICAL_UTC_TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
     private final MaintenanceTaskRepository taskRepository;
     private final UserRepository userRepository;
@@ -89,7 +97,7 @@ public class MaintenanceService {
     @Transactional
     public MaintenanceTask updateTask(Long id, MaintenanceTask taskDetails, Authentication authentication) {
         // A technician can update only a task explicitly assigned to their login email.
-        MaintenanceTask task = taskRepository.findByIdAndAssignedTechnician(id, authentication.getName())
+        MaintenanceTask task = taskRepository.findByIdAndAssignedTechnicianForUpdate(id, authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Maintenance task not found or not assigned to you"));
 
         MaintenanceStatus previousStatus = task.getStatus();
@@ -238,9 +246,8 @@ public class MaintenanceService {
                 .append("CALSCALE:GREGORIAN\r\n")
                 .append("METHOD:PUBLISH\r\n");
 
-        java.time.format.DateTimeFormatter basicDate = java.time.format.DateTimeFormatter.BASIC_ISO_DATE;
-        java.time.format.DateTimeFormatter stampTime = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
-        String nowStamp = java.time.LocalDateTime.now().format(stampTime);
+        DateTimeFormatter basicDate = DateTimeFormatter.BASIC_ISO_DATE;
+        String nowStamp = ICAL_UTC_TIMESTAMP.format(Instant.now());
 
         for (MaintenanceTask task : tasks) {
             if (task.getDeadline() == null) {
@@ -251,26 +258,63 @@ public class MaintenanceService {
             String summary = (task.getEquipment() != null ? task.getEquipment() : "Equipment") + " - " + (task.getMaintenanceType() != null ? task.getMaintenanceType() : "Maintenance");
             String status = task.getStatus() == com.medtrack.model.MaintenanceStatus.COMPLETED ? "COMPLETED" : "NEEDS-ACTION";
 
-            String description = String.format("Task Code: %s\\nStatus: %s\\nTechnician: %s\\nPriority: %s\\nDescription: %s",
+            String description = String.format("Task Code: %s\nStatus: %s\nTechnician: %s\nPriority: %s\nDescription: %s",
                     task.getTaskCode(),
                     task.getStatus().getDisplayName(),
                     task.getAssignedTechnician() != null ? task.getAssignedTechnician() : "Unassigned",
                     task.getPriority() != null ? task.getPriority() : "Normal",
-                    task.getDescription() != null ? task.getDescription().replace("\n", "\\n").replace("\r", "") : "");
+                    task.getDescription() != null ? task.getDescription() : "");
 
-            ical.append("BEGIN:VEVENT\r\n")
-                    .append("UID:").append(task.getTaskCode() != null ? task.getTaskCode() : "task-" + task.getId()).append("@medtrack.com\r\n")
-                    .append("DTSTAMP:").append(nowStamp).append("\r\n")
-                    .append("DTSTART;VALUE=DATE:").append(dtStart).append("\r\n")
-                    .append("DTEND;VALUE=DATE:").append(dtEnd).append("\r\n")
-                    .append("SUMMARY:").append(summary).append("\r\n")
-                    .append("DESCRIPTION:").append(description).append("\r\n")
-                    .append("STATUS:").append(status).append("\r\n")
-                    .append("END:VEVENT\r\n");
+            appendICalLine(ical, "BEGIN:VEVENT");
+            appendICalLine(ical, "UID:"
+                    + (task.getTaskCode() != null ? task.getTaskCode() : "task-" + task.getId())
+                    + "@medtrack.com");
+            appendICalLine(ical, "DTSTAMP:" + nowStamp);
+            appendICalLine(ical, "DTSTART;VALUE=DATE:" + dtStart);
+            appendICalLine(ical, "DTEND;VALUE=DATE:" + dtEnd);
+            appendICalLine(ical, "SUMMARY:" + escapeICalText(summary));
+            appendICalLine(ical, "DESCRIPTION:" + escapeICalText(description));
+            appendICalLine(ical, "STATUS:" + status);
+            appendICalLine(ical, "END:VEVENT");
         }
 
         ical.append("END:VCALENDAR\r\n");
         return ical.toString();
+    }
+
+    private String escapeICalText(String value) {
+        return value.replace("\\", "\\\\")
+                .replace("\r\n", "\\n")
+                .replace("\n", "\\n")
+                .replace("\r", "\\n")
+                .replace(";", "\\;")
+                .replace(",", "\\,");
+    }
+
+    private void appendICalLine(StringBuilder ical, String contentLine) {
+        int start = 0;
+        int currentOctets = 0;
+        boolean continuation = false;
+
+        for (int offset = 0; offset < contentLine.length();) {
+            int codePoint = contentLine.codePointAt(offset);
+            int charCount = Character.charCount(codePoint);
+            int codePointOctets = new String(Character.toChars(codePoint))
+                    .getBytes(StandardCharsets.UTF_8).length;
+            int maxOctets = continuation ? ICAL_MAX_LINE_OCTETS - 1 : ICAL_MAX_LINE_OCTETS;
+
+            if (currentOctets + codePointOctets > maxOctets) {
+                ical.append(contentLine, start, offset).append("\r\n ");
+                start = offset;
+                currentOctets = 0;
+                continuation = true;
+            }
+
+            currentOctets += codePointOctets;
+            offset += charCount;
+        }
+
+        ical.append(contentLine, start, contentLine.length()).append("\r\n");
     }
 
     public void deleteTask(Long id, Authentication authentication) {

@@ -76,6 +76,7 @@ It currently supports:
 - persisting technician reports including parts and signatures
 - requiring technician sign-off and recording `completedAt` on the transition to `COMPLETED`
 - creating one recurring task only when a task transitions to `COMPLETED`
+- serializing technician updates to the same task so concurrent completion requests cannot create duplicate recurrences
 - exporting hospital tasks as an iCalendar feed
 
 Current limitation: the API still uses the entity as its request model, although the service clears client-controlled identity, ownership, status, and report fields before insert. Dedicated create/update DTOs can be introduced later if the public API expands.
@@ -302,6 +303,13 @@ Migration behavior is verified by `MaintenanceMigrationIntegrationTest`. Control
 2. [x] **Corrected SLA reporting.** Analytics now compares the real completion date with the task deadline. Legacy completed rows without a trustworthy timestamp remain readable but are excluded from the SLA denominator instead of receiving an invented completion date.
 
 The nullable completion column is introduced by Flyway migration version `2`. Completion validation and timestamp ownership are covered by `MaintenanceServiceTest`; SLA calculation is covered by `AnalyticsServiceTest`.
+
+### Completed on 2026-07-18
+
+1. [x] **Made recurring completion concurrency-safe.** Technician updates now load the assigned maintenance row with a database `PESSIMISTIC_WRITE` lock inside the existing transaction. Concurrent completion requests therefore serialize: the first request completes the task and creates its recurrence, while the next request observes the completed immutable state and cannot create another recurrence.
+2. [x] **Hardened RFC 5545 calendar output.** Calendar text now escapes backslashes, commas, semicolons, and line breaks; `DTSTAMP` is generated from an actual UTC instant; and content lines are folded at 75 UTF-8 octets without splitting Unicode code points. The endpoint path, media type, filename, and event fields remain compatible.
+
+Lock selection and calendar escaping, UTC formatting, injection resistance, Unicode handling, and line-length behavior are covered by `MaintenanceServiceTest`.
 
 ### Recommended future work
 

@@ -16,10 +16,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import com.medtrack.exception.ResourceNotFoundException;
 
+import jakarta.persistence.LockModeType;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -155,7 +158,7 @@ public class MaintenanceServiceTest {
     @Test
     void updateTask_EnforcesAutoRecurrenceOnComplete() {
         when(authentication.getName()).thenReturn("tech@medtrack.com");
-        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
         // Mock saving the updated task
@@ -182,6 +185,7 @@ public class MaintenanceServiceTest {
 
         // Verify save was called twice (once for completion, once for spawning the next scheduled task)
         verify(taskRepository, times(2)).save(taskCaptor.capture());
+        verify(taskRepository).findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com");
 
         List<MaintenanceTask> savedTasks = taskCaptor.getAllValues();
         assertEquals(2, savedTasks.size());
@@ -200,7 +204,7 @@ public class MaintenanceServiceTest {
     @Test
     void updateTask_RejectsNegativeHours() {
         when(authentication.getName()).thenReturn("tech@medtrack.com");
-        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
         MaintenanceTask request = MaintenanceTask.builder()
@@ -216,7 +220,7 @@ public class MaintenanceServiceTest {
     @Test
     void updateTask_RejectsCompletionWithoutSignature() {
         when(authentication.getName()).thenReturn("tech@medtrack.com");
-        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
         MaintenanceTask request = MaintenanceTask.builder()
@@ -236,7 +240,7 @@ public class MaintenanceServiceTest {
     void updateTask_RejectsInvalidStatusTransition() {
         mockTask.setStatus(MaintenanceStatus.SCHEDULED);
         when(authentication.getName()).thenReturn("tech@medtrack.com");
-        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
         MaintenanceTask request = MaintenanceTask.builder()
@@ -252,7 +256,7 @@ public class MaintenanceServiceTest {
     void updateTask_RejectsEditingCompletedTaskWithoutCreatingRecurrence() {
         mockTask.setStatus(MaintenanceStatus.COMPLETED);
         when(authentication.getName()).thenReturn("tech@medtrack.com");
-        when(taskRepository.findByIdAndAssignedTechnician(50L, "tech@medtrack.com"))
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
         MaintenanceTask request = MaintenanceTask.builder()
@@ -287,6 +291,45 @@ public class MaintenanceServiceTest {
         assertTrue(icalResult.contains("STATUS:NEEDS-ACTION")); // since status is IN_PROGRESS
         assertTrue(icalResult.contains("END:VEVENT"));
         assertTrue(icalResult.contains("END:VCALENDAR"));
+    }
+
+    @Test
+    void updateQuery_UsesPessimisticWriteLock() throws NoSuchMethodException {
+        Method method = MaintenanceTaskRepository.class.getMethod(
+                "findByIdAndAssignedTechnicianForUpdate", Long.class, String.class);
+
+        Lock lock = method.getAnnotation(Lock.class);
+
+        assertNotNull(lock);
+        assertEquals(LockModeType.PESSIMISTIC_WRITE, lock.value());
+    }
+
+    @Test
+    void exportTasksToICal_EscapesTextUsesUtcAndFoldsUtf8Lines() {
+        mockTask.setEquipment("MRI, Scanner; East\\Wing");
+        mockTask.setMaintenanceType("Inspection\r\nX-INJECTED:TRUE");
+        mockTask.setDescription("Unicode 医療 ".repeat(20) + "\r\nSecond line, with; punctuation\\");
+
+        when(authentication.getName()).thenReturn(email);
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_HOSPITAL")))
+                .when(authentication).getAuthorities();
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(taskRepository.findByHospitalId(mockHospital.getId())).thenReturn(Collections.singletonList(mockTask));
+
+        String icalResult = maintenanceService.exportTasksToICal(authentication);
+        String unfoldedResult = icalResult.replace("\r\n ", "");
+
+        assertTrue(unfoldedResult.contains("SUMMARY:MRI\\, Scanner\\; East\\\\Wing - Inspection\\nX-INJECTED:TRUE"));
+        assertFalse(icalResult.contains("\r\nX-INJECTED:TRUE"));
+        assertTrue(icalResult.matches("(?s).*DTSTAMP:\\d{8}T\\d{6}Z\\r\\n.*"));
+        assertTrue(unfoldedResult.contains("\\nSecond line\\, with\\; punctuation\\\\"));
+
+        for (String line : icalResult.split("\\r\\n", -1)) {
+            assertTrue(line.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 75,
+                    () -> "iCalendar content line exceeds 75 octets: " + line);
+        }
+        assertTrue(icalResult.contains("\r\n "), "Long content should use RFC 5545 continuation lines");
     }
 
     @Test
