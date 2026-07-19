@@ -4,7 +4,7 @@ import "lenis/dist/lenis.css";
 import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
-import AppRoutes from "./routes/AppRoutes";
+import ScrollToTopButton from "./components/common/ScrollToTopButton";import AppRoutes from "./routes/AppRoutes";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import GuidelinesPage from "./pages/GuidelinesPage";
@@ -166,8 +166,8 @@ function AppContent() {
           )}
         </main>
 
-        {!isAuthPage && <Footer onNavigate={handleNavigate} />}
-      </div>
+{!isAuthPage && <Footer onNavigate={handleNavigate} />}
+        <ScrollToTopButton />      </div>
     </ReactLenis>
   );
 }
