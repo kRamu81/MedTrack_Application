@@ -90,3 +90,54 @@ body {
 }
 
 /* test frontend */
+
+
+/* Custom Cursor */
+.custom-cursor-dot,
+.custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.custom-cursor-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #2563eb;
+}
+
+.custom-cursor-ring {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #2563eb;
+  transition: width 0.2s ease, height 0.2s ease, background-color 0.2s ease;
+}
+
+.custom-cursor-ring.cursor-hover {
+  width: 48px;
+  height: 48px;
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.custom-cursor-ring.cursor-click {
+  width: 24px;
+  height: 24px;
+}
+
+@media (pointer: fine) {
+  body.custom-cursor-enabled,
+  body.custom-cursor-enabled * {
+    cursor: none !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .custom-cursor-dot,
+  .custom-cursor-ring {
+    display: none;
+  }
+}
