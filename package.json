@@ -10,7 +10,7 @@
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-scripts": "5.0.1"
+    "react-scripts": "^0.0.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.5.4",
