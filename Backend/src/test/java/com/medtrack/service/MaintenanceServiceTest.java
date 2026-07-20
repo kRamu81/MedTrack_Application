@@ -170,7 +170,7 @@ public class MaintenanceServiceTest {
                 .hoursWorked(2.5)
                 .partsUsed("Clean filters")
                 .signature("data:image/png;base64,drawingData")
-                .recurrencePeriodDays(90)
+                .recurrencePeriodDays(30)
                 .build();
 
         // Capture both saves: first the updated task, second the newly spawned recurring task
@@ -192,10 +192,12 @@ public class MaintenanceServiceTest {
 
         MaintenanceTask completedTask = savedTasks.get(0);
         assertEquals(MaintenanceStatus.COMPLETED, completedTask.getStatus());
+        assertEquals(90, completedTask.getRecurrencePeriodDays());
 
         MaintenanceTask nextTask = savedTasks.get(1);
         assertEquals(MaintenanceStatus.SCHEDULED, nextTask.getStatus());
         assertEquals(LocalDate.now().plusDays(90), nextTask.getDeadline());
+        assertEquals(90, nextTask.getRecurrencePeriodDays());
         assertEquals("MRI Scanner", nextTask.getEquipment());
         assertEquals("tech@medtrack.com", nextTask.getAssignedTechnician());
         assertTrue(nextTask.getDescription().contains("Auto-scheduled recurring maintenance task"));
@@ -226,6 +228,47 @@ public class MaintenanceServiceTest {
         MaintenanceTask request = MaintenanceTask.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .hoursWorked(1.0)
+                .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> maintenanceService.updateTask(50L, request, authentication));
+
+        assertEquals("Technician signature is required to complete the task", exception.getMessage());
+        assertNull(mockTask.getCompletedAt());
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void updateTask_CompletesWithPreviouslyStoredSignatureWhenPayloadOmitsIt() {
+        mockTask.setSignature("stored-technician-signature");
+        mockTask.setRecurrencePeriodDays(null);
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+        when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .build();
+
+        MaintenanceTask result = maintenanceService.updateTask(50L, request, authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        assertEquals("stored-technician-signature", result.getSignature());
+        assertNotNull(result.getCompletedAt());
+        verify(taskRepository).save(mockTask);
+    }
+
+    @Test
+    void updateTask_RejectsExplicitBlankSignatureOnCompletion() {
+        mockTask.setSignature("stored-technician-signature");
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+
+        MaintenanceTask request = MaintenanceTask.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .signature("   ")
                 .build();
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,

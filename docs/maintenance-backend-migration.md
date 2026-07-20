@@ -131,6 +131,9 @@ Integration tests that manage their own database state disable it.
 
 `MaintenanceServiceTest` continues to verify ownership scoping, scheduling, lifecycle enforcement, recurrence, calendar output, and deletion behavior.
 
-It also verifies that completion requires a technician signature, records `completedAt`, and rejects client control of that timestamp. `AnalyticsServiceTest` verifies that SLA compliance uses actual completion timestamps and excludes unverifiable legacy completions.
+It also verifies that completion requires an effective technician signature, accepts a previously stored signature when a partial completion payload omits the field, rejects an explicit blank signature, records `completedAt`, preserves hospital-owned recurrence configuration during technician updates, and rejects client control of the completion timestamp. `AnalyticsServiceTest` verifies that SLA compliance uses actual completion timestamps and excludes unverifiable legacy completions.
 
-The complete backend Maven test suite passes after these changes.
+The Maintenance regression coverage is present, but the complete backend Maven suite must
+be rerun after the project-wide `EquipmentStatus` compilation errors in `AnalyticsService`
+and `EquipmentService` are resolved. Those unrelated files are outside this Maintenance-only
+change.
