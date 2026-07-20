@@ -122,9 +122,8 @@ public class MaintenanceService {
                 && taskDetails.getStatus() == MaintenanceStatus.COMPLETED) {
             task.setCompletedAt(LocalDateTime.now());
         }
-        if (taskDetails.getRecurrencePeriodDays() != null) {
-            task.setRecurrencePeriodDays(taskDetails.getRecurrencePeriodDays());
-        }
+        // Recurrence is hospital-owned scheduling configuration. A technician update
+        // may echo this field, but it must never change the stored schedule.
 
         MaintenanceTask savedTask = taskRepository.save(task);
 
@@ -235,8 +234,11 @@ public class MaintenanceService {
                     "Cannot change maintenance status from " + currentStatus.getDisplayName()
                             + " to " + requestedStatus.getDisplayName());
         }
+        String effectiveSignature = taskDetails.getSignature() != null
+                ? taskDetails.getSignature()
+                : task.getSignature();
         if (requestedStatus == MaintenanceStatus.COMPLETED
-                && (taskDetails.getSignature() == null || taskDetails.getSignature().isBlank())) {
+                && (effectiveSignature == null || effectiveSignature.isBlank())) {
             throw new IllegalArgumentException("Technician signature is required to complete the task");
         }
         if (taskDetails.getHoursWorked() != null && taskDetails.getHoursWorked() < 0) {
