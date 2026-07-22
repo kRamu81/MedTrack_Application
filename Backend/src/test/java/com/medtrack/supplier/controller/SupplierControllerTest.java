@@ -2,11 +2,12 @@ package com.medtrack.supplier.controller;
 
 import com.medtrack.exception.GlobalExceptionHandler;
 import com.medtrack.model.EquipmentOrder;
+import com.medtrack.supplier.dto.SupplierPerformanceResponse;
 import com.medtrack.supplier.service.SupplierOrderService;
+import com.medtrack.supplier.service.SupplierPerformanceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -34,11 +35,14 @@ public class SupplierControllerTest {
         @Mock
         private SupplierOrderService supplierOrderService;
 
-        @InjectMocks
+        @Mock
+        private SupplierPerformanceService supplierPerformanceService;
+
         private SupplierController supplierController;
 
         @BeforeEach
         void setUp() {
+                supplierController = new SupplierController(supplierOrderService, supplierPerformanceService);
                 mockMvc = MockMvcBuilders.standaloneSetup(supplierController)
                                 .setControllerAdvice(new GlobalExceptionHandler())
                                 .build();
@@ -142,5 +146,35 @@ public class SupplierControllerTest {
                                 .accept(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.message").value("Order not found with id: 99"));
+        }
+
+        // -----------------------------------------------------------------------
+        // Phase 7 – Supplier Performance
+        // -----------------------------------------------------------------------
+
+        @Test
+        void getSupplierPerformance_Success() throws Exception {
+                SupplierPerformanceResponse perfResponse = SupplierPerformanceResponse.builder()
+                                .supplierId(10L)
+                                .totalShipments(5L)
+                                .deliveredShipments(4L)
+                                .delayedShipments(1L)
+                                .onTimeShipments(3L)
+                                .onTimeDeliveryRate(75.0)
+                                .performanceScore(80.0)
+                                .build();
+
+                when(supplierPerformanceService.getPerformance(10L)).thenReturn(perfResponse);
+
+                mockMvc.perform(get("/api/supplier/suppliers/10/performance")
+                                .accept(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.supplierId").value(10))
+                                .andExpect(jsonPath("$.totalShipments").value(5))
+                                .andExpect(jsonPath("$.deliveredShipments").value(4))
+                                .andExpect(jsonPath("$.delayedShipments").value(1))
+                                .andExpect(jsonPath("$.onTimeShipments").value(3))
+                                .andExpect(jsonPath("$.onTimeDeliveryRate").value(75.0))
+                                .andExpect(jsonPath("$.performanceScore").value(80.0));
         }
 }

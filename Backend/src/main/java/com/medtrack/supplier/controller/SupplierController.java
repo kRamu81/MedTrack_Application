@@ -1,7 +1,9 @@
 package com.medtrack.supplier.controller;
 
 import com.medtrack.model.EquipmentOrder;
+import com.medtrack.supplier.dto.SupplierPerformanceResponse;
 import com.medtrack.supplier.service.SupplierOrderService;
+import com.medtrack.supplier.service.SupplierPerformanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class SupplierController {
 
     private final SupplierOrderService supplierOrderService;
+    private final SupplierPerformanceService supplierPerformanceService;
 
     @GetMapping("/orders")
     @Operation(summary = "Get paginated, filtered supplier orders", description = "Allows suppliers to search and filter through synchronized equipment purchase orders.")
@@ -64,5 +67,21 @@ public class SupplierController {
 
         EquipmentOrder updatedOrder = supplierOrderService.updateOrderStatus(orderId, newStatus);
         return ResponseEntity.ok(updatedOrder);
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 7 – Supplier Performance Scoring
+    // -----------------------------------------------------------------------
+
+    @GetMapping("/suppliers/{supplierId}/performance")
+    @Operation(summary = "Get supplier performance score", description = "Returns on-time delivery rate and overall performance score for the given supplier.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Performance metrics returned successfully", content = @Content(schema = @Schema(implementation = SupplierPerformanceResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid supplier ID")
+    })
+    public ResponseEntity<SupplierPerformanceResponse> getSupplierPerformance(
+            @PathVariable Long supplierId) {
+        SupplierPerformanceResponse response = supplierPerformanceService.getPerformance(supplierId);
+        return ResponseEntity.ok(response);
     }
 }

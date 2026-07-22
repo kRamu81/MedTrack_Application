@@ -20,4 +20,16 @@ public interface ShipmentTrackingRepository extends JpaRepository<ShipmentTracki
     List<ShipmentTracking> findBySupplierId(Long supplierId);
 
     List<ShipmentTracking> findByEstimatedDeliveryDateBefore(LocalDateTime dateTime);
+
+    // Phase 7: Delay detection - find active (non-delivered) shipments not yet
+    // flagged as delayed
+    List<ShipmentTracking> findByShipmentStatusNotAndDelayDetectedFalse(ShipmentStatus status);
+
+    // Phase 7: Performance scoring - delivered shipments by supplier
+    List<ShipmentTracking> findBySupplierIdAndShipmentStatus(Long supplierId, ShipmentStatus status);
+
+    // Phase 7: Performance scoring - counts
+    long countBySupplierId(Long supplierId);
+
+    long countBySupplierIdAndDelayDetectedTrue(Long supplierId);
 }

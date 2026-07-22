@@ -12,9 +12,20 @@ public class SupplierKafkaConfig {
     @Value("${app.kafka.topics.order-events:order-events}")
     private String orderEventsTopic;
 
+    @Value("${app.kafka.topics.delay-events:delay-events}")
+    private String delayEventsTopic;
+
     @Bean
     public NewTopic orderEventsTopic() {
         return TopicBuilder.name(orderEventsTopic)
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic delayEventsTopic() {
+        return TopicBuilder.name(delayEventsTopic)
                 .partitions(1)
                 .replicas(1)
                 .build();
