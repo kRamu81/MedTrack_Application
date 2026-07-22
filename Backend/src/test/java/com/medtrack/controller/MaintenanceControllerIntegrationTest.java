@@ -2,11 +2,14 @@ package com.medtrack.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medtrack.auth.service.KafkaEventPublisher;
+import com.medtrack.dto.MaintenanceCreateRequest;
+import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.exception.InvalidStatusTransitionException;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.service.MaintenanceService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -19,6 +22,7 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -71,13 +75,18 @@ class MaintenanceControllerIntegrationTest {
     @Test
     @WithMockUser(username = "hospital@medtrack.com", roles = "HOSPITAL")
     void hospitalCanScheduleValidMaintenance() throws Exception {
-        MaintenanceTask request = validSchedulingRequest();
-        MaintenanceTask created = validSchedulingRequest();
-        created.setId(42L);
-        created.setTaskCode("MNT-SERVER-GENERATED");
-        created.setStatus(MaintenanceStatus.SCHEDULED);
+        MaintenanceCreateRequest request = validSchedulingRequest();
+        MaintenanceTask created = MaintenanceTask.builder()
+                .id(42L)
+                .taskCode("MNT-SERVER-GENERATED")
+                .equipmentId(request.getEquipmentId())
+                .maintenanceType(request.getMaintenanceType())
+                .deadline(request.getDeadline())
+                .priority(request.getPriority())
+                .status(MaintenanceStatus.SCHEDULED)
+                .build();
 
-        when(maintenanceService.scheduleTask(any(MaintenanceTask.class), any())).thenReturn(created);
+        when(maintenanceService.scheduleTask(any(MaintenanceCreateRequest.class), any())).thenReturn(created);
 
         mockMvc.perform(post("/api/maintenance")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,6 +95,45 @@ class MaintenanceControllerIntegrationTest {
                 .andExpect(jsonPath("$.id").value(42))
                 .andExpect(jsonPath("$.taskCode").value("MNT-SERVER-GENERATED"))
                 .andExpect(jsonPath("$.status").value("Scheduled"));
+    }
+
+    @Test
+    @WithMockUser(username = "hospital@medtrack.com", roles = "HOSPITAL")
+    void schedulingIgnoresLegacyServerControlledRequestFields() throws Exception {
+        MaintenanceTask created = MaintenanceTask.builder()
+                .id(42L)
+                .taskCode("MNT-SERVER-GENERATED")
+                .equipmentId("EQ-1001")
+                .maintenanceType("Inspection")
+                .deadline(LocalDate.now().plusDays(7))
+                .priority("High")
+                .status(MaintenanceStatus.SCHEDULED)
+                .build();
+        when(maintenanceService.scheduleTask(any(MaintenanceCreateRequest.class), any()))
+                .thenReturn(created);
+
+        mockMvc.perform(post("/api/maintenance")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "id":999,
+                                  "taskCode":"CLIENT-CODE",
+                                  "equipmentId":"EQ-1001",
+                                  "maintenanceType":"Inspection",
+                                  "deadline":"%s",
+                                  "priority":"High",
+                                  "status":"Completed",
+                                  "completedAt":"2026-01-01T00:00:00"
+                                }
+                                """.formatted(LocalDate.now().plusDays(7))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.taskCode").value("MNT-SERVER-GENERATED"))
+                .andExpect(jsonPath("$.status").value("Scheduled"));
+
+        ArgumentCaptor<MaintenanceCreateRequest> requestCaptor =
+                ArgumentCaptor.forClass(MaintenanceCreateRequest.class);
+        verify(maintenanceService).scheduleTask(requestCaptor.capture(), any());
+        assertEquals("EQ-1001", requestCaptor.getValue().getEquipmentId());
     }
 
     @Test
@@ -102,7 +150,7 @@ class MaintenanceControllerIntegrationTest {
     @Test
     @WithMockUser(username = "tech@medtrack.com", roles = "TECHNICIAN")
     void technicianCanUpdateMaintenance() throws Exception {
-        MaintenanceTask update = MaintenanceTask.builder()
+        MaintenanceUpdateRequest update = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.IN_PROGRESS)
                 .notes("Inspection started")
                 .hoursWorked(1.5)
@@ -119,7 +167,7 @@ class MaintenanceControllerIntegrationTest {
                 .hoursWorked(1.5)
                 .build();
 
-        when(maintenanceService.updateTask(eq(42L), any(MaintenanceTask.class), any())).thenReturn(updated);
+        when(maintenanceService.updateTask(eq(42L), any(MaintenanceUpdateRequest.class), any())).thenReturn(updated);
 
         mockMvc.perform(put("/api/maintenance/42")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,7 +180,7 @@ class MaintenanceControllerIntegrationTest {
     @Test
     @WithMockUser(username = "hospital@medtrack.com", roles = "HOSPITAL")
     void hospitalCannotUseTechnicianUpdateEndpoint() throws Exception {
-        MaintenanceTask update = MaintenanceTask.builder()
+        MaintenanceUpdateRequest update = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.IN_PROGRESS)
                 .build();
 
@@ -165,7 +213,7 @@ class MaintenanceControllerIntegrationTest {
     @Test
     @WithMockUser(username = "hospital@medtrack.com", roles = "HOSPITAL")
     void invalidSchedulingPayloadReturns400() throws Exception {
-        MaintenanceTask invalid = MaintenanceTask.builder()
+        MaintenanceCreateRequest invalid = MaintenanceCreateRequest.builder()
                 .equipmentId("")
                 .maintenanceType("")
                 .priority("Urgent")
@@ -195,11 +243,41 @@ class MaintenanceControllerIntegrationTest {
 
     @Test
     @WithMockUser(username = "tech@medtrack.com", roles = "TECHNICIAN")
+    void technicianUpdateWithoutStatusReturnsValidationError() throws Exception {
+        mockMvc.perform(put("/api/maintenance/42")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"notes":"Inspection started"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors.status").value("Status is required"));
+
+        verify(maintenanceService, never()).updateTask(any(), any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "tech@medtrack.com", roles = "TECHNICIAN")
+    void technicianUpdateWithNegativeHoursReturnsValidationError() throws Exception {
+        mockMvc.perform(put("/api/maintenance/42")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"In Progress","hoursWorked":-1}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors.hoursWorked").value("Hours worked cannot be negative"));
+
+        verify(maintenanceService, never()).updateTask(any(), any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "tech@medtrack.com", roles = "TECHNICIAN")
     void invalidStatusTransitionReturns400() throws Exception {
-        MaintenanceTask update = MaintenanceTask.builder()
+        MaintenanceUpdateRequest update = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .build();
-        when(maintenanceService.updateTask(eq(42L), any(MaintenanceTask.class), any()))
+        when(maintenanceService.updateTask(eq(42L), any(MaintenanceUpdateRequest.class), any()))
                 .thenThrow(new InvalidStatusTransitionException(
                         "Cannot change maintenance status from Scheduled to Completed"));
 
@@ -262,13 +340,12 @@ class MaintenanceControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].status").value("Scheduled"));
     }
 
-    private MaintenanceTask validSchedulingRequest() {
-        return MaintenanceTask.builder()
+    private MaintenanceCreateRequest validSchedulingRequest() {
+        return MaintenanceCreateRequest.builder()
                 .equipmentId("EQ-1001")
                 .maintenanceType("Inspection")
                 .deadline(LocalDate.now().plusDays(7))
                 .priority("High")
-                .status(MaintenanceStatus.SCHEDULED)
                 .build();
     }
 }

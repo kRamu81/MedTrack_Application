@@ -47,7 +47,7 @@ public class MaintenanceTask {
     private String hospital;
 
     // Stable ownership key used by the service to isolate one hospital's tasks from another.
-    @Column(name = "hospital_id")
+    @Column(name = "hospital_id", nullable = false)
     private Long hospitalId;
 
     @NotBlank(message = "Maintenance type is required")
@@ -63,6 +63,7 @@ public class MaintenanceTask {
     private String image;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
     @NotNull(message = "Status is required")
     private MaintenanceStatus status = MaintenanceStatus.SCHEDULED;

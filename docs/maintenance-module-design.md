@@ -6,6 +6,8 @@ The project already contains a basic Maintenance Scheduling module. It is implem
 
 - `model/MaintenanceTask.java`
 - `model/MaintenanceStatus.java`
+- `dto/MaintenanceCreateRequest.java`
+- `dto/MaintenanceUpdateRequest.java`
 - `repository/MaintenanceTaskRepository.java`
 - `service/MaintenanceService.java`
 - `controller/MaintenanceController.java`
@@ -26,7 +28,18 @@ The current backend can create, fetch, update, and delete maintenance tasks thro
 
 `MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, parts used, signature, and the server-recorded completion timestamp. Its `status` field uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`. It also stores `hospitalId`, which is populated by the backend and used as a stable ownership key.
 
-The task keeps the existing API-facing equipment code/name fields and also stores a lazy, required `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. A versioned Flyway migration backfills legacy rows before enforcing the non-null relationship. Technician assignment remains an email string, but scheduling verifies that a supplied account exists and has the technician role.
+The task keeps the existing API-facing equipment code/name fields and also stores a lazy, required `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. Versioned Flyway migrations backfill legacy rows, enforce non-null equipment and hospital ownership, and add a restrictive equipment foreign key so maintenance history cannot be orphaned by equipment deletion. Technician assignment remains an email string, but scheduling verifies that a supplied account exists and has the technician role.
+
+### Maintenance request DTOs
+
+`MaintenanceCreateRequest` contains only hospital-controlled scheduling fields. Identity,
+ownership, initial status, timestamps, and technician evidence are not request properties.
+Unknown legacy entity fields are ignored so existing clients can continue sending their current
+JSON shape without gaining write access to those values.
+
+`MaintenanceUpdateRequest` contains only the status and partial technician report fields.
+Its optional report values retain the existing null-means-preserve behavior. The recurrence
+field remains accepted for compatibility but cannot change the hospital-owned schedule.
 
 ### MaintenanceTaskRepository.java
 
@@ -87,7 +100,9 @@ It currently supports:
 - serializing hospital deletion with technician completion of the same task
 - exporting hospital tasks as an iCalendar feed
 
-Current limitation: the API still uses the entity as its request model, although the service clears client-controlled identity, ownership, status, and report fields before insert. Dedicated create/update DTOs can be introduced later if the public API expands.
+Create and update requests use dedicated DTOs. `MaintenanceTask` remains the response model,
+so existing response JSON fields are unchanged. The service constructs new entities from the
+create allowlist and applies only technician-owned fields from the update allowlist.
 
 ### MaintenanceController.java
 
@@ -104,7 +119,8 @@ Current endpoints:
 
 The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The list endpoint is automatically scoped to the authenticated hospital or technician and consistently returns HTTP 200 with a JSON array, including `[]` when no tasks exist.
 
-Scheduling requests now use Bean Validation. Technician updates use service-level validation because their partial payload intentionally does not contain required scheduling fields. Optional status and equipment filters are not yet exposed.
+Scheduling and technician-update DTOs use Bean Validation, with business-critical checks also
+retained in the service. Optional status and equipment filters are not yet exposed.
 
 Controller integration tests verify scheduling, updates, deletion, empty lists, invalid payloads, invalid status text and transitions, positive ID validation, role guards, and hospital-only calendar export. Method-security failures are mapped to HTTP 403 instead of being converted to a generic HTTP 400 response.
 
@@ -297,6 +313,8 @@ The current frontend field names should be preserved unless frontend changes are
 - [x] Return HTTP 200 with an empty array for an empty maintenance list.
 - [x] Add maintenance controller integration tests for validation and role guards.
 - [x] Add migration integration tests for successful backfill and unmatched legacy records.
+- [x] Introduce allowlisted create and technician-update request DTOs.
+- [x] Enforce non-null maintenance ownership and a restrictive equipment foreign key.
 
 ### Completed on 2026-07-14
 
@@ -352,6 +370,19 @@ Lock selection and calendar escaping, UTC formatting, injection resistance, Unic
 
 The endpoint paths, request and response field names, role guards, and HTTP status codes
 remain unchanged. Regression coverage is implemented in `MaintenanceServiceTest`.
+
+### Completed on 2026-07-22
+
+1. [x] **Separated Maintenance API requests from persistence entities.** Hospital scheduling
+   now accepts `MaintenanceCreateRequest`, and technician reporting accepts
+   `MaintenanceUpdateRequest`. Server-controlled identity, ownership, workflow, and audit
+   fields are no longer bindable request properties. Endpoint paths, request field names,
+   response JSON, roles, and status codes remain unchanged.
+2. [x] **Enforced Maintenance record integrity in versioned migrations.** Migration version
+   `3` makes `hospital_id` and `status` non-null and adds a restrictive foreign key from
+   `maintenance_tasks.equipment_record_id` to `equipment.id`. Equipment deletion therefore
+   cannot orphan retained maintenance evidence. Migration and locked-deletion regression
+   coverage now verifies these guarantees.
 
 ### Recommended future work
 

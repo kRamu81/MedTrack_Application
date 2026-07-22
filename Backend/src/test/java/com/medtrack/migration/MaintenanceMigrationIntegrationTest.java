@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 
@@ -39,6 +40,29 @@ class MaintenanceMigrationIntegrationTest {
     @Test
     void migrationFailsWhenLegacyTaskCannotBeMatchedToEquipment() throws Exception {
         String url = createLegacyDatabase(false);
+
+        assertThrows(Exception.class, () -> migrate(url));
+    }
+
+    @Test
+    void migrationPreventsDeletingEquipmentReferencedByMaintenanceHistory() throws Exception {
+        String url = createLegacyDatabase(true);
+        migrate(url);
+
+        try (Connection connection = DriverManager.getConnection(url, "sa", "");
+             Statement statement = connection.createStatement()) {
+            assertThrows(SQLException.class,
+                    () -> statement.executeUpdate("DELETE FROM equipment WHERE id = 10"));
+        }
+    }
+
+    @Test
+    void migrationFailsWhenMaintenanceOwnershipCannotBeRestored() throws Exception {
+        String url = createLegacyDatabase(true);
+        try (Connection connection = DriverManager.getConnection(url, "sa", "");
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE equipment SET hospital_id = NULL WHERE id = 10");
+        }
 
         assertThrows(Exception.class, () -> migrate(url));
     }

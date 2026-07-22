@@ -1,5 +1,7 @@
 package com.medtrack.controller;
 
+import com.medtrack.dto.MaintenanceCreateRequest;
+import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.service.MaintenanceService;
 import jakarta.validation.Valid;
@@ -56,15 +58,15 @@ public class MaintenanceController {
      * Schedules a new maintenance task.
      * Accessible only to users with the HOSPITAL role.
      *
-     * @param task the maintenance task to be created
+     * @param request the hospital-controlled scheduling fields
      * @return the newly created maintenance task with HTTP 201 Created
      */
     @PostMapping
     @PreAuthorize("hasRole('HOSPITAL')")
     // Bean validation rejects malformed scheduling requests before business logic runs.
-    public ResponseEntity<MaintenanceTask> scheduleTask(@Valid @RequestBody MaintenanceTask task,
+    public ResponseEntity<MaintenanceTask> scheduleTask(@Valid @RequestBody MaintenanceCreateRequest request,
                                                         Authentication authentication) {
-        MaintenanceTask createdTask = maintenanceService.scheduleTask(task, authentication);
+        MaintenanceTask createdTask = maintenanceService.scheduleTask(request, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
@@ -73,16 +75,16 @@ public class MaintenanceController {
      * Accessible only to users with the TECHNICIAN role.
      *
      * @param id the maintenance task identifier
-     * @param task the updated maintenance task details
+     * @param request the technician-controlled report fields
      * @return the updated maintenance task
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('TECHNICIAN')")
     public ResponseEntity<MaintenanceTask> updateTask(@PathVariable Long id,
-                                                      @RequestBody MaintenanceTask task,
+                                                      @Valid @RequestBody MaintenanceUpdateRequest request,
                                                       Authentication authentication) {
         validateId(id);
-        return ResponseEntity.ok(maintenanceService.updateTask(id, task, authentication));
+        return ResponseEntity.ok(maintenanceService.updateTask(id, request, authentication));
     }
 
     /**

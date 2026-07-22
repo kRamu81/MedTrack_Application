@@ -2,6 +2,8 @@ package com.medtrack.service;
 
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.dto.MaintenanceCreateRequest;
+import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.exception.InvalidStatusTransitionException;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.Hospital;
@@ -70,56 +72,58 @@ public class MaintenanceService {
     }
 
     @Transactional
-    public MaintenanceTask scheduleTask(MaintenanceTask task, Authentication authentication) {
+    public MaintenanceTask scheduleTask(MaintenanceCreateRequest request, Authentication authentication) {
         Hospital hospital = getHospitalForUser(authentication.getName());
-        validateSchedulingRequest(task);
-        Equipment equipment = resolveOwnedEquipment(task.getEquipmentId(), hospital.getId());
-        validateAssignedTechnician(task.getAssignedTechnician());
+        validateSchedulingRequest(request);
+        Equipment equipment = resolveOwnedEquipment(request.getEquipmentId(), hospital.getId());
+        validateAssignedTechnician(request.getAssignedTechnician());
 
-        // Reset identity and report fields so POST cannot overwrite an existing task or forge its state.
-        task.setId(null);
-        task.setTaskCode("MNT-" + UUID.randomUUID());
-        task.setHospitalId(hospital.getId());
-        task.setHospital(hospital.getName());
-        task.setEquipmentRecord(equipment);
-        task.setEquipmentId(equipment.getEquipmentCode());
-        task.setEquipment(equipment.getName());
-        task.setStatus(MaintenanceStatus.SCHEDULED);
-        task.setNotes(null);
-        task.setHoursWorked(null);
-        task.setPartsUsed(null);
-        task.setSignature(null);
-        task.setCompletedAt(null);
-        task.setCreatedAt(LocalDateTime.now());
+        MaintenanceTask task = MaintenanceTask.builder()
+                .taskCode("MNT-" + UUID.randomUUID())
+                .equipmentId(equipment.getEquipmentCode())
+                .equipment(equipment.getName())
+                .equipmentRecord(equipment)
+                .hospital(hospital.getName())
+                .hospitalId(hospital.getId())
+                .maintenanceType(request.getMaintenanceType())
+                .deadline(request.getDeadline())
+                .assignedTechnician(request.getAssignedTechnician())
+                .description(request.getDescription())
+                .priority(request.getPriority())
+                .image(request.getImage())
+                .status(MaintenanceStatus.SCHEDULED)
+                .recurrencePeriodDays(request.getRecurrencePeriodDays())
+                .createdAt(LocalDateTime.now())
+                .build();
         return taskRepository.save(task);
     }
 
     @Transactional
-    public MaintenanceTask updateTask(Long id, MaintenanceTask taskDetails, Authentication authentication) {
+    public MaintenanceTask updateTask(Long id, MaintenanceUpdateRequest request, Authentication authentication) {
         // A technician can update only a task explicitly assigned to their login email.
         MaintenanceTask task = taskRepository.findByIdAndAssignedTechnicianForUpdate(id, authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Maintenance task not found or not assigned to you"));
 
         MaintenanceStatus previousStatus = task.getStatus();
-        validateTechnicianUpdate(task, taskDetails);
+        validateTechnicianUpdate(task, request);
 
-        task.setStatus(taskDetails.getStatus());
+        task.setStatus(request.getStatus());
         // Technician updates are partial: omitted optional report fields must not erase
         // values captured by an earlier update. Empty strings remain explicit values.
-        if (taskDetails.getNotes() != null) {
-            task.setNotes(taskDetails.getNotes());
+        if (request.getNotes() != null) {
+            task.setNotes(request.getNotes());
         }
-        if (taskDetails.getHoursWorked() != null) {
-            task.setHoursWorked(taskDetails.getHoursWorked());
+        if (request.getHoursWorked() != null) {
+            task.setHoursWorked(request.getHoursWorked());
         }
-        if (taskDetails.getPartsUsed() != null) {
-            task.setPartsUsed(taskDetails.getPartsUsed());
+        if (request.getPartsUsed() != null) {
+            task.setPartsUsed(request.getPartsUsed());
         }
-        if (taskDetails.getSignature() != null) {
-            task.setSignature(taskDetails.getSignature());
+        if (request.getSignature() != null) {
+            task.setSignature(request.getSignature());
         }
         if (previousStatus != MaintenanceStatus.COMPLETED
-                && taskDetails.getStatus() == MaintenanceStatus.COMPLETED) {
+                && request.getStatus() == MaintenanceStatus.COMPLETED) {
             task.setCompletedAt(LocalDateTime.now());
         }
         // Recurrence is hospital-owned scheduling configuration. A technician update
@@ -155,20 +159,20 @@ public class MaintenanceService {
         return savedTask;
     }
 
-    private void validateSchedulingRequest(MaintenanceTask task) {
-        if (task.getEquipmentId() == null || task.getEquipmentId().isBlank()) {
+    private void validateSchedulingRequest(MaintenanceCreateRequest request) {
+        if (request.getEquipmentId() == null || request.getEquipmentId().isBlank()) {
             throw new IllegalArgumentException("Equipment ID is required");
         }
-        if (task.getDeadline() == null) {
+        if (request.getDeadline() == null) {
             throw new IllegalArgumentException("Deadline is required");
         }
-        if (task.getMaintenanceType() == null || task.getMaintenanceType().isBlank()) {
+        if (request.getMaintenanceType() == null || request.getMaintenanceType().isBlank()) {
             throw new IllegalArgumentException("Maintenance type is required");
         }
-        if (!Set.of("Normal", "High", "Critical").contains(task.getPriority())) {
+        if (!Set.of("Normal", "High", "Critical").contains(request.getPriority())) {
             throw new IllegalArgumentException("Priority must be Normal, High, or Critical");
         }
-        if (task.getRecurrencePeriodDays() != null && task.getRecurrencePeriodDays() < 0) {
+        if (request.getRecurrencePeriodDays() != null && request.getRecurrencePeriodDays() < 0) {
             throw new IllegalArgumentException("Recurrence period cannot be negative");
         }
     }
@@ -215,9 +219,9 @@ public class MaintenanceService {
         }
     }
 
-    private void validateTechnicianUpdate(MaintenanceTask task, MaintenanceTask taskDetails) {
+    private void validateTechnicianUpdate(MaintenanceTask task, MaintenanceUpdateRequest request) {
         MaintenanceStatus currentStatus = task.getStatus();
-        MaintenanceStatus requestedStatus = taskDetails.getStatus();
+        MaintenanceStatus requestedStatus = request.getStatus();
 
         if (currentStatus == null) {
             throw new InvalidStatusTransitionException("Maintenance task has no current status");
@@ -234,17 +238,17 @@ public class MaintenanceService {
                     "Cannot change maintenance status from " + currentStatus.getDisplayName()
                             + " to " + requestedStatus.getDisplayName());
         }
-        String effectiveSignature = taskDetails.getSignature() != null
-                ? taskDetails.getSignature()
+        String effectiveSignature = request.getSignature() != null
+                ? request.getSignature()
                 : task.getSignature();
         if (requestedStatus == MaintenanceStatus.COMPLETED
                 && (effectiveSignature == null || effectiveSignature.isBlank())) {
             throw new IllegalArgumentException("Technician signature is required to complete the task");
         }
-        if (taskDetails.getHoursWorked() != null && taskDetails.getHoursWorked() < 0) {
+        if (request.getHoursWorked() != null && request.getHoursWorked() < 0) {
             throw new IllegalArgumentException("Hours worked cannot be negative");
         }
-        if (taskDetails.getRecurrencePeriodDays() != null && taskDetails.getRecurrencePeriodDays() < 0) {
+        if (request.getRecurrencePeriodDays() != null && request.getRecurrencePeriodDays() < 0) {
             throw new IllegalArgumentException("Recurrence period cannot be negative");
         }
     }

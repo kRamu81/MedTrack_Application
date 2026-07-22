@@ -2,6 +2,8 @@ package com.medtrack.service;
 
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.dto.MaintenanceCreateRequest;
+import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.model.Hospital;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.MaintenanceStatus;
@@ -105,17 +107,11 @@ public class MaintenanceServiceTest {
         when(equipmentRepository.findByEquipmentCode("EQ-100")).thenReturn(Optional.of(mockEquipment));
         when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MaintenanceTask taskToSchedule = MaintenanceTask.builder()
-                .id(999L)
-                .taskCode("CLIENT-CODE")
+        MaintenanceCreateRequest taskToSchedule = MaintenanceCreateRequest.builder()
                 .equipmentId("EQ-100")
                 .maintenanceType("Preventive")
                 .deadline(LocalDate.now())
                 .priority("Normal")
-                .status(MaintenanceStatus.COMPLETED)
-                .notes("Client-forged report")
-                .hoursWorked(4.0)
-                .completedAt(java.time.LocalDateTime.now().minusDays(1))
                 .build();
 
         MaintenanceTask result = maintenanceService.scheduleTask(taskToSchedule, authentication);
@@ -143,7 +139,7 @@ public class MaintenanceServiceTest {
         when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
         when(equipmentRepository.findByEquipmentCode("EQ-100")).thenReturn(Optional.of(mockEquipment));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceCreateRequest request = MaintenanceCreateRequest.builder()
                 .equipmentId("EQ-100")
                 .maintenanceType("Preventive")
                 .deadline(LocalDate.now())
@@ -164,7 +160,7 @@ public class MaintenanceServiceTest {
         // Mock saving the updated task
         when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MaintenanceTask taskUpdatePayload = MaintenanceTask.builder()
+        MaintenanceUpdateRequest taskUpdatePayload = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .notes("All filters cleaned. Operational.")
                 .hoursWorked(2.5)
@@ -209,7 +205,7 @@ public class MaintenanceServiceTest {
         when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.IN_PROGRESS)
                 .hoursWorked(-1.0)
                 .build();
@@ -225,7 +221,7 @@ public class MaintenanceServiceTest {
         when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .hoursWorked(1.0)
                 .build();
@@ -247,7 +243,7 @@ public class MaintenanceServiceTest {
                 .thenReturn(Optional.of(mockTask));
         when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .build();
 
@@ -266,7 +262,7 @@ public class MaintenanceServiceTest {
         when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .signature("   ")
                 .build();
@@ -286,7 +282,7 @@ public class MaintenanceServiceTest {
         when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .build();
 
@@ -302,7 +298,7 @@ public class MaintenanceServiceTest {
         when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
                 .thenReturn(Optional.of(mockTask));
 
-        MaintenanceTask request = MaintenanceTask.builder()
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
                 .status(MaintenanceStatus.COMPLETED)
                 .notes("Edited after completion")
                 .build();
@@ -340,6 +336,17 @@ public class MaintenanceServiceTest {
     void updateQuery_UsesPessimisticWriteLock() throws NoSuchMethodException {
         Method method = MaintenanceTaskRepository.class.getMethod(
                 "findByIdAndAssignedTechnicianForUpdate", Long.class, String.class);
+
+        Lock lock = method.getAnnotation(Lock.class);
+
+        assertNotNull(lock);
+        assertEquals(LockModeType.PESSIMISTIC_WRITE, lock.value());
+    }
+
+    @Test
+    void deleteQuery_UsesPessimisticWriteLock() throws NoSuchMethodException {
+        Method method = MaintenanceTaskRepository.class.getMethod(
+                "findByIdAndHospitalIdForUpdate", Long.class, Long.class);
 
         Lock lock = method.getAnnotation(Lock.class);
 
@@ -413,7 +420,8 @@ public class MaintenanceServiceTest {
         when(authentication.getName()).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
         when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
-        when(taskRepository.findByIdAndHospitalId(50L, mockHospital.getId())).thenReturn(Optional.of(mockTask));
+        when(taskRepository.findByIdAndHospitalIdForUpdate(50L, mockHospital.getId()))
+                .thenReturn(Optional.of(mockTask));
 
         maintenanceService.deleteTask(50L, authentication);
 
@@ -425,11 +433,27 @@ public class MaintenanceServiceTest {
         when(authentication.getName()).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
         when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
-        when(taskRepository.findByIdAndHospitalId(999L, mockHospital.getId())).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndHospitalIdForUpdate(999L, mockHospital.getId()))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
                 maintenanceService.deleteTask(999L, authentication)
         );
+
+        verify(taskRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteTask_RejectsCompletedMaintenanceEvidence() {
+        mockTask.setStatus(MaintenanceStatus.COMPLETED);
+        when(authentication.getName()).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(taskRepository.findByIdAndHospitalIdForUpdate(50L, mockHospital.getId()))
+                .thenReturn(Optional.of(mockTask));
+
+        assertThrows(com.medtrack.exception.InvalidStatusTransitionException.class,
+                () -> maintenanceService.deleteTask(50L, authentication));
 
         verify(taskRepository, never()).delete(any());
     }

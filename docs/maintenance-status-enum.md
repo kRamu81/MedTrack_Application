@@ -56,6 +56,12 @@ Example:
 maintenanceTaskRepository.findByStatus(MaintenanceStatus.IN_PROGRESS);
 ```
 
+### Maintenance request DTOs
+
+`MaintenanceCreateRequest` does not expose `status`; every scheduled task starts as
+`SCHEDULED` under server control. `MaintenanceUpdateRequest` requires a valid
+`MaintenanceStatus` and carries only technician-owned partial report fields.
+
 ## API Compatibility
 
 Existing frontend request data remains valid:
@@ -95,7 +101,10 @@ Vendor-specific scripts are stored under:
 - `Backend/src/main/resources/db/migration/h2/`
 - `Backend/src/main/resources/db/migration/mysql/`
 
-The same migration backfills the required `equipment_record_id` relationship and missing `hospital_id` values. It fails when a legacy task cannot be matched to equipment, so operators must resolve unmatched rows instead of silently deploying incomplete data.
+The migrations backfill the required `equipment_record_id` relationship and missing
+`hospital_id` values. Version `3` makes ownership and status non-null and adds a restrictive
+equipment foreign key. Migration fails when equipment or ownership cannot be restored, so
+operators must resolve invalid rows instead of silently deploying incomplete data.
 
 Flyway is enabled with `FLYWAY_ENABLED=true`. It remains disabled by default because the current local H2 workflow still lets Hibernate create a new development schema. Deployment and verification steps are recorded in `docs/maintenance-backend-migration.md`.
 
