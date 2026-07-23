@@ -130,7 +130,6 @@ public class SecurityConfig {
                     "/api/auth/devices/**",
                     "/api/auth/sso/**",
                     "/api/auth/audit/**",
-                    "/api/auth/rbac/**",
                     "/h2-console/**",
                     "/error",
                     "/v3/api-docs/**",

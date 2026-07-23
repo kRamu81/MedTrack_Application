@@ -2,7 +2,6 @@ package com.medtrack.service;
 
 import com.medtrack.dto.HospitalAnalyticsDto;
 import com.medtrack.model.Equipment;
-import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.MaintenanceStatus;

@@ -24,7 +24,6 @@ import OrderStatus from "../pages/supplier/OrderStatus";
 import AuthoritySecurityPage from "../pages/auth/AuthoritySecurityPage";
 import MfaSecurityPage from "../pages/auth/MfaSecurityPage";
 import EnterpriseSsoPage from "../pages/auth/EnterpriseSsoPage";
-import RbacSecurityPage from "../pages/auth/RbacSecurityPage";
 
 // --- Connected Imports ---
 import AddEquipmentForm from "../pages/hospital/AddEquipmentForm";
@@ -134,9 +133,6 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "sso-security":
     case "sso":
       return ProtectedRoute(EnterpriseSsoPage);
-    case "rbac-security":
-    case "rbac":
-      return ProtectedRoute(RbacSecurityPage);
 
     // --- Fallback ---
     default:
