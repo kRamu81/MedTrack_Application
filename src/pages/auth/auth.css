@@ -27,24 +27,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  gap: 16px;
+  margin-bottom: 24px;
+  gap: 12px;
 }
 
 .auth-logo {
-  height: 32px;
+  height: 24px;
   object-fit: contain;
 }
 
 .platform-badge {
-  font-size: 10px;
-  font-weight: 700;
-  color: #316bff;
-  background-color: #eff6ff;
-  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  padding: 4px 10px;
   border-radius: 9999px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
@@ -196,34 +196,73 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  height: 56px;
+  padding: 0 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.input-box svg {
-  position: absolute;
-  left: 16px;
+.input-box:focus-within {
+  border-color: #3563FF !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(53, 99, 255, 0.12) !important;
+}
+
+.input-box > svg:not(.select-chevron) {
+  position: static !important;
+  flex-shrink: 0;
   color: #94a3b8;
+  margin-right: 12px;
   pointer-events: none;
 }
 
 .input-box input {
+  flex: 1;
   width: 100%;
-  height: 56px;
-  padding: 0 16px 0 48px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  height: 100%;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   font-size: 14px;
   font-weight: 500;
   color: #0f172a;
-  outline: none;
-  transition: all 0.2s ease-in-out;
-  box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 0;
 }
 
-.input-box input:focus {
-  border-color: #316bff;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 4px rgba(49, 107, 255, 0.1);
+.input-box select.auth-select {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  padding: 0 8px 0 0 !important;
+  margin: 0 !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.input-box .select-chevron {
+  position: static !important;
+  flex-shrink: 0;
+  color: #94a3b8;
+  pointer-events: none;
+  margin-left: auto;
 }
 
 .form-row {
@@ -445,10 +484,9 @@
 
 /* Password visibility toggle button */
 .password-toggle {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: static !important;
+  transform: none !important;
+  flex-shrink: 0;
   background: none;
   border: none;
   padding: 4px;
@@ -460,15 +498,11 @@
   border-radius: 6px;
   transition: color 0.2s;
   pointer-events: all;
+  margin-left: 8px;
 }
 
 .password-toggle:hover {
-  color: #316bff;
-}
-
-/* Adjust input right padding when toggle is present */
-.input-box:has(.password-toggle) input {
-  padding-right: 44px;
+  color: #3563FF;
 }
 
 /* Password strength indicator */

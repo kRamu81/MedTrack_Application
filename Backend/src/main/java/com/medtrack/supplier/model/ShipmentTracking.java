@@ -48,6 +48,10 @@ public class ShipmentTracking {
     @Column
     private LocalDateTime updatedAt;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean delayDetected = false;
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();

@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 import java.time.LocalDate;
 
@@ -52,8 +54,9 @@ public class Equipment {
      * Status values: "Operational", "Maintenance", "Retired"
      * Matches AddEquipmentForm.jsx options
      */
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private String status = "Operational";
+    private EquipmentStatus status = EquipmentStatus.ACTIVE;
 
     private String category;
 

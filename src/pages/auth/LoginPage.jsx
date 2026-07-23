@@ -1,29 +1,9 @@
 import { useState } from "react";
-import { Check, Hospital, Layers, Lock, Mail, Wrench } from "lucide-react";
+import { ChevronDown, Hospital, Layers, Lock, Mail, Wrench } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { loginUser } from "../../services/AuthService";
+import MedTrackLogo from "../../components/common/MedTrackLogo";
 import "./auth.css";
-
-const roles = [
-  {
-    title: "Hospital",
-    subtitle: "Manage Equipment",
-    icon: Hospital,
-    roleKey: "hospital",
-  },
-  {
-    title: "Technician",
-    subtitle: "Maintenance",
-    icon: Wrench,
-    roleKey: "technician",
-  },
-  {
-    title: "Supplier",
-    subtitle: "Medical Equipment Vendor",
-    icon: Layers,
-    roleKey: "supplier",
-  },
-];
 
 export default function LoginPage({ onNavigate }) {
   const { login } = useAuth();
@@ -40,14 +20,12 @@ export default function LoginPage({ onNavigate }) {
     try {
       const response = await loginUser({ email, password, role: selectedRole.toUpperCase() });
 
-      // Flatten the nested response shape into the format AuthContext expects
       const userData = {
         id: response.user.id,
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
         organization: response.user.organization,
-        // Store role as lowercase so AppRoutes page-key mapping works correctly
         role: response.user.role.toLowerCase(),
         token: response.token,
       };
@@ -72,7 +50,7 @@ export default function LoginPage({ onNavigate }) {
     setLoading(false);
   };
 
-  const handleRoleSelect = (roleKey) => {
+  const handleRoleChange = (roleKey) => {
     setSelectedRole(roleKey);
     if (roleKey === "hospital") {
       setEmail("admin@medtrack.com");
@@ -86,13 +64,15 @@ export default function LoginPage({ onNavigate }) {
     }
   };
 
+  const RoleIcon = selectedRole === "technician" ? Wrench : selectedRole === "supplier" ? Layers : Hospital;
+
   return (
     <main className="auth-page auth-page-with-bg">
       <div className="auth-bg" aria-hidden="true" style={{ backgroundImage: 'url("/medtrack-auth-bg.png")' }} />
       <section className="auth-card">
         <header className="auth-header">
-          <img src="/medtrack-logo.png" alt="MedTrack" className="auth-logo" />
-          <span className="platform-badge">Healthcare Equipment Platform</span>
+          <MedTrackLogo size="text-xl" />
+          <span className="platform-badge">Healthcare Platform</span>
         </header>
 
         <div className="auth-title">
@@ -101,50 +81,19 @@ export default function LoginPage({ onNavigate }) {
             <br />
             Your <span>Workspace</span>
           </h1>
-        </div>
-
-        <div className="role-section">
-          <p className="section-label">Select Professional Role</p>
-
-          <div className="role-grid">
-            {roles.map((role) => {
-              const Icon = role.icon;
-              const isSelected = selectedRole === role.roleKey;
-
-              return (
-                <button
-                  key={role.title}
-                  type="button"
-                  onClick={() => handleRoleSelect(role.roleKey)}
-                  className={isSelected ? "role-card selected" : "role-card"}
-                >
-                  <span className="role-icon">
-                    <Icon size={18} />
-                  </span>
-
-                  {isSelected && (
-                    <span className="role-check">
-                      <Check size={12} />
-                    </span>
-                  )}
-
-                  <span className="role-title">{role.title}</span>
-                  <span className="role-subtitle">{role.subtitle}</span>
-                </button>
-              );
-            })}
-          </div>
+          <p>Access your equipment, maintenance schedules, and vendor orders.</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
-            Hospital Email
+            Email Address
             <div className="input-box">
               <Mail size={18} />
               <input
                 type="email"
+                placeholder="name@organization.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -158,10 +107,29 @@ export default function LoginPage({ onNavigate }) {
               <Lock size={18} />
               <input
                 type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+            </div>
+          </label>
+
+          <label>
+            Select Role
+            <div className="input-box">
+              <RoleIcon size={18} />
+              <select
+                value={selectedRole}
+                onChange={(e) => handleRoleChange(e.target.value)}
+                className="auth-select"
+                required
+              >
+                <option value="hospital">Hospital (Equipment & Asset Management)</option>
+                <option value="technician">Technician (Maintenance & Repairs)</option>
+                <option value="supplier">Supplier (Vendor & Orders)</option>
+              </select>
+              <ChevronDown size={18} className="select-chevron" />
             </div>
           </label>
 
@@ -210,7 +178,7 @@ export default function LoginPage({ onNavigate }) {
               }
             }}
           >
-            Register Node
+            Register Account
           </a>
         </footer>
       </section>

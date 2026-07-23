@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { resetPassword } from "../../services/AuthService";
-import logo from "../../assets/logo.png";
+import MedTrackLogo from "../common/MedTrackLogo";
 
 export default function ResetPasswordForm({ onNavigate, email, otp }) {
   const [newPassword, setNewPassword] = useState("");
@@ -84,7 +84,9 @@ export default function ResetPasswordForm({ onNavigate, email, otp }) {
     <div className="w-full">
       {/* Header */}
       <div className="text-center mb-8">
-        <img src={logo} alt="MedTrack Logo" className="h-10 mx-auto mb-4" />
+        <div className="flex justify-center mb-3">
+          <MedTrackLogo size="text-2xl" />
+        </div>
         <h2 className="text-2xl font-extrabold" style={{ color: "#0f172a" }}>
           New Password
         </h2>

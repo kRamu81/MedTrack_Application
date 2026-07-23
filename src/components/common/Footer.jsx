@@ -1,4 +1,5 @@
 import { useState } from "react";
+import MedTrackLogo from "./MedTrackLogo";
 
 export default function Footer({ onNavigate }) {
   return (
@@ -10,11 +11,9 @@ export default function Footer({ onNavigate }) {
           
           {/* Logo (Left) */}
           <div className="lg:w-1/4">
-            <a href="/" className="flex items-center gap-1">
-              <span className="text-2xl font-black tracking-tighter text-blue-600">
-                "medtrack"
-              </span>
-            </a>
+            <button onClick={() => onNavigate && onNavigate("landing")} className="flex items-center gap-1 bg-transparent border-none p-0 cursor-pointer">
+              <MedTrackLogo size="text-2xl" />
+            </button>
           </div>
 
           {/* Links Grid (Right) */}

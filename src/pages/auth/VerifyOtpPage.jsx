@@ -1,4 +1,5 @@
 import VerifyOtpForm from "../../components/auth/VerifyOtpForm";
+import MedTrackLogo from "../../components/common/MedTrackLogo";
 
 export default function VerifyOtpPage({ onNavigate, email }) {
   return (
@@ -28,13 +29,7 @@ export default function VerifyOtpPage({ onNavigate, email }) {
         {/* Brand */}
         <div className="relative z-10 px-12 pt-12">
           <div className="flex items-center gap-3 mb-4">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg"
-              style={{ background: "linear-gradient(135deg, #38bdf8, #0284c7)" }}
-            >
-              M
-            </div>
-            <span className="text-white font-bold text-xl tracking-wide">MedTrack</span>
+            <MedTrackLogo size="text-2xl" className="bg-white/90 px-4 py-2 rounded-xl shadow-sm" />
           </div>
         </div>
 

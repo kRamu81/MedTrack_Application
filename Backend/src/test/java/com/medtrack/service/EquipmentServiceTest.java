@@ -4,6 +4,7 @@ package com.medtrack.service;
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.exception.ResourceNotFoundException;
+import com.medtrack.dto.EquipmentImportSummary;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.Hospital;
 import com.medtrack.repository.EquipmentRepository;
@@ -15,8 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import com.medtrack.dto.EquipmentImportSummary;
-import com.medtrack.exception.ResourceNotFoundException;
 
 import java.time.LocalDate;
 import java.util.Collections;

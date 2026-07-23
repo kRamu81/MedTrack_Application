@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80" width="340" height="80">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800;900&amp;display=swap');
+      .logo-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 900;
+        font-size: 48px;
+        fill: #2563eb;
+        letter-spacing: -2.8px;
+      }
+    </style>
+  </defs>
+  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" class="logo-text">&quot;medtrack&quot;</text>
+</svg>

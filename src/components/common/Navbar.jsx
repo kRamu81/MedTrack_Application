@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import logo from "../../assets/logo.png";
+import MedTrackLogo from "./MedTrackLogo";
 
 export default function Navbar({ onNavigate, currentPage }) {
   const { user, logout } = useAuth();
@@ -58,7 +58,7 @@ export default function Navbar({ onNavigate, currentPage }) {
             onClick={() => onNavigate("landing")}
             className="flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 rounded-lg"
           >
-            <span className="text-2xl font-black tracking-tighter text-blue-600">"medtrack"</span>
+            <MedTrackLogo size="text-2xl" />
           </button>
 
           {/* Desktop Navigation */}

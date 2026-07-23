@@ -36,9 +36,9 @@ public class MaintenanceTask {
     private String equipmentId;
     private String equipment;
 
-    // Keeps the existing API strings while adding a real, queryable equipment relationship.
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "equipment_record_id")
+    // Every migrated and newly-created task must reference a real equipment record.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "equipment_record_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -47,7 +47,7 @@ public class MaintenanceTask {
     private String hospital;
 
     // Stable ownership key used by the service to isolate one hospital's tasks from another.
-    @Column(name = "hospital_id")
+    @Column(name = "hospital_id", nullable = false)
     private Long hospitalId;
 
     @NotBlank(message = "Maintenance type is required")
@@ -63,6 +63,7 @@ public class MaintenanceTask {
     private String image;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
     @NotNull(message = "Status is required")
     private MaintenanceStatus status = MaintenanceStatus.SCHEDULED;
@@ -77,6 +78,9 @@ public class MaintenanceTask {
 
     @Column(columnDefinition = "TEXT")
     private String signature;
+
+    // Set by the service on the first valid transition to COMPLETED.
+    private LocalDateTime completedAt;
 
     @PositiveOrZero(message = "Recurrence period cannot be negative")
     private Integer recurrencePeriodDays;

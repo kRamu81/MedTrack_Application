@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { registerUser } from "../../services/AuthService";
+import MedTrackLogo from "../../components/common/MedTrackLogo";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import {
   Building2,
   Check,
+  ChevronDown,
   Eye,
   EyeOff,
   Hospital,
@@ -18,10 +20,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-// Register GSAP plugins
 gsap.registerPlugin(useGSAP);
 
-// Password strength calculation
 function getPasswordStrength(pw) {
   if (!pw) return { score: 0, label: "", color: "" };
   let score = 0;
@@ -35,33 +35,17 @@ function getPasswordStrength(pw) {
   return { score, label: "Strong", color: "#10b981" };
 }
 
-const roles = [
-  {
-    title: "Hospital",
-    subtitle: "Manage Equipment",
-    icon: Hospital,
-    orgLabel: "Hospital Name",
-    orgPlaceholder: "St. Mary Clinic",
-  },
-  {
-    title: "Technician",
-    subtitle: "Maintenance",
-    icon: Wrench,
-    orgLabel: "Organization",
-    orgPlaceholder: "MedCare Services",
-  },
-  {
-    title: "Supplier",
-    subtitle: "Medical Equipment Vendor",
-    icon: Layers,
-    orgLabel: "Company Name",
-    orgPlaceholder: "BioMed Supplies Inc.",
-  },
+const roleOptions = [
+  { key: "hospital", title: "Hospital", label: "Hospital (Equipment & Asset Management)", orgLabel: "Hospital Name", orgPlaceholder: "St. Mary Clinic" },
+  { key: "technician", title: "Technician", label: "Technician (Maintenance & Repairs)", orgLabel: "Organization", orgPlaceholder: "MedCare Services" },
+  { key: "supplier", title: "Supplier", label: "Supplier (Vendor & Orders)", orgLabel: "Company Name", orgPlaceholder: "BioMed Supplies Inc." },
 ];
 
 export default function RegisterPage({ onNavigate, defaultRole }) {
   const { login } = useAuth();
-  const [selectedRole, setSelectedRole] = useState(defaultRole || "Hospital");
+  const [selectedRole, setSelectedRole] = useState(
+    defaultRole ? defaultRole.toLowerCase() : "hospital"
+  );
   const [fullName, setFullName] = useState("");
   const [hospitalName, setHospitalName] = useState("");
   const [email, setEmail] = useState("");
@@ -81,9 +65,8 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
   const containerRef = useRef(null);
 
   useGSAP(() => {
-    // Hide components initially to prevent flash of unstyled content
     gsap.set(".auth-card", { opacity: 0, y: 40 });
-    gsap.set(".auth-header, .auth-title, .role-section, .auth-form, .auth-footer", { opacity: 0, y: 20 });
+    gsap.set(".auth-header, .auth-title, .auth-form, .auth-footer", { opacity: 0, y: 20 });
 
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
@@ -92,7 +75,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
       y: 0,
       duration: 0.8,
     })
-    .to(".auth-header, .auth-title, .role-section, .auth-form, .auth-footer", {
+    .to(".auth-header, .auth-title, .auth-form, .auth-footer", {
       opacity: 1,
       y: 0,
       duration: 0.6,
@@ -100,36 +83,54 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
     }, "-=0.4");
   }, { scope: containerRef });
 
+  const currentRoleObj = roleOptions.find((r) => r.key === selectedRole) || roleOptions[0];
+  const RoleIcon = selectedRole === "technician" ? Wrench : selectedRole === "supplier" ? Layers : Hospital;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (password !== confirmPassword) {
+    if (passwordMismatch) {
       setError("Passwords do not match.");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
+
     if (!agreeTerms) {
-      setError("You must agree to the terms and privacy policy.");
+      setError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
     setLoading(true);
+
     try {
-      const user = await registerUser({
+      const response = await registerUser({
         name: fullName,
-        organization: hospitalName,
         email: email,
-        phone: phone,
         password: password,
-        confirmPassword: confirmPassword,
+        phone: phone,
+        organization: hospitalName,
         role: selectedRole.toUpperCase(),
       });
-      login(user);
-      onNavigate("login");
+
+      const userData = {
+        id: response.user.id,
+        name: response.user.name,
+        email: response.user.email,
+        phone: response.user.phone,
+        organization: response.user.organization,
+        role: response.user.role.toLowerCase(),
+        token: response.token,
+      };
+
+      login(userData);
+
+      if (onNavigate) {
+        onNavigate(
+          userData.role === "hospital" ? "dashboard"
+            : userData.role === "technician" ? "tasks"
+            : "orders"
+        );
+      }
     } catch (err) {
       console.error("Registration error:", err);
       if (err.response && err.response.data) {
@@ -146,8 +147,8 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
       <div className="auth-bg" style={{ backgroundImage: 'url("/medtrack-auth-bg.png")' }} aria-hidden="true" />
       <section className="auth-card">
         <header className="auth-header">
-          <img src="/medtrack-logo.png" alt="MedTrack" className="auth-logo" />
-          <span className="platform-badge">Healthcare Equipment Platform</span>
+          <MedTrackLogo size="text-xl" />
+          <span className="platform-badge">Healthcare Platform</span>
         </header>
 
         <div className="auth-title">
@@ -156,39 +157,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
             <br />
             <span>Account</span>
           </h1>
-        </div>
-
-        <div className="role-section">
-          <p className="section-label">Select Professional Role</p>
-
-          <div className="role-grid">
-            {roles.map((role) => {
-              const Icon = role.icon;
-              const isSelected = selectedRole === role.title;
-
-              return (
-                <button
-                  key={role.title}
-                  type="button"
-                  className={isSelected ? "role-card selected" : "role-card"}
-                  onClick={() => setSelectedRole(role.title)}
-                >
-                  <span className="role-icon">
-                    <Icon size={18} />
-                  </span>
-
-                  {isSelected && (
-                    <span className="role-check">
-                      <Check size={12} />
-                    </span>
-                  )}
-
-                  <span className="role-title">{role.title}</span>
-                  <span className="role-subtitle">{role.subtitle}</span>
-                </button>
-              );
-            })}
-          </div>
+          <p>Join MedTrack to manage equipment lifecycle and maintenance.</p>
         </div>
 
         {error && (
@@ -226,12 +195,12 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
             </label>
 
             <label>
-              {roles.find((r) => r.title === selectedRole)?.orgLabel ?? "Organization"}
+              {currentRoleObj.orgLabel}
               <div className="input-box">
                 <Building2 size={18} />
                 <input
                   type="text"
-                  placeholder={roles.find((r) => r.title === selectedRole)?.orgPlaceholder ?? "Organization"}
+                  placeholder={currentRoleObj.orgPlaceholder}
                   value={hospitalName}
                   onChange={(e) => setHospitalName(e.target.value)}
                   required
@@ -247,7 +216,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
                 <Mail size={18} />
                 <input
                   type="email"
-                  placeholder="carter@stmary.org"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -261,7 +230,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
                 <Phone size={18} />
                 <input
                   type="tel"
-                  placeholder="+1 (555) 019-2834"
+                  placeholder="+91 XXXXX XXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
@@ -277,7 +246,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
                 <Lock size={18} />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="•••••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -293,7 +262,6 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
                 </button>
               </div>
 
-              {/* Password strength bar */}
               {password && (
                 <div id="password-strength" className="password-strength">
                   <div className="strength-bars">
@@ -323,7 +291,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
                 <Lock size={18} />
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="•••••••••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -347,20 +315,35 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
                 </button>
               </div>
 
-              {passwordMismatch && (
-                <span id="confirm-password-msg" className="field-error" role="alert">
-                  Passwords don't match
-                </span>
-              )}
-              {confirmPassword && !passwordMismatch && (
-                <span id="confirm-password-msg" className="field-success" role="status">
-                  Passwords match
-                </span>
+              {confirmPassword && (
+                <div id="confirm-password-msg" className="field-hint" style={{ color: passwordMismatch ? "#ef4444" : "#10b981", fontSize: "11px", fontWeight: "600", marginTop: "4px" }}>
+                  {passwordMismatch ? "Passwords do not match" : "Passwords match"}
+                </div>
               )}
             </label>
           </div>
 
-          <label className="checkbox-label">
+          <label>
+            Select Role
+            <div className="input-box">
+              <RoleIcon size={18} />
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="auth-select"
+                required
+              >
+                {roleOptions.map((r) => (
+                  <option key={r.key} value={r.key}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={18} className="select-chevron" />
+            </div>
+          </label>
+
+          <label className="checkbox-label" style={{ marginTop: "4px" }}>
             <input
               type="checkbox"
               checked={agreeTerms}
@@ -369,45 +352,48 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
             />
             <span>
               I agree to the{" "}
-              <span
-                style={{
-                  color: "#316bff",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  fontWeight: "bold"
+              <a
+                href="/terms"
+                onClick={(e) => {
+                  if (onNavigate) {
+                    e.preventDefault();
+                    onNavigate("terms");
+                  }
                 }}
+                className="link-button"
               >
-                Terms &amp; Privacy Policy
-              </span>{" "}
-              statements for compliance.
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a
+                href="/privacy"
+                onClick={(e) => {
+                  if (onNavigate) {
+                    e.preventDefault();
+                    onNavigate("privacy");
+                  }
+                }}
+                className="link-button"
+              >
+                Privacy Policy
+              </a>
             </span>
           </label>
 
           <button type="submit" className="primary-button" disabled={loading}>
-            {loading ? (
-              "Creating Account..."
-            ) : (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                }}
-              >
-                Create Account <ArrowRight size={16} />
-              </span>
-            )}
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
-        <footer className="auth-footer">
+        <footer className="auth-footer" style={{ marginTop: "24px" }}>
           <span>Already have an account?</span>
           <a
             href="/login"
             onClick={(e) => {
-              e.preventDefault();
-              onNavigate("login");
+              if (onNavigate) {
+                e.preventDefault();
+                onNavigate("login");
+              }
             }}
           >
             Sign In
