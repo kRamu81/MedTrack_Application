@@ -126,6 +126,8 @@ public class SecurityConfig {
                     "/api/auth/verify-otp",
                     "/api/auth/reset-password",
                     "/api/auth/authority/**",
+                    "/api/auth/mfa/**",
+                    "/api/auth/devices/**",
                     "/h2-console/**",
                     "/error",
                     "/v3/api-docs/**",
