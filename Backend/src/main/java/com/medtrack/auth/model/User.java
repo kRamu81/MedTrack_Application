@@ -120,6 +120,9 @@ public class User {
 
     private LocalDateTime accountLockedUntil;
 
+    @Builder.Default
+    private Long authorityVersion = 1L;
+
     @NotBlank
     @Column(nullable = false)
     private String phone;

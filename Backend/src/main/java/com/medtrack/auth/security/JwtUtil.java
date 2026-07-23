@@ -40,10 +40,24 @@ public class JwtUtil {
      * @return the compacted, cryptographically signed JWT string
      */
     public String generateToken(Long userId, String email, String role) {
+        return generateToken(userId, email, role, 1L);
+    }
+
+    /**
+     * Generates a new JSON Web Token (JWT) signed with HMAC-SHA containing user ID, email, role, and authority version.
+     *
+     * @param userId user database ID
+     * @param email user email address
+     * @param role user security role
+     * @param authorityVersion current authority version of the user
+     * @return cryptographically signed JWT string
+     */
+    public String generateToken(Long userId, String email, String role, Long authorityVersion) {
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
                 .claim("role", role)
+                .claim("authorityVersion", authorityVersion != null ? authorityVersion : 1L)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey())
@@ -71,6 +85,22 @@ public class JwtUtil {
     }
 
     /**
+     * Helper to extract the custom 'authorityVersion' claim from the JWT claims payload.
+     *
+     * @param token the JWT string to parse
+     * @return the authority version stored in the token claims, or 1L if absent
+     */
+    public Long extractAuthorityVersion(String token) {
+        return extractClaim(token, claims -> {
+            Object val = claims.get("authorityVersion");
+            if (val instanceof Number) {
+                return ((Number) val).longValue();
+            }
+            return 1L;
+        });
+    }
+
+    /**
      * Helper to extract the expiration timestamp of the token.
      *
      * @param token the JWT string to parse
@@ -91,6 +121,25 @@ public class JwtUtil {
     public boolean isTokenValid(String token, String email) {
         final String extractedEmail = extractEmail(token);
         return extractedEmail.equals(email) && !isTokenExpired(token);
+    }
+
+    /**
+     * Validates JWT token integrity including checking token authority version against user current authority version.
+     *
+     * @param token the JWT string to validate
+     * @param email expected email address
+     * @param currentAuthorityVersion current authority version in database
+     * @return {@code true} if valid, unexpired and authority version matches
+     */
+    public boolean isTokenValid(String token, String email, Long currentAuthorityVersion) {
+        if (!isTokenValid(token, email)) {
+            return false;
+        }
+        if (currentAuthorityVersion == null) {
+            return true;
+        }
+        Long tokenVersion = extractAuthorityVersion(token);
+        return tokenVersion.equals(currentAuthorityVersion);
     }
 
     /**

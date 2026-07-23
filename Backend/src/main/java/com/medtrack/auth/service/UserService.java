@@ -256,8 +256,9 @@ public class UserService {
      * @return the fully populated {@link AuthResponse} object
      */
     private AuthResponse mapToAuthResponse(User user, String message) {
-        // Request a new JWT token signed with user's ID, email and role claims
-        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
+        // Request a new JWT token signed with user's ID, email, role, and authority version claims
+        Long authorityVer = user.getAuthorityVersion() != null ? user.getAuthorityVersion() : 1L;
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole(), authorityVer);
         String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
         UserResponse userResponse = UserResponse.builder()

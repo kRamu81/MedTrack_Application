@@ -73,6 +73,8 @@ const getRouteStateFromPath = () => {
     guides: "guides",
     security: "security",
     status: "status",
+    authority: "authority-security",
+    "authority-security": "authority-security",
   };
 
   return {
