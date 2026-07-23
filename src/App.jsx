@@ -81,6 +81,8 @@ const getRouteStateFromPath = () => {
     "mfa-security": "mfa-security",
     sso: "sso-security",
     "sso-security": "sso-security",
+    rbac: "rbac-security",
+    "rbac-security": "rbac-security",
   };
 
   return {
