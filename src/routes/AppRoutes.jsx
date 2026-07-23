@@ -22,6 +22,7 @@ import UpdateTask from "../pages/technician/UpdateTask";
 import OrdersList from "../pages/supplier/OrdersList";
 import OrderStatus from "../pages/supplier/OrderStatus";
 import AuthoritySecurityPage from "../pages/auth/AuthoritySecurityPage";
+import MfaSecurityPage from "../pages/auth/MfaSecurityPage";
 
 // --- Connected Imports ---
 import AddEquipmentForm from "../pages/hospital/AddEquipmentForm";
@@ -125,6 +126,9 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "authority-security":
     case "authority":
       return ProtectedRoute(AuthoritySecurityPage);
+    case "mfa-security":
+    case "mfa":
+      return ProtectedRoute(MfaSecurityPage);
 
     // --- Fallback ---
     default:
