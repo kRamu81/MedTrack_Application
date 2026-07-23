@@ -4,6 +4,7 @@ import com.medtrack.dto.HospitalAnalyticsDto;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.EquipmentOrder;
+import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.repository.EquipmentOrderRepository;
