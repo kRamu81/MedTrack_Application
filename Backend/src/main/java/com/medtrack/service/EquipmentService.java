@@ -4,6 +4,7 @@ import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.dto.EquipmentImportSummary;
 import com.medtrack.model.Equipment;
+import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.Hospital;
 import com.medtrack.repository.EquipmentRepository;
 import com.medtrack.repository.HospitalRepository;
@@ -274,13 +275,20 @@ public class EquipmentService {
                     }
                 }
 
+                EquipmentStatus parsedStatus = EquipmentStatus.ACTIVE;
+                if ("Maintenance".equalsIgnoreCase(status) || "UNDER_MAINTENANCE".equalsIgnoreCase(status)) {
+                    parsedStatus = EquipmentStatus.UNDER_MAINTENANCE;
+                } else if ("Retired".equalsIgnoreCase(status) || "RETIRED".equalsIgnoreCase(status)) {
+                    parsedStatus = EquipmentStatus.RETIRED;
+                }
+
                 Equipment equipment = Equipment.builder()
                         .name(name)
                         .model(model)
                         .serialNumber(serialNumber)
                         .department(department)
                         .category(category)
-                        .status(status)
+                        .status(parsedStatus)
                         .purchaseDate(purchaseDate)
                         .equipmentCode("EQ-" + UUID.randomUUID().toString())
                         .hospital(hospital)

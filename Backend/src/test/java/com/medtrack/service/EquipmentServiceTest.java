@@ -6,6 +6,7 @@ import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.exception.ResourceNotFoundException;
 import com.medtrack.dto.EquipmentImportSummary;
 import com.medtrack.model.Equipment;
+import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.Hospital;
 import com.medtrack.repository.EquipmentRepository;
 import com.medtrack.repository.HospitalRepository;
@@ -67,7 +68,7 @@ public class EquipmentServiceTest {
                 .serialNumber("SN-12345")
                 .department("Radiology")
                 .category("Imaging")
-                .status("Operational")
+                .status(EquipmentStatus.ACTIVE)
                 .purchaseDate(LocalDate.of(2025, 1, 1))
                 .equipmentCode("EQ-100")
                 .hospital(mockHospital)
@@ -236,7 +237,7 @@ public class EquipmentServiceTest {
                 .model("Siemens A2")
                 .serialNumber("SN-12345-UPD")
                 .department("Cardiology")
-                .status("Maintenance")
+                .status(EquipmentStatus.UNDER_MAINTENANCE)
                 .purchaseDate(LocalDate.of(2025, 2, 2))
                 .build();
 

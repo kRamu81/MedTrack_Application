@@ -36,7 +36,7 @@ public class AnalyticsService {
         // 1. Downtime Percentage
         long totalEquipment = equipmentList.size();
         long underMaintenanceCount = equipmentList.stream()
-                .filter(eq -> "Under Maintenance".equalsIgnoreCase(eq.getStatus()))
+                .filter(eq -> eq.getStatus() == com.medtrack.model.EquipmentStatus.UNDER_MAINTENANCE)
                 .count();
         double downtimePercentage = totalEquipment > 0
                 ? (underMaintenanceCount * 100.0) / totalEquipment
