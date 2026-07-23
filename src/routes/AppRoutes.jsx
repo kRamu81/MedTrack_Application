@@ -21,6 +21,7 @@ import TaskList from "../pages/technician/TaskList";
 import UpdateTask from "../pages/technician/UpdateTask";
 import OrdersList from "../pages/supplier/OrdersList";
 import OrderStatus from "../pages/supplier/OrderStatus";
+import AuthoritySecurityPage from "../pages/auth/AuthoritySecurityPage";
 
 // --- Connected Imports ---
 import AddEquipmentForm from "../pages/hospital/AddEquipmentForm";
@@ -119,6 +120,11 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
       return ProtectedRoute(OrdersList);
     case "orderstatus":
       return ProtectedRoute(OrderStatus, { order: pageData });
+
+    // --- Protected Routes: Security & Authority ---
+    case "authority-security":
+    case "authority":
+      return ProtectedRoute(AuthoritySecurityPage);
 
     // --- Fallback ---
     default:

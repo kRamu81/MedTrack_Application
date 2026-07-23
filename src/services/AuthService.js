@@ -29,3 +29,27 @@ export const resetPassword = async (data) => {
   const response = await API.post("/api/auth/reset-password", data);
   return response.data;
 };
+
+// Get authority version and permissions for a user
+export const getAuthorityVersion = async (userId) => {
+  const response = await API.get(`/api/auth/authority/version/${userId}`);
+  return response.data;
+};
+
+// Increment authority version for a targeted user (Revokes active sessions)
+export const incrementAuthorityVersion = async (data) => {
+  const response = await API.post("/api/auth/authority/version/increment", data);
+  return response.data;
+};
+
+// Bump system-wide global authority version
+export const bumpGlobalAuthorityVersion = async (data) => {
+  const response = await API.post("/api/auth/authority/version/bump-global", data);
+  return response.data;
+};
+
+// Fetch security audit logs for a user
+export const getAuthorityAuditLogs = async (userId) => {
+  const response = await API.get(`/api/auth/authority/audit-logs/${userId}`);
+  return response.data;
+};
