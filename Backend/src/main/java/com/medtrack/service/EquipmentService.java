@@ -134,6 +134,7 @@ public class EquipmentService {
         equipment.setModel(equipmentDetails.getModel());
         equipment.setSerialNumber(equipmentDetails.getSerialNumber());
         equipment.setDepartment(equipmentDetails.getDepartment());
+        equipment.setCategory(equipmentDetails.getCategory());
         equipment.setStatus(equipmentDetails.getStatus());
         equipment.setPurchaseDate(equipmentDetails.getPurchaseDate());
 
