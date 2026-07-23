@@ -3,6 +3,7 @@ package com.medtrack.service;
 import com.medtrack.dto.HospitalAnalyticsDto;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.EquipmentOrder;
+import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.repository.EquipmentOrderRepository;
@@ -48,7 +49,7 @@ public class AnalyticsServiceTest {
                 .id(1L)
                 .name("MRI Scanner")
                 .category("Imaging")
-                .status("Operational")
+                .status(EquipmentStatus.ACTIVE)
                 .warrantyExpiry(LocalDate.now().plusDays(15)) // upcoming warranty expiration
                 .build();
 
@@ -56,7 +57,7 @@ public class AnalyticsServiceTest {
                 .id(2L)
                 .name("Infusion Pump")
                 .category("Monitoring")
-                .status("Under Maintenance") // downtime indicator
+                .status(EquipmentStatus.UNDER_MAINTENANCE) // downtime indicator
                 .warrantyExpiry(LocalDate.now().plusDays(100))
                 .build();
 

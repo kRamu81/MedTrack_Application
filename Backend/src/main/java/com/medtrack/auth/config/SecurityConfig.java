@@ -128,6 +128,8 @@ public class SecurityConfig {
                     "/api/auth/authority/**",
                     "/api/auth/mfa/**",
                     "/api/auth/devices/**",
+                    "/api/auth/sso/**",
+                    "/api/auth/audit/**",
                     "/h2-console/**",
                     "/error",
                     "/v3/api-docs/**",
