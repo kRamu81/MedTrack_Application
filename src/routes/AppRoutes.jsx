@@ -26,7 +26,7 @@ import MfaSecurityPage from "../pages/auth/MfaSecurityPage";
 import EnterpriseSsoPage from "../pages/auth/EnterpriseSsoPage";
 import RbacSecurityPage from "../pages/auth/RbacSecurityPage";
 import ZeroTrustSecurityPage from "../pages/auth/ZeroTrustSecurityPage";
-import ComplianceSecurityPage from "../pages/auth/ComplianceSecurityPage";
+import SecurityKeyVaultPage from "../pages/auth/SecurityKeyVaultPage";
 
 // --- Connected Imports ---
 import AddEquipmentForm from "../pages/hospital/AddEquipmentForm";
@@ -142,9 +142,9 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "zerotrust-security":
     case "zerotrust":
       return ProtectedRoute(ZeroTrustSecurityPage);
-    case "compliance-security":
-    case "compliance":
-      return ProtectedRoute(ComplianceSecurityPage);
+    case "keyvault-security":
+    case "keyvault":
+      return ProtectedRoute(SecurityKeyVaultPage);
 
     // --- Fallback ---
     default:
