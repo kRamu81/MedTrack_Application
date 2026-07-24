@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { getAllEquipment } from '../../services/EquipmentService';
+import { placeOrder } from '../../services/OrderService';
 
 const RequestEquipmentPage = ({ onNavigate }) => {
+  const { user } = useAuth();
   const [equipmentList, setEquipmentList] = useState([]);
   const [formData, setFormData] = useState({
     equipmentId: '',
@@ -10,20 +14,24 @@ const RequestEquipmentPage = ({ onNavigate }) => {
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem("medtrack_equipment");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setEquipmentList(parsed);
-      if (parsed.length > 0) {
-        setFormData(prev => ({ ...prev, equipmentId: parsed[0].id, equipmentName: parsed[0].name }));
+    const fetchEquipment = async () => {
+      try {
+        const data = await getAllEquipment();
+        setEquipmentList(data);
+        if (data.length > 0) {
+          setFormData(prev => ({ ...prev, equipmentId: data[0].equipmentCode, equipmentName: data[0].name }));
+        }
+      } catch (err) {
+        console.error("Error fetching equipment:", err);
       }
-    }
+    };
+    fetchEquipment();
   }, []);
 
   const onChange = (e) => {
     const { name, value } = e.target;
     if (name === "equipmentId") {
-      const selected = equipmentList.find(eq => eq.id === value);
+      const selected = equipmentList.find(eq => eq.equipmentCode === value);
       setFormData({
         ...formData,
         equipmentId: value,
@@ -34,26 +42,21 @@ const RequestEquipmentPage = ({ onNavigate }) => {
     }
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    
-    // Mock Order Entity for Member 6 Backend
-    const newOrder = {
-      id: `ORD-${Date.now().toString().slice(-4)}`,
-      ...formData,
-      status: 'PENDING',
-      orderDate: new Date().toISOString(),
-      createdBy: 'Hospital Admin'
-    };
 
-    // Store in localStorage (simulating Order DB)
-    const storedOrders = localStorage.getItem("medtrack_orders");
-    const existingOrders = storedOrders ? JSON.parse(storedOrders) : [];
-    const updatedOrders = [...existingOrders, newOrder];
-    localStorage.setItem("medtrack_orders", JSON.stringify(updatedOrders));
-
-    alert('Order placed successfully!');
-    onNavigate('dashboard');
+    try {
+      await placeOrder({
+        ...formData,
+        hospital: user?.organization,
+        createdBy: user?.name
+      });
+      alert('Order placed successfully!');
+      onNavigate('dashboard');
+    } catch (err) {
+      console.error("Error placing order:", err);
+      alert('Failed to place order. Please try again.');
+    }
   };
 
   return (
@@ -77,7 +80,7 @@ const RequestEquipmentPage = ({ onNavigate }) => {
               >
                 <option value="" disabled>-- Select Equipment --</option>
                 {equipmentList.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <option key={item.id} value={item.equipmentCode}>
                     {item.name} ({item.model})
                   </option>
                 ))}

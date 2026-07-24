@@ -1,8 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
+  const hasManualPreferenceRef = useRef(
+    typeof window !== "undefined" && localStorage.getItem("theme") !== null
+  );
+
   const [theme, setTheme] = useState(() => {
     // Check localStorage first
     if (typeof window !== "undefined" && localStorage.getItem("theme")) {
@@ -32,9 +36,10 @@ export function ThemeProvider({ children }) {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     
     const handleChange = (e) => {
-      // If user hasn't explicitly set a preference, react to OS change
-      // Alternatively, we can let OS override unless we store a specific flag, but simplest is:
-      setTheme(e.matches ? "dark" : "light");
+      // Only follow the OS theme if the user hasn't explicitly chosen one via toggleTheme
+      if (!hasManualPreferenceRef.current) {
+        setTheme(e.matches ? "dark" : "light");
+      }
     };
 
     mediaQuery.addEventListener("change", handleChange);
@@ -42,6 +47,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const toggleTheme = () => {
+    hasManualPreferenceRef.current = true;
     setTheme((prevTheme) => (prevTheme === "dark" ? "light" : "dark"));
   };
 

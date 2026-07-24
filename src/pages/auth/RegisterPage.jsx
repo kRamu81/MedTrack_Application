@@ -18,6 +18,7 @@ import {
   User,
   Wrench,
   ArrowRight,
+  ArrowLeft
 } from "lucide-react";
 
 gsap.registerPlugin(useGSAP);
@@ -65,17 +66,17 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
   const containerRef = useRef(null);
 
   useGSAP(() => {
-    gsap.set(".auth-card", { opacity: 0, y: 40 });
-    gsap.set(".auth-header, .auth-title, .auth-form, .auth-footer", { opacity: 0, y: 20 });
+    gsap.set(".split-form-section", { opacity: 0, y: 40 });
+    gsap.set(".auth-title, .auth-form, .auth-footer", { opacity: 0, y: 20 });
 
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-    tl.to(".auth-card", {
+    tl.to(".split-form-section", {
       opacity: 1,
       y: 0,
       duration: 0.8,
     })
-    .to(".auth-header, .auth-title, .auth-form, .auth-footer", {
+    .to(".auth-title, .auth-form, .auth-footer", {
       opacity: 1,
       y: 0,
       duration: 0.6,
@@ -143,21 +144,17 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
   };
 
   return (
-    <main className="auth-page auth-page-with-bg" ref={containerRef}>
-      <div className="auth-bg" style={{ backgroundImage: 'url("/medtrack-auth-bg.png")' }} aria-hidden="true" />
-      <section className="auth-card">
-        <header className="auth-header">
-          <MedTrackLogo size="text-xl" />
-          <span className="platform-badge">Healthcare Platform</span>
-        </header>
-
+    <main className="split-auth-container" ref={containerRef}>
+      <section className="split-form-section" style={{ position: 'relative' }}>
+        <button 
+          onClick={() => onNavigate ? onNavigate('home') : window.location.href = '/'} 
+          style={{ position: 'absolute', top: '40px', left: '40px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '500' }}
+        >
+          <ArrowLeft size={20} /> Back
+        </button>
         <div className="auth-title">
-          <h1>
-            Create Your
-            <br />
-            <span>Account</span>
-          </h1>
-          <p>Join MedTrack to manage equipment lifecycle and maintenance.</p>
+          <h1>Create an account</h1>
+          <p>Simplify your workflow and boost your productivity with MedTrack. Get started for free.</p>
         </div>
 
         {error && (
@@ -389,6 +386,7 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
           <span>Already have an account?</span>
           <a
             href="/login"
+            className="split-footer-link"
             onClick={(e) => {
               if (onNavigate) {
                 e.preventDefault();
@@ -399,6 +397,16 @@ export default function RegisterPage({ onNavigate, defaultRole }) {
             Sign In
           </a>
         </footer>
+      </section>
+
+      <section className="split-image-section">
+        <img src="/auth_illustration.jpg" alt="Illustration" style={{ mixBlendMode: 'multiply', borderRadius: '16px' }} />
+        <div className="carousel-indicators">
+          <div className="carousel-dot active"></div>
+          <div className="carousel-dot"></div>
+          <div className="carousel-dot"></div>
+        </div>
+        <h2>Make your work easier and organized with <span>MedTrack</span></h2>
       </section>
     </main>
   );

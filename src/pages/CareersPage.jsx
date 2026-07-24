@@ -12,7 +12,7 @@ export default function CareersPage({ onNavigate }) {
 
   const filteredJobs = jobs.filter(job => {
     const matchDept = departmentFilter === "All" || job.department === departmentFilter;
-    const matchLoc = locationFilter === "All" || job.location.includes(locationFilter) || job.location === "Remote (Global)";
+    const matchLoc = locationFilter === "All" || job.location.includes(locationFilter);
     const matchType = typeFilter === "All" || job.type === typeFilter;
     const matchSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.desc.toLowerCase().includes(searchQuery.toLowerCase());
     return matchDept && matchLoc && matchType && matchSearch;

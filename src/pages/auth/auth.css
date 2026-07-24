@@ -1002,3 +1002,163 @@
   margin-top: 20px;
 }
 
+/* ==========================================================================
+   SPLIT SCREEN AUTHENTICATION LAYOUT
+   ========================================================================== */
+
+.split-auth-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #ffffff;
+  font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+.split-form-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #ffffff;
+}
+
+.split-image-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f3fcf4; /* Light mint green */
+  padding: 40px;
+  text-align: center;
+}
+
+.split-image-section img {
+  max-width: 80%;
+  max-height: 60vh;
+  object-fit: contain;
+  margin-bottom: 40px;
+}
+
+.split-image-section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+.split-image-section h2 span {
+  font-weight: 800;
+}
+
+.carousel-indicators {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #cbd5e1;
+}
+
+.carousel-dot.active {
+  background-color: #0f172a;
+  width: 16px;
+  border-radius: 4px;
+}
+
+/* Form Styles Override for Split Layout */
+.split-form-section .auth-title {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.split-form-section .auth-title h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.split-form-section .auth-title p {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.split-form-section .input-box {
+  border-radius: 9999px; /* Pill shape */
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+.split-form-section .primary-button {
+  border-radius: 9999px; /* Pill shape */
+  background: #0f172a; /* Black button */
+  box-shadow: none;
+}
+
+.split-form-section .primary-button:hover {
+  background: #1e293b;
+}
+
+.social-login-group {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.social-circle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #0f172a;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.social-circle-btn:hover {
+  background-color: #1e293b;
+  transform: translateY(-2px);
+}
+
+.social-circle-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.split-footer-link {
+  color: #10b981; /* Green accent */
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.split-footer-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .split-auth-container {
+    flex-direction: column;
+  }
+  .split-image-section {
+    display: none; /* Hide image on mobile */
+  }
+}
