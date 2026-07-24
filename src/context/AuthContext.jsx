@@ -8,10 +8,7 @@ export const AuthProvider = ({ children }) => {
     const savedUser = sessionStorage.getItem("medtrack_user");
     if (savedUser) return JSON.parse(savedUser);
     
-    // Auto-login for local development UI testing
-    if (process.env.NODE_ENV === 'development') {
-      return { id: "demo-user", role: "hospital", name: "Demo Admin", email: "demo@medtrack.com" };
-    }
+    // Auto-login for local development UI testing removed to allow actual login flow
     return null;
   });
 
