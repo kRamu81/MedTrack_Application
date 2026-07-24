@@ -25,6 +25,7 @@ import AuthoritySecurityPage from "../pages/auth/AuthoritySecurityPage";
 import MfaSecurityPage from "../pages/auth/MfaSecurityPage";
 import EnterpriseSsoPage from "../pages/auth/EnterpriseSsoPage";
 import RbacSecurityPage from "../pages/auth/RbacSecurityPage";
+import ZeroTrustSecurityPage from "../pages/auth/ZeroTrustSecurityPage";
 import SecurityKeyVaultPage from "../pages/auth/SecurityKeyVaultPage";
 
 // --- Connected Imports ---
@@ -138,6 +139,9 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "rbac-security":
     case "rbac":
       return ProtectedRoute(RbacSecurityPage);
+    case "zerotrust-security":
+    case "zerotrust":
+      return ProtectedRoute(ZeroTrustSecurityPage);
     case "keyvault-security":
     case "keyvault":
       return ProtectedRoute(SecurityKeyVaultPage);
