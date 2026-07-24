@@ -6,7 +6,10 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const savedUser = sessionStorage.getItem("medtrack_user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (savedUser) return JSON.parse(savedUser);
+    
+    // Auto-login for local development UI testing removed to allow actual login flow
+    return null;
   });
 
   const [authorityState, setAuthorityState] = useState(() => {
@@ -32,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchUserAuthority = useCallback(async (userId) => {
-    if (!userId) return;
+    if (!userId || userId === "demo-user") return;
     setAuthorityLoading(true);
     try {
       const data = await getAuthorityVersion(userId);
