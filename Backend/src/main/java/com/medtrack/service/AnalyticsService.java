@@ -1,12 +1,15 @@
 package com.medtrack.service;
 
 import com.medtrack.dto.HospitalAnalyticsDto;
+import com.medtrack.exception.ResourceNotFoundException;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.EquipmentOrder;
+import com.medtrack.model.Hospital;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.repository.EquipmentOrderRepository;
 import com.medtrack.repository.EquipmentRepository;
+import com.medtrack.repository.HospitalRepository;
 import com.medtrack.repository.MaintenanceTaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,16 +25,24 @@ public class AnalyticsService {
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceTaskRepository taskRepository;
     private final EquipmentOrderRepository orderRepository;
+    private final HospitalRepository hospitalRepository;
 
     public HospitalAnalyticsDto getHospitalAnalytics(Long hospitalId) {
         // Fetch equipment for hospital
         List<Equipment> equipmentList = equipmentRepository.findByHospitalId(hospitalId);
-        
+
         // Fetch tasks for hospital
         List<MaintenanceTask> tasks = taskRepository.findByHospitalId(hospitalId);
-        
-        // Fetch all orders
-        List<EquipmentOrder> orders = orderRepository.findAll();
+
+        // EquipmentOrder has no hospitalId foreign key, only a free-text hospital name,
+        // so orders are scoped by matching that name against the caller's own hospital
+        // record. Without this filter, every hospital's delivered-order spend was being
+        // aggregated into every other hospital's analytics dashboard.
+        Hospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hospital not found with id: " + hospitalId));
+        List<EquipmentOrder> orders = orderRepository.findAll().stream()
+                .filter(order -> hospital.getName() != null && hospital.getName().equalsIgnoreCase(order.getHospital()))
+                .toList();
 
         // 1. Downtime Percentage
         long totalEquipment = equipmentList.size();
