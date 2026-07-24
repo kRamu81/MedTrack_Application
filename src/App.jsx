@@ -147,11 +147,7 @@ function AppContent() {
         className="flex flex-col min-h-screen bg-surface text-primary transition-colors duration-200"
         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
-        {process.env.REACT_APP_DEMO_MODE === 'true' && (
-          <div className="bg-amber-500 text-white text-center py-2 px-4 text-xs font-bold shadow-md z-[9999] relative">
-            Demo Mode — Frontend Only, No Live Backend
-          </div>
-        )}
+
         <CustomCursor />
         {!isAuthPage && (
           <Navbar onNavigate={handleNavigate} currentPage={currentPage} />

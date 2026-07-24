@@ -38,7 +38,7 @@ export default function Dashboard({ onNavigate }) {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      if (user?.id === 'demo-user') {
+      if (user?.id?.startsWith('demo-')) {
         setEquipmentList([
           { id: 1, name: 'MRI Machine', status: 'OPERATIONAL' },
           { id: 2, name: 'X-Ray Scanner', status: 'OPERATIONAL' },
