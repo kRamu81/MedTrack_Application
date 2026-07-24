@@ -126,15 +126,18 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
       return ProtectedRoute(OrderStatus, { order: pageData });
 
     // --- Protected Routes: Security & Authority ---
+    // Authority version management, RBAC role/permission matrix, and SSO provider
+    // configuration are Hospital admin-only consoles. 2FA/device management is
+    // self-service and stays open to any authenticated role.
     case "authority-security":
     case "authority":
-      return ProtectedRoute(AuthoritySecurityPage);
+      return ProtectedRoute(AuthoritySecurityPage, {}, ["hospital"]);
     case "mfa-security":
     case "mfa":
       return ProtectedRoute(MfaSecurityPage);
     case "sso-security":
     case "sso":
-      return ProtectedRoute(EnterpriseSsoPage);
+      return ProtectedRoute(EnterpriseSsoPage, {}, ["hospital"]);
     case "rbac-security":
     case "rbac":
       return ProtectedRoute(RbacSecurityPage);
