@@ -85,6 +85,8 @@ const getRouteStateFromPath = () => {
     "rbac-security": "rbac-security",
     zerotrust: "zerotrust-security",
     "zerotrust-security": "zerotrust-security",
+    compliance: "compliance-security",
+    "compliance-security": "compliance-security",
   };
 
   return {
