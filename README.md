@@ -54,6 +54,7 @@
       </ul>
     </li>
     <li><a href="#usage">Usage & Test Accounts</a></li>
+    <li><a href="#ai-assistant-beta">AI Assistant (Beta)</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -63,7 +64,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-MedTrack is a **Full-Stack Medical Equipment Management Platform** that helps hospitals manage their equipment inventory, maintenance schedules, and equipment orders efficiently.
+MedTrack is a **Full-Stack Medical Equipment Management Platform** that helps hospitals manage their equipment inventory, maintenance schedules, and equipment orders efficiently. It now also features an AI-powered assistant for equipment Q&A and document drafting.
 
 The system is designed with a microservice-oriented backend and a responsive React frontend, created specifically for the **MedTrack Case Study 06** during the Elite Summer of Code (ECSoc).
 
@@ -72,6 +73,7 @@ The system supports three major roles:
 * 🏥 **Hospital**: Manage inventory, schedule maintenance, and order equipment.
 * 🔧 **Technician**: View and complete assigned maintenance tasks.
 * 🚚 **Supplier**: Fulfill equipment orders and update delivery status.
+* 🤖 **AI Assistant**: Chat with a RAG-grounded assistant to ask questions about equipment/maintenance/orders, and draft purchase orders or reports in plain language — with human approval required before anything is submitted.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -81,6 +83,8 @@ The system supports three major roles:
 * [![Tailwind][Tailwind.css]][Tailwind-url]
 * [![Spring][Spring.io]][Spring-url]
 * [![Java][Java.com]][Java-url]
+* [![LangChain][LangChain.js]][LangChain-url]
+* [![LLM API][LLM.api]][LLM-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -95,6 +99,8 @@ To get a local copy up and running, follow these simple steps.
 * Node.js (v16+)
 * npm (v8+)
 * Maven
+* `OPENAI_API_KEY` environment variable (for the AI Service)
+* Python 3.10+ (for the AI Service microservice)
 
 ### Installation
 
@@ -118,6 +124,15 @@ To get a local copy up and running, follow these simple steps.
    ```
    * **App URL**: `http://localhost:3000/MedTrack_Application`
 
+4. **Start the AI Service (Separate Python Microservice)**
+   ```sh
+   cd ai-service
+   # Ensure your .env contains OPENAI_API_KEY=your_api_key
+   pip install -r requirements.txt
+   uvicorn main:app --port 8000
+   ```
+   * **API URL**: `http://localhost:8000`
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
@@ -130,6 +145,17 @@ Use the following default accounts to test the different role dashboards:
 | Hospital Admin | `hospital@medtrack.com` | `admin123` |
 | Technician | `tech@medtrack.com` | `tech123` |
 | Supplier | `supplier@medtrack.com` | `supply123` |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- AI ASSISTANT -->
+## AI Assistant (Beta)
+
+MedTrack now includes a conversational AI assistant grounded in live platform data (via RAG and pgvector/Elasticsearch kNN) to help orchestrate tasks across all roles.
+
+* **How to access:** Click the 🤖 icon in the bottom right of any role dashboard.
+* **Example Prompt:** *"Draft a purchase order for 3 replacement infusion pump batteries at City General."*
+* **Important Guardrail:** All AI-drafted actions require explicit human review. A user must click "Approve & Submit" before any change takes effect. The agent NEVER writes directly to the database. All AI interactions are logged to the `ai-events` Kafka topic for auditing.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -204,6 +230,10 @@ Project Link: [https://github.com/kRamu81/MedTrack_Application](https://github.c
 [Spring-url]: https://spring.io/projects/spring-boot
 [Java.com]: https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white
 [Java-url]: https://java.com/
+[LangChain.js]: https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logoColor=white
+[LangChain-url]: https://langchain.com/
+[LLM.api]: https://img.shields.io/badge/OpenAI_API-412991?style=for-the-badge&logo=openai&logoColor=white
+[LLM-url]: https://openai.com/
 
 <!-- final test -->
 
