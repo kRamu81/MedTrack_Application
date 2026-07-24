@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,40 +22,52 @@ public class ShipmentTrackingController {
     private final ShipmentTrackingService shipmentTrackingService;
 
     @PostMapping
-    public ResponseEntity<ShipmentTrackingResponse> createShipment(@Valid @RequestBody CreateShipmentRequest request) {
-        ShipmentTrackingResponse response = shipmentTrackingService.createShipment(request);
+    @PreAuthorize("hasRole('SUPPLIER')")
+    public ResponseEntity<ShipmentTrackingResponse> createShipment(@Valid @RequestBody CreateShipmentRequest request,
+            Authentication authentication) {
+        ShipmentTrackingResponse response = shipmentTrackingService.createShipment(request, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
     public ResponseEntity<ShipmentTrackingResponse> updateShipmentStatus(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateShipmentStatusRequest request) {
-        ShipmentTrackingResponse response = shipmentTrackingService.updateShipmentStatus(id, request);
+            @Valid @RequestBody UpdateShipmentStatusRequest request,
+            Authentication authentication) {
+        ShipmentTrackingResponse response = shipmentTrackingService.updateShipmentStatus(id, request, authentication);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ShipmentTrackingResponse> getShipmentById(@PathVariable Long id) {
-        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentById(id);
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    public ResponseEntity<ShipmentTrackingResponse> getShipmentById(@PathVariable Long id,
+            Authentication authentication) {
+        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentById(id, authentication);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/tracking/{trackingNumber}")
-    public ResponseEntity<ShipmentTrackingResponse> getShipmentByTrackingNumber(@PathVariable String trackingNumber) {
-        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentByTrackingNumber(trackingNumber);
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    public ResponseEntity<ShipmentTrackingResponse> getShipmentByTrackingNumber(@PathVariable String trackingNumber,
+            Authentication authentication) {
+        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentByTrackingNumber(trackingNumber, authentication);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<ShipmentTrackingResponse> getShipmentByOrderId(@PathVariable Long orderId) {
-        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentByOrderId(orderId);
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    public ResponseEntity<ShipmentTrackingResponse> getShipmentByOrderId(@PathVariable Long orderId,
+            Authentication authentication) {
+        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentByOrderId(orderId, authentication);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/supplier/{supplierId}")
-    public ResponseEntity<List<ShipmentTrackingResponse>> getShipmentsBySupplier(@PathVariable Long supplierId) {
-        List<ShipmentTrackingResponse> response = shipmentTrackingService.getShipmentsBySupplier(supplierId);
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    public ResponseEntity<List<ShipmentTrackingResponse>> getShipmentsBySupplier(@PathVariable Long supplierId,
+            Authentication authentication) {
+        List<ShipmentTrackingResponse> response = shipmentTrackingService.getShipmentsBySupplier(supplierId, authentication);
         return ResponseEntity.ok(response);
     }
 }

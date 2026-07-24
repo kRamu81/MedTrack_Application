@@ -3,6 +3,7 @@ package com.medtrack.supplier.controller;
 import com.medtrack.exception.GlobalExceptionHandler;
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.supplier.dto.SupplierPerformanceResponse;
+import com.medtrack.supplier.security.SupplierAccessGuard;
 import com.medtrack.supplier.service.SupplierOrderService;
 import com.medtrack.supplier.service.SupplierPerformanceService;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -21,6 +23,7 @@ import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -38,11 +41,15 @@ public class SupplierControllerTest {
         @Mock
         private SupplierPerformanceService supplierPerformanceService;
 
+        @Mock
+        private SupplierAccessGuard supplierAccessGuard;
+
         private SupplierController supplierController;
 
         @BeforeEach
         void setUp() {
-                supplierController = new SupplierController(supplierOrderService, supplierPerformanceService);
+                supplierController = new SupplierController(supplierOrderService, supplierPerformanceService,
+                                supplierAccessGuard);
                 mockMvc = MockMvcBuilders.standaloneSetup(supplierController)
                                 .setControllerAdvice(new GlobalExceptionHandler())
                                 .build();
@@ -50,6 +57,11 @@ public class SupplierControllerTest {
 
         @Test
         void getSupplierOrders_Success() throws Exception {
+                // The caller is a supplier (not a HOSPITAL admin) whose own resolved ID is 100.
+                // Even though the request also carries a supplierId param, the controller uses
+                // the resolved caller identity rather than trusting the client-supplied value.
+                when(supplierAccessGuard.resolveCallerId(any())).thenReturn(100L);
+
                 EquipmentOrder order = EquipmentOrder.builder()
                                 .id(1L)
                                 .orderCode("ORD-101")
@@ -82,22 +94,40 @@ public class SupplierControllerTest {
         }
 
         @Test
-        void getSupplierOrders_EmptyResult_Returns204() throws Exception {
-                Page<EquipmentOrder> emptyPage = new PageImpl<>(Collections.emptyList());
+        void getSupplierOrders_SupplierCannotViewAnotherSuppliersOrders() throws Exception {
+                // The caller's own ID is 100, but they ask for supplierId=999 in the query
+                // string. The controller must ignore that client-supplied value.
+                when(supplierAccessGuard.resolveCallerId(any())).thenReturn(100L);
 
+                Page<EquipmentOrder> emptyPage = new PageImpl<>(Collections.emptyList());
                 when(supplierOrderService.getSupplierOrders(
                                 eq(0), eq(10), eq("orderDate"), eq("desc"),
-                                eq(null), eq(null), eq(null), eq(null))).thenReturn(emptyPage);
+                                eq(null), eq(null), eq(100L), eq(null))).thenReturn(emptyPage);
 
-                mockMvc.perform(get("/api/supplier/orders"))
+                mockMvc.perform(get("/api/supplier/orders").param("supplierId", "999"))
+                                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void getSupplierOrders_HospitalAdminCanFilterByAnySupplier() throws Exception {
+                when(supplierAccessGuard.isHospitalAdmin(any())).thenReturn(true);
+
+                Page<EquipmentOrder> emptyPage = new PageImpl<>(Collections.emptyList());
+                when(supplierOrderService.getSupplierOrders(
+                                eq(0), eq(10), eq("orderDate"), eq("desc"),
+                                eq(null), eq(null), eq(999L), eq(null))).thenReturn(emptyPage);
+
+                mockMvc.perform(get("/api/supplier/orders").param("supplierId", "999"))
                                 .andExpect(status().isNoContent());
         }
 
         @Test
         void getSupplierOrders_InvalidParams_Returns400() throws Exception {
+                // Mockito's default answer for an unstubbed Long-returning method is 0L, not
+                // null, so that's what resolveCallerId() yields here since it isn't stubbed.
                 when(supplierOrderService.getSupplierOrders(
                                 eq(-1), eq(10), eq("orderDate"), eq("desc"),
-                                eq(null), eq(null), eq(null), eq(null)))
+                                eq(null), eq(null), eq(0L), eq(null)))
                                 .thenThrow(new IllegalArgumentException("Page index must not be less than zero"));
 
                 mockMvc.perform(get("/api/supplier/orders")
@@ -113,7 +143,7 @@ public class SupplierControllerTest {
                                 .status("CONFIRMED")
                                 .build();
 
-                when(supplierOrderService.updateOrderStatus(1L, "CONFIRMED")).thenReturn(updatedOrder);
+                when(supplierOrderService.updateOrderStatus(eq(1L), eq("CONFIRMED"), any())).thenReturn(updatedOrder);
 
                 mockMvc.perform(put("/api/supplier/order/update/1")
                                 .param("newStatus", "CONFIRMED")
@@ -124,7 +154,7 @@ public class SupplierControllerTest {
 
         @Test
         void updateOrderStatus_InvalidTransition_Returns400() throws Exception {
-                when(supplierOrderService.updateOrderStatus(1L, "SHIPPED"))
+                when(supplierOrderService.updateOrderStatus(eq(1L), eq("SHIPPED"), any()))
                                 .thenThrow(new com.medtrack.exception.InvalidStatusTransitionException(
                                                 "Invalid status transition"));
 
@@ -137,7 +167,7 @@ public class SupplierControllerTest {
 
         @Test
         void updateOrderStatus_NotFound_Returns404() throws Exception {
-                when(supplierOrderService.updateOrderStatus(99L, "CONFIRMED"))
+                when(supplierOrderService.updateOrderStatus(eq(99L), eq("CONFIRMED"), any()))
                                 .thenThrow(new com.medtrack.exception.ResourceNotFoundException(
                                                 "Order not found with id: 99"));
 
@@ -146,6 +176,17 @@ public class SupplierControllerTest {
                                 .accept(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.message").value("Order not found with id: 99"));
+        }
+
+        @Test
+        void updateOrderStatus_DeniedForOtherSupplier_Returns403() throws Exception {
+                when(supplierOrderService.updateOrderStatus(eq(1L), eq("SHIPPED"), any()))
+                                .thenThrow(new AccessDeniedException("Not authorized"));
+
+                mockMvc.perform(put("/api/supplier/order/update/1")
+                                .param("newStatus", "SHIPPED")
+                                .accept(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isForbidden());
         }
 
         // -----------------------------------------------------------------------
@@ -176,5 +217,14 @@ public class SupplierControllerTest {
                                 .andExpect(jsonPath("$.onTimeShipments").value(3))
                                 .andExpect(jsonPath("$.onTimeDeliveryRate").value(75.0))
                                 .andExpect(jsonPath("$.performanceScore").value(80.0));
+        }
+
+        @Test
+        void getSupplierPerformance_DeniedForOtherSupplier_Returns403() throws Exception {
+                doThrow(new AccessDeniedException("Not authorized"))
+                                .when(supplierAccessGuard).assertSelfOrHospitalAdmin(any(), eq(10L));
+
+                mockMvc.perform(get("/api/supplier/suppliers/10/performance"))
+                                .andExpect(status().isForbidden());
         }
 }

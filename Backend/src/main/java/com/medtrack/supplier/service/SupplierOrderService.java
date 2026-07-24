@@ -5,7 +5,7 @@ import com.medtrack.repository.EquipmentOrderRepository;
 import com.medtrack.supplier.model.ShipmentStatus;
 import com.medtrack.supplier.model.ShipmentTracking;
 import com.medtrack.supplier.repository.ShipmentTrackingRepository;
-import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.supplier.security.SupplierAccessGuard;
 import com.medtrack.exception.InvalidStatusTransitionException;
 import com.medtrack.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -27,7 +28,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,7 +39,7 @@ public class SupplierOrderService {
 
     private final EquipmentOrderRepository orderRepository;
     private final ShipmentTrackingRepository shipmentTrackingRepository;
-    private final UserRepository userRepository;
+    private final SupplierAccessGuard supplierAccessGuard;
 
     @Autowired(required = false)
     private KafkaTemplate<String, Object> kafkaTemplate;
@@ -94,7 +94,7 @@ public class SupplierOrderService {
     }
 
     @Transactional
-    public EquipmentOrder updateOrderStatus(Long orderId, String newStatus) {
+    public EquipmentOrder updateOrderStatus(Long orderId, String newStatus, Authentication authentication) {
         Set<String> publishedEvents = new HashSet<>();
         if (orderId == null || orderId <= 0) {
             throw new IllegalArgumentException("Invalid resource ID.");
@@ -102,6 +102,8 @@ public class SupplierOrderService {
         if (newStatus == null || newStatus.isEmpty()) {
             throw new IllegalArgumentException("Status cannot be blank");
         }
+
+        Long callerSupplierId = supplierAccessGuard.resolveCallerId(authentication);
 
         ShipmentStatus requestedStatus;
         try {
@@ -112,6 +114,14 @@ public class SupplierOrderService {
 
         EquipmentOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // If a supplier has already been assigned to this order (a shipment tracking record
+        // exists), only that supplier - or a HOSPITAL admin - may advance its status. This
+        // closes the gap where any authenticated supplier could hijack/advance another
+        // supplier's order because the order itself carries no supplier assignment until
+        // the first shipment record is created.
+        shipmentTrackingRepository.findByOrderId(orderId).ifPresent(existingShipment ->
+                supplierAccessGuard.assertSelfOrHospitalAdmin(authentication, callerSupplierId, existingShipment.getSupplierId()));
 
         String currentStatusStr = order.getStatus();
         ShipmentStatus currentStatus;
@@ -145,7 +155,7 @@ public class SupplierOrderService {
         if (requestedStatus == ShipmentStatus.SHIPPED) {
             ShipmentTracking shipment = shipmentTrackingRepository.findByOrderId(orderId)
                     .orElseGet(() -> {
-                        Long supplierId = resolveSupplierId();
+                        Long supplierId = callerSupplierId;
                         return ShipmentTracking.builder()
                                 .orderId(orderId)
                                 .supplierId(supplierId)
@@ -177,7 +187,7 @@ public class SupplierOrderService {
         } else if (requestedStatus == ShipmentStatus.DELIVERED) {
             ShipmentTracking shipment = shipmentTrackingRepository.findByOrderId(orderId)
                     .orElseGet(() -> {
-                        Long supplierId = resolveSupplierId();
+                        Long supplierId = callerSupplierId;
                         return ShipmentTracking.builder()
                                 .orderId(orderId)
                                 .supplierId(supplierId)
@@ -201,23 +211,6 @@ public class SupplierOrderService {
         order.setUpdatedAt(LocalDateTime.now());
 
         return orderRepository.save(order);
-    }
-
-    private Long resolveSupplierId() {
-        try {
-            org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
-                    .getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated()) {
-                String username = authentication.getName();
-                Optional<com.medtrack.auth.model.User> userOpt = userRepository.findByUsername(username);
-                if (userOpt.isPresent()) {
-                    return userOpt.get().getId();
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Failed to resolve supplierId from security context: {}", e.getMessage());
-        }
-        return 1L; // default fallback ID
     }
 
     private String generateUniqueTrackingNumber() {

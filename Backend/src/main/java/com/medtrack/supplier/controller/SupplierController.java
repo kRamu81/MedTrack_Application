@@ -2,6 +2,7 @@ package com.medtrack.supplier.controller;
 
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.supplier.dto.SupplierPerformanceResponse;
+import com.medtrack.supplier.security.SupplierAccessGuard;
 import com.medtrack.supplier.service.SupplierOrderService;
 import com.medtrack.supplier.service.SupplierPerformanceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,9 +27,11 @@ public class SupplierController {
 
     private final SupplierOrderService supplierOrderService;
     private final SupplierPerformanceService supplierPerformanceService;
+    private final SupplierAccessGuard supplierAccessGuard;
 
     @GetMapping("/orders")
-    @Operation(summary = "Get paginated, filtered supplier orders", description = "Allows suppliers to search and filter through synchronized equipment purchase orders.")
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    @Operation(summary = "Get paginated, filtered supplier orders", description = "Allows suppliers to search and filter through synchronized equipment purchase orders. Suppliers only ever see their own orders; HOSPITAL admins may filter by any supplier.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved orders", content = @Content(schema = @Schema(implementation = Page.class))),
             @ApiResponse(responseCode = "204", description = "No orders found matching the filter criteria"),
@@ -41,10 +45,19 @@ public class SupplierController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String shippingStatus,
             @RequestParam(required = false) Long supplierId,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            Authentication authentication) {
+
+        // A supplier can only ever see their own orders: the caller-supplied supplierId is
+        // ignored/overridden rather than trusted, and a HOSPITAL admin may filter by any
+        // supplier (or none, to see all).
+        Long effectiveSupplierId = supplierId;
+        if (!supplierAccessGuard.isHospitalAdmin(authentication)) {
+            effectiveSupplierId = supplierAccessGuard.resolveCallerId(authentication);
+        }
 
         Page<EquipmentOrder> orders = supplierOrderService.getSupplierOrders(
-                page, size, sortBy, sortDir, status, shippingStatus, supplierId, search);
+                page, size, sortBy, sortDir, status, shippingStatus, effectiveSupplierId, search);
 
         if (orders.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -63,9 +76,10 @@ public class SupplierController {
     })
     public ResponseEntity<EquipmentOrder> updateOrderStatus(
             @PathVariable Long orderId,
-            @RequestParam String newStatus) {
+            @RequestParam String newStatus,
+            Authentication authentication) {
 
-        EquipmentOrder updatedOrder = supplierOrderService.updateOrderStatus(orderId, newStatus);
+        EquipmentOrder updatedOrder = supplierOrderService.updateOrderStatus(orderId, newStatus, authentication);
         return ResponseEntity.ok(updatedOrder);
     }
 
@@ -74,13 +88,16 @@ public class SupplierController {
     // -----------------------------------------------------------------------
 
     @GetMapping("/suppliers/{supplierId}/performance")
-    @Operation(summary = "Get supplier performance score", description = "Returns on-time delivery rate and overall performance score for the given supplier.")
+    @PreAuthorize("hasAnyRole('HOSPITAL', 'SUPPLIER')")
+    @Operation(summary = "Get supplier performance score", description = "Returns on-time delivery rate and overall performance score for the given supplier. Callable only by that supplier or a HOSPITAL admin.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Performance metrics returned successfully", content = @Content(schema = @Schema(implementation = SupplierPerformanceResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid supplier ID")
     })
     public ResponseEntity<SupplierPerformanceResponse> getSupplierPerformance(
-            @PathVariable Long supplierId) {
+            @PathVariable Long supplierId,
+            Authentication authentication) {
+        supplierAccessGuard.assertSelfOrHospitalAdmin(authentication, supplierId);
         SupplierPerformanceResponse response = supplierPerformanceService.getPerformance(supplierId);
         return ResponseEntity.ok(response);
     }

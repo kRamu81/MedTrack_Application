@@ -67,7 +67,7 @@ public class ShipmentTrackingControllerTest {
                 .supplierId(10L)
                 .build();
 
-        when(shipmentTrackingService.createShipment(any(CreateShipmentRequest.class))).thenReturn(response);
+        when(shipmentTrackingService.createShipment(any(CreateShipmentRequest.class), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/shipments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +112,7 @@ public class ShipmentTrackingControllerTest {
                 .shipmentStatus("SHIPPED")
                 .build();
 
-        when(shipmentTrackingService.updateShipmentStatus(eq(100L), any(UpdateShipmentStatusRequest.class))).thenReturn(response);
+        when(shipmentTrackingService.updateShipmentStatus(eq(100L), any(UpdateShipmentStatusRequest.class), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/shipments/100/status")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -127,7 +127,7 @@ public class ShipmentTrackingControllerTest {
                 .shipmentStatus("PENDING")
                 .build();
 
-        when(shipmentTrackingService.updateShipmentStatus(eq(100L), any(UpdateShipmentStatusRequest.class)))
+        when(shipmentTrackingService.updateShipmentStatus(eq(100L), any(UpdateShipmentStatusRequest.class), any()))
                 .thenThrow(new InvalidStatusTransitionException("Cannot revert status from SHIPPED to PENDING"));
 
         mockMvc.perform(put("/api/shipments/100/status")
@@ -139,7 +139,7 @@ public class ShipmentTrackingControllerTest {
 
     @Test
     void getShipmentById_NotFound_Returns404() throws Exception {
-        when(shipmentTrackingService.getShipmentById(999L))
+        when(shipmentTrackingService.getShipmentById(eq(999L), any()))
                 .thenThrow(new ResourceNotFoundException("Shipment tracking not found with ID: 999"));
 
         mockMvc.perform(get("/api/shipments/999"))
@@ -154,7 +154,7 @@ public class ShipmentTrackingControllerTest {
                 .supplierId(10L)
                 .build();
 
-        when(shipmentTrackingService.getShipmentsBySupplier(10L)).thenReturn(Collections.singletonList(item));
+        when(shipmentTrackingService.getShipmentsBySupplier(eq(10L), any())).thenReturn(Collections.singletonList(item));
 
         mockMvc.perform(get("/api/shipments/supplier/10"))
                 .andExpect(status().isOk())

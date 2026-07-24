@@ -11,11 +11,13 @@ import com.medtrack.supplier.dto.UpdateShipmentStatusRequest;
 import com.medtrack.supplier.model.ShipmentStatus;
 import com.medtrack.supplier.model.ShipmentTracking;
 import com.medtrack.supplier.repository.ShipmentTrackingRepository;
+import com.medtrack.supplier.security.SupplierAccessGuard;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,8 +36,13 @@ public class ShipmentTrackingServiceTest {
     @Mock
     private EquipmentOrderRepository orderRepository;
 
+    @Mock
+    private SupplierAccessGuard supplierAccessGuard;
+
     @InjectMocks
     private ShipmentTrackingService shipmentTrackingService;
+
+    private final Authentication authentication = mock(Authentication.class);
 
     @Test
     void createShipment_Success() {
@@ -66,7 +73,7 @@ public class ShipmentTrackingServiceTest {
         when(shipmentTrackingRepository.findByShipmentTrackingNumber("TRK123456")).thenReturn(Optional.empty());
         when(shipmentTrackingRepository.save(any(ShipmentTracking.class))).thenReturn(shipment);
 
-        ShipmentTrackingResponse response = shipmentTrackingService.createShipment(request);
+        ShipmentTrackingResponse response = shipmentTrackingService.createShipment(request, authentication);
 
         assertNotNull(response);
         assertEquals(5L, response.getId());
@@ -89,7 +96,7 @@ public class ShipmentTrackingServiceTest {
 
         when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> shipmentTrackingService.createShipment(request));
+        assertThrows(ResourceNotFoundException.class, () -> shipmentTrackingService.createShipment(request, authentication));
         verify(shipmentTrackingRepository, never()).save(any());
     }
 
@@ -106,7 +113,7 @@ public class ShipmentTrackingServiceTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
         when(shipmentTrackingRepository.findByOrderId(1L)).thenReturn(Optional.of(existingShipment));
 
-        assertThrows(IllegalArgumentException.class, () -> shipmentTrackingService.createShipment(request));
+        assertThrows(IllegalArgumentException.class, () -> shipmentTrackingService.createShipment(request, authentication));
         verify(shipmentTrackingRepository, never()).save(any());
     }
 
@@ -124,7 +131,7 @@ public class ShipmentTrackingServiceTest {
         when(shipmentTrackingRepository.findByOrderId(1L)).thenReturn(Optional.empty());
         when(shipmentTrackingRepository.findByShipmentTrackingNumber("TRK123456")).thenReturn(Optional.of(existingShipment));
 
-        assertThrows(DuplicateTrackingNumberException.class, () -> shipmentTrackingService.createShipment(request));
+        assertThrows(DuplicateTrackingNumberException.class, () -> shipmentTrackingService.createShipment(request, authentication));
         verify(shipmentTrackingRepository, never()).save(any());
     }
 
@@ -150,7 +157,7 @@ public class ShipmentTrackingServiceTest {
         when(shipmentTrackingRepository.save(any(ShipmentTracking.class))).thenReturn(shipment);
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
-        ShipmentTrackingResponse response = shipmentTrackingService.updateShipmentStatus(5L, request);
+        ShipmentTrackingResponse response = shipmentTrackingService.updateShipmentStatus(5L, request, authentication);
 
         assertNotNull(response);
         assertEquals("SHIPPED", response.getShipmentStatus());
@@ -184,7 +191,7 @@ public class ShipmentTrackingServiceTest {
         when(shipmentTrackingRepository.save(any(ShipmentTracking.class))).thenReturn(shipment);
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
-        ShipmentTrackingResponse response = shipmentTrackingService.updateShipmentStatus(5L, request);
+        ShipmentTrackingResponse response = shipmentTrackingService.updateShipmentStatus(5L, request, authentication);
 
         assertNotNull(response);
         assertEquals("DELIVERED", response.getShipmentStatus());
@@ -210,7 +217,7 @@ public class ShipmentTrackingServiceTest {
 
         when(shipmentTrackingRepository.findById(5L)).thenReturn(Optional.of(shipment));
 
-        assertThrows(InvalidStatusTransitionException.class, () -> shipmentTrackingService.updateShipmentStatus(5L, request));
+        assertThrows(InvalidStatusTransitionException.class, () -> shipmentTrackingService.updateShipmentStatus(5L, request, authentication));
         verify(shipmentTrackingRepository, never()).save(any());
     }
 
@@ -225,10 +232,53 @@ public class ShipmentTrackingServiceTest {
 
         when(shipmentTrackingRepository.findById(5L)).thenReturn(Optional.of(shipment));
 
-        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentById(5L);
+        ShipmentTrackingResponse response = shipmentTrackingService.getShipmentById(5L, authentication);
 
         assertNotNull(response);
         assertEquals(5L, response.getId());
         assertEquals("TRK123", response.getShipmentTrackingNumber());
+    }
+
+    @Test
+    void getShipmentById_DeniedForOtherSupplier() {
+        ShipmentTracking shipment = ShipmentTracking.builder()
+                .id(5L)
+                .orderId(1L)
+                .supplierId(20L)
+                .shipmentStatus(ShipmentStatus.PENDING)
+                .build();
+
+        when(shipmentTrackingRepository.findById(5L)).thenReturn(Optional.of(shipment));
+        when(supplierAccessGuard.resolveCallerId(authentication)).thenReturn(999L);
+        doThrow(new org.springframework.security.access.AccessDeniedException("Not authorized"))
+                .when(supplierAccessGuard).assertSelfOrHospitalAdmin(authentication, 999L, 20L);
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> shipmentTrackingService.getShipmentById(5L, authentication));
+    }
+
+    @Test
+    void createShipment_StampsResolvedCallerIdNotClientSuppliedSupplierId() {
+        CreateShipmentRequest request = CreateShipmentRequest.builder()
+                .orderId(1L)
+                .shipmentTrackingNumber("TRK999")
+                .carrier("FedEx")
+                .supplierId(999L) // client-supplied value must be ignored
+                .build();
+
+        EquipmentOrder order = EquipmentOrder.builder().id(1L).status("PENDING").build();
+
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(shipmentTrackingRepository.findByOrderId(1L)).thenReturn(Optional.empty());
+        when(shipmentTrackingRepository.findByShipmentTrackingNumber("TRK999")).thenReturn(Optional.empty());
+        when(supplierAccessGuard.resolveCallerId(authentication)).thenReturn(10L);
+        when(shipmentTrackingRepository.save(any(ShipmentTracking.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        shipmentTrackingService.createShipment(request, authentication);
+
+        org.mockito.ArgumentCaptor<ShipmentTracking> captor = org.mockito.ArgumentCaptor.forClass(ShipmentTracking.class);
+        verify(shipmentTrackingRepository).save(captor.capture());
+        assertEquals(10L, captor.getValue().getSupplierId());
     }
 }
