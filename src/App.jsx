@@ -136,7 +136,8 @@ function AppContent() {
     "forgot-password",
     "verify-otp",
     "reset-password",
-    "apply"
+    "apply",
+    "dashboard"
   ];
   const isAuthPage = noLayoutPages.includes(currentPage);
 

@@ -6,7 +6,13 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const savedUser = sessionStorage.getItem("medtrack_user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (savedUser) return JSON.parse(savedUser);
+    
+    // Auto-login for local development UI testing
+    if (process.env.NODE_ENV === 'development') {
+      return { id: "demo-user", role: "hospital", name: "Demo Admin", email: "demo@medtrack.com" };
+    }
+    return null;
   });
 
   const [authorityState, setAuthorityState] = useState(() => {
@@ -32,7 +38,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchUserAuthority = useCallback(async (userId) => {
-    if (!userId) return;
+    if (!userId || userId === "demo-user") return;
     setAuthorityLoading(true);
     try {
       const data = await getAuthorityVersion(userId);
