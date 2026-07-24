@@ -83,6 +83,8 @@ const getRouteStateFromPath = () => {
     "sso-security": "sso-security",
     rbac: "rbac-security",
     "rbac-security": "rbac-security",
+    zerotrust: "zerotrust-security",
+    "zerotrust-security": "zerotrust-security",
   };
 
   return {
@@ -134,7 +136,8 @@ function AppContent() {
     "forgot-password",
     "verify-otp",
     "reset-password",
-    "apply"
+    "apply",
+    "dashboard"
   ];
   const isAuthPage = noLayoutPages.includes(currentPage);
 
