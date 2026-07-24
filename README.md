@@ -8,6 +8,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+[![Top ECSOC 2026](https://img.shields.io/badge/Top_ECSOC_2026-FFD700?style=for-the-badge&logoColor=black)](#)
 
 </div>
 
@@ -15,11 +16,8 @@
 <br />
 <div align="center">
   <a href="https://github.com/kRamu81/MedTrack_Application">
-    <!-- Replace with your actual logo -->
-    <img src="https://raw.githubusercontent.com/othneildrew/Best-README-Template/master/images/logo.png" alt="Logo" width="80" height="80">
+    <img src="public/medtrack-logo.svg" alt="MedTrack Logo" width="340">
   </a>
-
-  <h3 align="center">🏥 MedTrack</h3>
 
   <p align="center">
     <strong>A Full-Stack Medical Equipment Management & Tracking System</strong>
