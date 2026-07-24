@@ -83,6 +83,8 @@ const getRouteStateFromPath = () => {
     "sso-security": "sso-security",
     rbac: "rbac-security",
     "rbac-security": "rbac-security",
+    keyvault: "keyvault-security",
+    "keyvault-security": "keyvault-security",
   };
 
   return {
