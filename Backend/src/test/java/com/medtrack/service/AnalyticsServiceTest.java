@@ -5,10 +5,13 @@ import com.medtrack.model.Equipment;
 import com.medtrack.model.EquipmentStatus;
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.model.EquipmentStatus;
+import com.medtrack.model.Hospital;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
+import com.medtrack.exception.ResourceNotFoundException;
 import com.medtrack.repository.EquipmentOrderRepository;
 import com.medtrack.repository.EquipmentRepository;
+import com.medtrack.repository.HospitalRepository;
 import com.medtrack.repository.MaintenanceTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -38,12 +42,17 @@ public class AnalyticsServiceTest {
     @Mock
     private EquipmentOrderRepository orderRepository;
 
+    @Mock
+    private HospitalRepository hospitalRepository;
+
     @InjectMocks
     private AnalyticsService analyticsService;
 
     @Test
     void getHospitalAnalytics_ComputesCorrectStatistics() {
         Long hospitalId = 1L;
+        Hospital hospital = Hospital.builder().id(hospitalId).name("City General Hospital").build();
+        when(hospitalRepository.findById(hospitalId)).thenReturn(Optional.of(hospital));
 
         // Mock Equipment
         Equipment eq1 = Equipment.builder()
@@ -101,6 +110,7 @@ public class AnalyticsServiceTest {
         EquipmentOrder order1 = EquipmentOrder.builder()
                 .id(100L)
                 .equipmentName("MRI Scanner")
+                .hospital("City General Hospital")
                 .shippingStatus("Delivered")
                 .totalCost(BigDecimal.valueOf(150000.00))
                 .build();
@@ -108,6 +118,7 @@ public class AnalyticsServiceTest {
         EquipmentOrder order2 = EquipmentOrder.builder()
                 .id(200L)
                 .equipmentName("Infusion Pump")
+                .hospital("City General Hospital")
                 .shippingStatus("Delivered")
                 .totalCost(BigDecimal.valueOf(5000.00))
                 .build();
@@ -115,6 +126,7 @@ public class AnalyticsServiceTest {
         EquipmentOrder order3 = EquipmentOrder.builder()
                 .id(300L)
                 .equipmentName("Ventilator Beta") // keyword fallback category "Respiratory"
+                .hospital("City General Hospital")
                 .shippingStatus("Delivered")
                 .totalCost(BigDecimal.valueOf(25000.00))
                 .build();
@@ -122,14 +134,28 @@ public class AnalyticsServiceTest {
         EquipmentOrder order4 = EquipmentOrder.builder()
                 .id(400L)
                 .equipmentName("Surgical Laser")
+                .hospital("City General Hospital")
                 .shippingStatus("Processing") // not delivered, should not count towards spend
                 .totalCost(BigDecimal.valueOf(99999.00))
+                .build();
+
+        // Belongs to a DIFFERENT hospital and is delivered - must never be counted
+        // into this hospital's analytics. Regression guard for the cross-hospital
+        // spend leak where getHospitalAnalytics() previously called
+        // orderRepository.findAll() with no hospital filtering at all.
+        EquipmentOrder otherHospitalOrder = EquipmentOrder.builder()
+                .id(500L)
+                .equipmentName("MRI Scanner")
+                .hospital("Riverside Medical Center")
+                .shippingStatus("Delivered")
+                .totalCost(BigDecimal.valueOf(1_000_000.00))
                 .build();
 
         when(equipmentRepository.findByHospitalId(hospitalId)).thenReturn(Arrays.asList(eq1, eq2));
         when(taskRepository.findByHospitalId(hospitalId))
                 .thenReturn(Arrays.asList(task1, task2, task3, legacyCompletedTask));
-        when(orderRepository.findAll()).thenReturn(Arrays.asList(order1, order2, order3, order4));
+        when(orderRepository.findAll())
+                .thenReturn(Arrays.asList(order1, order2, order3, order4, otherHospitalOrder));
 
         HospitalAnalyticsDto dto = analyticsService.getHospitalAnalytics(hospitalId);
 
@@ -158,5 +184,13 @@ public class AnalyticsServiceTest {
 
         // Warranty: eq1 expires in 15 days, eq2 in 100 days -> 1 upcoming
         assertEquals(1, dto.getUpcomingWarrantyExpirationsCount());
+    }
+
+    @Test
+    void getHospitalAnalytics_HospitalNotFound_ThrowsResourceNotFoundException() {
+        when(hospitalRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> analyticsService.getHospitalAnalytics(999L));
     }
 }
