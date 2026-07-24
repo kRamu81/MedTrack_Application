@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +30,8 @@ public class SsoProviderController {
     private final SsoProviderService ssoProviderService;
 
     @PostMapping("/configure")
-    @Operation(summary = "Configure SSO Provider", description = "Onboards or updates an enterprise Identity Provider configuration for a domain.")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    @Operation(summary = "Configure SSO Provider", description = "Onboards or updates an enterprise Identity Provider configuration for a domain. Restricted to HOSPITAL administrators.")
     public ResponseEntity<SsoProviderConfigResponse> configureProvider(@Valid @RequestBody SsoProviderConfigRequest request) {
         SsoProviderConfigResponse response = ssoProviderService.configureProvider(request);
         return ResponseEntity.ok(response);
@@ -51,7 +53,8 @@ public class SsoProviderController {
     }
 
     @PostMapping("/toggle/{providerId}")
-    @Operation(summary = "Toggle SSO Provider state", description = "Enables or disables an identity provider.")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    @Operation(summary = "Toggle SSO Provider state", description = "Enables or disables an identity provider. Restricted to HOSPITAL administrators.")
     public ResponseEntity<Map<String, Object>> toggleProvider(@PathVariable Long providerId, @RequestParam boolean enabled) {
         boolean toggled = ssoProviderService.toggleProviderState(providerId, enabled);
         return ResponseEntity.ok(Map.of(

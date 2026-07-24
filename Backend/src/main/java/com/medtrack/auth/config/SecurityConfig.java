@@ -140,6 +140,27 @@ public class SecurityConfig {
                     "/swagger-ui.html"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
+                // Resolves the SSO identity provider for an email domain before the caller
+                // has a session, so this single lookup endpoint must stay public.
+                .requestMatchers(HttpMethod.POST, "/api/auth/sso/initiate").permitAll()
+
+                // RBAC/Authority/MFA/Device/SSO/Audit management surface: these APIs can create
+                // roles, grant permissions, revoke sessions, disable MFA, and reconfigure SSO
+                // providers for ANY account, so mutating calls require the HOSPITAL admin role.
+                // Read/self-service calls only require authentication; per-user ownership
+                // (self vs. HOSPITAL admin) is enforced in the controllers via OwnershipAccessGuard.
+                .requestMatchers(HttpMethod.POST, "/api/auth/rbac/roles").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.PUT, "/api/auth/rbac/matrix").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.GET, "/api/auth/rbac/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/auth/authority/version/increment").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.POST, "/api/auth/authority/version/bump-global").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.GET, "/api/auth/authority/**").authenticated()
+                .requestMatchers("/api/auth/mfa/**").authenticated()
+                .requestMatchers("/api/auth/devices/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/auth/sso/configure").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.POST, "/api/auth/sso/toggle/**").hasRole("HOSPITAL")
+                .requestMatchers(HttpMethod.GET, "/api/auth/sso/**").authenticated()
+                .requestMatchers("/api/auth/audit/**").authenticated()
 
                 // Equipment module boundaries:
                 // GET requests: Authorized users.

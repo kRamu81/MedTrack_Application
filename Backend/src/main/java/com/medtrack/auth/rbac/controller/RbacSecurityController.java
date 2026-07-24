@@ -2,11 +2,14 @@ package com.medtrack.auth.rbac.controller;
 
 import com.medtrack.auth.rbac.dto.*;
 import com.medtrack.auth.rbac.service.RbacSecurityService;
+import com.medtrack.auth.security.OwnershipAccessGuard;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +29,7 @@ import java.util.List;
 public class RbacSecurityController {
 
     private final RbacSecurityService rbacSecurityService;
+    private final OwnershipAccessGuard ownershipAccessGuard;
 
     @GetMapping("/roles")
     @Operation(summary = "Get all RBAC Roles", description = "Retrieves all registered roles and their granted permission codes.")
@@ -42,24 +46,28 @@ public class RbacSecurityController {
     }
 
     @PostMapping("/roles")
-    @Operation(summary = "Create custom RBAC Role", description = "Onboards a new custom application role.")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    @Operation(summary = "Create custom RBAC Role", description = "Onboards a new custom application role. Restricted to HOSPITAL administrators.")
     public ResponseEntity<RoleResponse> createRole(@Valid @RequestBody RoleCreateRequest request) {
         RoleResponse response = rbacSecurityService.createRole(request);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/matrix")
-    @Operation(summary = "Update Role Permission Matrix", description = "Assigns or revokes granular permission codes for a role.")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    @Operation(summary = "Update Role Permission Matrix", description = "Assigns or revokes granular permission codes for a role. Restricted to HOSPITAL administrators.")
     public ResponseEntity<RoleResponse> updateRolePermissions(@Valid @RequestBody UpdateRolePermissionsRequest request) {
         RoleResponse response = rbacSecurityService.updateRolePermissions(request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/check/{userId}")
-    @Operation(summary = "Evaluate User Permission", description = "Evaluates whether a user has access rights for a specific permission code.")
+    @Operation(summary = "Evaluate User Permission", description = "Evaluates whether a user has access rights for a specific permission code. Callable only by the target user or a HOSPITAL administrator.")
     public ResponseEntity<UserPermissionCheckResponse> checkUserPermission(
             @PathVariable Long userId,
-            @RequestParam String permissionCode) {
+            @RequestParam String permissionCode,
+            Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, userId);
         UserPermissionCheckResponse response = rbacSecurityService.checkUserPermission(userId, permissionCode);
         return ResponseEntity.ok(response);
     }

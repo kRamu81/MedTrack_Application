@@ -1,5 +1,6 @@
 package com.medtrack.auth.security;
 
+import com.medtrack.auth.authority.service.AuthorityService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +42,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     /**
+     * Resolves the current, database-backed authority version for a user so revoked/incremented
+     * authority (role demotion, forced logout, global security bump) takes effect immediately
+     * instead of waiting for the token's natural expiry.
+     */
+    private final AuthorityService authorityService;
+
+    /**
      * Intercepts incoming requests to extract the JWT token from the authorization header,
      * validate it, and authenticate the client if the token is valid.
      *
@@ -71,14 +79,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String token = authHeader.substring(7);
 
         try {
-            // Extract core claims (subject/email and role) from the token
+            // Extract core claims (subject/email, user ID, role) from the token
             final String email = jwtUtil.extractEmail(token);
             final String role = jwtUtil.extractRole(token);
+            final Long userId = jwtUtil.extractUserId(token);
 
             // Execute authentication lookup if email is found and context is not already authenticated
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Verify token signature and check expiration date
-                if (jwtUtil.isTokenValid(token, email)) {
+                // Verify token signature, check expiration date, and confirm the token's authority
+                // version still matches the user's current database version. A mismatch means an
+                // admin has since revoked/incremented authority (role change, forced logout, global
+                // security bump) and this token must be rejected even though it hasn't expired yet.
+                boolean authorityStillValid = userId == null || authorityService.validateAuthorityVersion(
+                        userId, jwtUtil.extractAuthorityVersion(token));
+
+                if (jwtUtil.isTokenValid(token, email) && authorityStillValid) {
                     // Map the user's role to a Spring Security authority with a "ROLE_" prefix.
                     // This matches the role mappings expected by Spring Security's hasRole() rules.
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
