@@ -132,6 +132,7 @@ public class SecurityConfig {
                     "/api/auth/audit/**",
                     "/api/auth/rbac/**",
                     "/api/auth/zerotrust/**",
+                    "/api/auth/vulnerability/**",
                     "/h2-console/**",
                     "/error",
                     "/v3/api-docs/**",
