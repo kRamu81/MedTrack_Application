@@ -8,7 +8,7 @@ import "./auth.css";
 export default function LoginPage({ onNavigate }) {
   const { login } = useAuth();
   const [selectedRole, setSelectedRole] = useState("hospital");
-  const [email, setEmail] = useState("admin@medtrack.com");
+  const [email, setEmail] = useState("hospital@medtrack.com");
   const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +53,7 @@ export default function LoginPage({ onNavigate }) {
   const handleRoleChange = (roleKey) => {
     setSelectedRole(roleKey);
     if (roleKey === "hospital") {
-      setEmail("admin@medtrack.com");
+      setEmail("hospital@medtrack.com");
       setPassword("admin123");
     } else if (roleKey === "technician") {
       setEmail("tech@medtrack.com");
