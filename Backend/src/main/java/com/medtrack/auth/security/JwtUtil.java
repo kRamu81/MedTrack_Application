@@ -85,6 +85,22 @@ public class JwtUtil {
     }
 
     /**
+     * Helper to extract the custom 'userId' claim from the JWT claims payload.
+     *
+     * @param token the JWT string to parse
+     * @return the user database ID stored in the claims
+     */
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> {
+            Object val = claims.get("userId");
+            if (val instanceof Number) {
+                return ((Number) val).longValue();
+            }
+            return null;
+        });
+    }
+
+    /**
      * Helper to extract the custom 'authorityVersion' claim from the JWT claims payload.
      *
      * @param token the JWT string to parse

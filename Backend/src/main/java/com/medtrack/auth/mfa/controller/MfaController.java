@@ -2,11 +2,13 @@ package com.medtrack.auth.mfa.controller;
 
 import com.medtrack.auth.mfa.dto.*;
 import com.medtrack.auth.mfa.service.MfaService;
+import com.medtrack.auth.security.OwnershipAccessGuard;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -26,17 +28,21 @@ import java.util.Map;
 public class MfaController {
 
     private final MfaService mfaService;
+    private final OwnershipAccessGuard ownershipAccessGuard;
 
     @PostMapping("/setup/{userId}")
-    @Operation(summary = "Initiate MFA setup", description = "Generates a 16-character Base32 TOTP secret, otpauth URI, and emergency recovery codes.")
-    public ResponseEntity<MfaSetupResponse> setupMfa(@PathVariable Long userId) {
+    @Operation(summary = "Initiate MFA setup", description = "Generates a 16-character Base32 TOTP secret, otpauth URI, and emergency recovery codes. Callable only by the target user or a HOSPITAL administrator.")
+    public ResponseEntity<MfaSetupResponse> setupMfa(@PathVariable Long userId, Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, userId);
         MfaSetupResponse response = mfaService.setupMfa(userId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/verify")
-    @Operation(summary = "Verify TOTP code or emergency recovery code", description = "Validates the 6-digit TOTP code or recovery code to activate or complete 2FA login.")
-    public ResponseEntity<Map<String, Object>> verifyMfa(@Valid @RequestBody MfaVerifyRequest request) {
+    @Operation(summary = "Verify TOTP code or emergency recovery code", description = "Validates the 6-digit TOTP code or recovery code to activate or complete 2FA login. Callable only by the target user or a HOSPITAL administrator.")
+    public ResponseEntity<Map<String, Object>> verifyMfa(@Valid @RequestBody MfaVerifyRequest request,
+                                                          Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, request.getUserId());
         boolean verified = mfaService.verifyAndEnableMfa(request);
         if (verified) {
             return ResponseEntity.ok(Map.of(
@@ -52,15 +58,17 @@ public class MfaController {
     }
 
     @GetMapping("/status/{userId}")
-    @Operation(summary = "Get MFA configuration status", description = "Retrieves MFA enabled state, last verified timestamp, and active device count.")
-    public ResponseEntity<MfaStatusResponse> getMfaStatus(@PathVariable Long userId) {
+    @Operation(summary = "Get MFA configuration status", description = "Retrieves MFA enabled state, last verified timestamp, and active device count. Callable only by the target user or a HOSPITAL administrator.")
+    public ResponseEntity<MfaStatusResponse> getMfaStatus(@PathVariable Long userId, Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, userId);
         MfaStatusResponse response = mfaService.getMfaStatus(userId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/disable/{userId}")
-    @Operation(summary = "Disable MFA", description = "Disables Multi-Factor Authentication for the specified user account.")
-    public ResponseEntity<Map<String, Object>> disableMfa(@PathVariable Long userId) {
+    @Operation(summary = "Disable MFA", description = "Disables Multi-Factor Authentication for the specified user account. Callable only by the target user or a HOSPITAL administrator.")
+    public ResponseEntity<Map<String, Object>> disableMfa(@PathVariable Long userId, Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, userId);
         boolean disabled = mfaService.disableMfa(userId);
         return ResponseEntity.ok(Map.of(
                 "success", disabled,

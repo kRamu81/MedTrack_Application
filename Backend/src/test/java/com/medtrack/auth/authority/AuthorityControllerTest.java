@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medtrack.auth.authority.controller.AuthorityController;
 import com.medtrack.auth.authority.dto.*;
 import com.medtrack.auth.authority.service.AuthorityService;
+import com.medtrack.auth.security.OwnershipAccessGuard;
+import com.medtrack.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +13,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -20,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,14 +45,22 @@ public class AuthorityControllerTest {
     @Mock
     private AuthorityService authorityService;
 
+    @Mock
+    private OwnershipAccessGuard ownershipAccessGuard;
+
     @InjectMocks
     private AuthorityController authorityController;
+
+    private final Authentication hospitalAdmin = new UsernamePasswordAuthenticationToken(
+            "hospital@medtrack.org", null, List.of(new SimpleGrantedAuthority("ROLE_HOSPITAL")));
 
     private AuthorityVersionResponse sampleResponse;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(authorityController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(authorityController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
 
         sampleResponse = AuthorityVersionResponse.builder()
                 .userId(10L)
@@ -62,12 +78,21 @@ public class AuthorityControllerTest {
     void getAuthorityVersion_Success() throws Exception {
         when(authorityService.getAuthorityVersion(10L)).thenReturn(sampleResponse);
 
-        mockMvc.perform(get("/api/auth/authority/version/10"))
+        mockMvc.perform(get("/api/auth/authority/version/10").principal(hospitalAdmin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(10))
                 .andExpect(jsonPath("$.authorityVersion").value(2))
                 .andExpect(jsonPath("$.role").value("HOSPITAL"))
                 .andExpect(jsonPath("$.active").value(true));
+    }
+
+    @Test
+    void getAuthorityVersion_DeniedForOtherUser() throws Exception {
+        doThrow(new AccessDeniedException("Not authorized"))
+                .when(ownershipAccessGuard).assertSelfOrHospitalAdmin(any(), eq(10L));
+
+        mockMvc.perform(get("/api/auth/authority/version/10"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -118,10 +143,19 @@ public class AuthorityControllerTest {
 
         when(authorityService.getAuditLogsForUser(10L)).thenReturn(List.of(logDto));
 
-        mockMvc.perform(get("/api/auth/authority/audit-logs/10"))
+        mockMvc.perform(get("/api/auth/authority/audit-logs/10").principal(hospitalAdmin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(100))
                 .andExpect(jsonPath("$[0].eventType").value("VERSION_INCREMENT"))
                 .andExpect(jsonPath("$[0].userId").value(10));
+    }
+
+    @Test
+    void getAuditLogsForUser_DeniedForOtherUser() throws Exception {
+        doThrow(new AccessDeniedException("Not authorized"))
+                .when(ownershipAccessGuard).assertSelfOrHospitalAdmin(any(), eq(10L));
+
+        mockMvc.perform(get("/api/auth/authority/audit-logs/10"))
+                .andExpect(status().isForbidden());
     }
 }

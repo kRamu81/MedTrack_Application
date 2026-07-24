@@ -2,6 +2,7 @@ package com.medtrack.auth.authority.controller;
 
 import com.medtrack.auth.authority.dto.*;
 import com.medtrack.auth.authority.service.AuthorityService;
+import com.medtrack.auth.security.OwnershipAccessGuard;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,9 +35,11 @@ import java.util.Map;
 public class AuthorityController {
 
     private final AuthorityService authorityService;
+    private final OwnershipAccessGuard ownershipAccessGuard;
 
     /**
      * Retrieves authority state, role permissions, and active authority version for a target user.
+     * Callable only by the target user or a HOSPITAL administrator.
      *
      * @param userId primary key identifier of the target user account
      * @return {@link AuthorityVersionResponse} containing current version and permissions
@@ -45,7 +50,9 @@ public class AuthorityController {
         @ApiResponse(responseCode = "200", description = "Authority details retrieved successfully", content = @Content(schema = @Schema(implementation = AuthorityVersionResponse.class))),
         @ApiResponse(responseCode = "404", description = "User account not found")
     })
-    public ResponseEntity<AuthorityVersionResponse> getAuthorityVersion(@PathVariable Long userId) {
+    public ResponseEntity<AuthorityVersionResponse> getAuthorityVersion(@PathVariable Long userId,
+                                                                        Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, userId);
         AuthorityVersionResponse response = authorityService.getAuthorityVersion(userId);
         return ResponseEntity.ok(response);
     }
@@ -58,7 +65,8 @@ public class AuthorityController {
      * @return updated {@link AuthorityVersionResponse} payload
      */
     @PostMapping("/version/increment")
-    @Operation(summary = "Increment user authority version (Revoke active sessions)", description = "Increments user authority version, immediately invalidating any active JWT access tokens for that user.")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    @Operation(summary = "Increment user authority version (Revoke active sessions)", description = "Increments user authority version, immediately invalidating any active JWT access tokens for that user. Restricted to HOSPITAL administrators.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Authority version incremented successfully", content = @Content(schema = @Schema(implementation = AuthorityVersionResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request payload or missing justification"),
@@ -77,7 +85,8 @@ public class AuthorityController {
      * @return HTTP response wrapping count of updated accounts
      */
     @PostMapping("/version/bump-global")
-    @Operation(summary = "Bump system-wide global authority version", description = "Increments authority version for all registered user accounts to enforce global re-authentication.")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    @Operation(summary = "Bump system-wide global authority version", description = "Increments authority version for all registered user accounts to enforce global re-authentication. Restricted to HOSPITAL administrators.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Global authority bump completed successfully")
     })
@@ -99,11 +108,13 @@ public class AuthorityController {
      * @return list of {@link AuditLogResponse} audit events
      */
     @GetMapping("/audit-logs/{userId}")
-    @Operation(summary = "Fetch authority audit logs for a user", description = "Queries immutable audit history for authority version changes and role modifications.")
+    @Operation(summary = "Fetch authority audit logs for a user", description = "Queries immutable audit history for authority version changes and role modifications. Callable only by the target user or a HOSPITAL administrator.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Audit logs retrieved successfully")
     })
-    public ResponseEntity<List<AuditLogResponse>> getAuditLogsForUser(@PathVariable Long userId) {
+    public ResponseEntity<List<AuditLogResponse>> getAuditLogsForUser(@PathVariable Long userId,
+                                                                       Authentication authentication) {
+        ownershipAccessGuard.assertSelfOrHospitalAdmin(authentication, userId);
         List<AuditLogResponse> logs = authorityService.getAuditLogsForUser(userId);
         return ResponseEntity.ok(logs);
     }
