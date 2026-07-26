@@ -39,11 +39,7 @@ public class HospitalController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
 
-        try {
-            Hospital createdHospital = hospitalService.createHospitalProfile(hospital, userEmail);
-            return new ResponseEntity<>(createdHospital, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Hospital createdHospital = hospitalService.createHospitalProfile(hospital, userEmail);
+        return new ResponseEntity<>(createdHospital, HttpStatus.CREATED);
     }
 }
