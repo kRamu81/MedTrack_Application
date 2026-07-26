@@ -1,4 +1,5 @@
 import axios from "axios";
+import { showError } from "./toastService";
 
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:8081",
@@ -38,11 +39,11 @@ API.interceptors.response.use(
     const status=error.response?.status;
     if(status==401){
       sessionStorage.removeItem("medtrack_user");
-      alert("Session expired. Please login again.");
+      showError("Session expired. Please login again.");
       window.location.href="/login";
     }
     else if(status==403){
-      alert("Access denied: You are not authorised to perform this action.");
+      showError("Access denied: You are not authorised to perform this action.");
     }
     else{
       console.error("API request failed:", error.response?.data || error.message);
