@@ -42,7 +42,7 @@ public class Hospital {
      * One Hospital has many Equipment items.
      * We use a JoinColumn to add a foreign key 'hospital_id' in the Equipment table.
      */
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private List<Equipment> equipmentList;
 }
