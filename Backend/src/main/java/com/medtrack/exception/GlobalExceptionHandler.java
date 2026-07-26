@@ -10,11 +10,15 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // Handles validation violations -> 400 Bad Request
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -97,9 +101,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        log.error("Unhandled runtime exception", ex);
         Map<String, String> response = new HashMap<>();
-        response.put("message", ex.getMessage());
-        return ResponseEntity.badRequest().body(response);
+        response.put("message", "An internal error occurred");
+        return ResponseEntity.internalServerError().body(response);
     }
 
     @ExceptionHandler(Exception.class)
