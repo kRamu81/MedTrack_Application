@@ -1,10 +1,14 @@
 package com.medtrack.service;
 
+import com.medtrack.auth.model.User;
+import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.model.EquipmentOrder;
 import com.medtrack.repository.EquipmentOrderRepository;
 import com.medtrack.util.PurchaseOrderPdf;
 import com.medtrack.dto.SupplierMetricsDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.medtrack.exception.ResourceNotFoundException;
 
@@ -23,6 +27,7 @@ public class OrderService {
     private final PurchaseOrderPdf purchaseOrderPdf;
     private final SupplierInvoicePdf supplierInvoicePdf;
     private final EmailService emailService;
+    private final UserRepository userRepository;
 
     public byte[] generateInvoicePdf(Long id) {
         EquipmentOrder order = getOrderById(id);
@@ -40,13 +45,41 @@ public class OrderService {
     }
 
 
+    private String getCurrentUserOrganization() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(User::getOrganization)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private boolean isSupplier() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) return false;
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPPLIER"));
+    }
+
     public List<EquipmentOrder> getAllOrders() {
-        return orderRepository.findAll();
+        if (isSupplier()) {
+            return orderRepository.findAll();
+        }
+        return orderRepository.findByHospital(getCurrentUserOrganization());
     }
 
     public EquipmentOrder getOrderById(Long id) {
-        return orderRepository.findById(id)
+        EquipmentOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+        if (!isSupplier()) {
+            String hospital = getCurrentUserOrganization();
+            if (!order.getHospital().equals(hospital)) {
+                throw new ResourceNotFoundException("Order not found with id: " + id);
+            }
+        }
+        return order;
     }
 
     public EquipmentOrder placeOrder(EquipmentOrder order) {
@@ -89,15 +122,12 @@ public class OrderService {
     }
 
     public void deleteOrder(Long id) {
-        EquipmentOrder order = orderRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Order not found with id: " + id));
-
+        EquipmentOrder order = getOrderById(id);
         orderRepository.delete(order);
     }
 
     public SupplierMetricsDto getSupplierMetrics() {
-        List<EquipmentOrder> orders = orderRepository.findAll();
+        List<EquipmentOrder> orders = getAllOrders();
         long total = orders.size();
         
         long pending = orders.stream()

@@ -370,18 +370,28 @@ public class UserService {
         String email = request.getEmail().trim().toLowerCase();
         String otp = request.getOtp();
 
-        // Find token by email and OTP
-        PasswordResetToken token = passwordResetTokenRepository.findByEmailAndOtp(email, otp)
-                .orElseThrow(() -> new RuntimeException("Incorrect OTP"));
+        // Find the latest token for this email
+        PasswordResetToken token = passwordResetTokenRepository.findFirstByEmailOrderByCreatedAtDesc(email)
+                .orElseThrow(() -> new RuntimeException("No OTP found for this email"));
 
         // Reject if expired
         if (token.getExpiryTime().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("OTP has expired");
         }
 
-        // Reject if used
+        // Reject if already used
         if (token.isUsed()) {
             throw new RuntimeException("OTP has already been used");
+        }
+
+        // Check if OTP matches
+        if (!token.getOtp().equals(otp)) {
+            token.setFailedAttempts(token.getFailedAttempts() + 1);
+            if (token.getFailedAttempts() >= 3) {
+                token.setUsed(true);
+            }
+            passwordResetTokenRepository.save(token);
+            throw new RuntimeException("Incorrect OTP");
         }
 
         // Mark OTP as verified

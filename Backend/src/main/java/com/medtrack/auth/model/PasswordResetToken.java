@@ -44,4 +44,8 @@ public class PasswordResetToken {
     @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int failedAttempts = 0;
 }
