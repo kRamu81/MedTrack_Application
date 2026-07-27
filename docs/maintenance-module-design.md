@@ -7,6 +7,7 @@ The project already contains a basic Maintenance Scheduling module. It is implem
 - `model/MaintenanceTask.java`
 - `model/MaintenanceStatus.java`
 - `dto/MaintenanceCreateRequest.java`
+- `dto/MaintenanceAssignmentRequest.java`
 - `dto/MaintenanceUpdateRequest.java`
 - `validation/MaintenanceValidationLimits.java`
 - `repository/MaintenanceTaskRepository.java`
@@ -21,7 +22,8 @@ The frontend also already has Maintenance-related pages and API helpers:
 - `src/pages/technician/TaskList.jsx`
 - `src/pages/technician/UpdateTask.jsx`
 
-The current backend can create, fetch, update, and delete maintenance tasks through `/api/maintenance` endpoints.
+The current backend can create, fetch, assign, update, and delete maintenance tasks through
+`/api/maintenance` endpoints.
 
 ## What The Existing Files Do
 
@@ -29,7 +31,7 @@ The current backend can create, fetch, update, and delete maintenance tasks thro
 
 `MaintenanceTask` is the current JPA entity for maintenance records. It maps to the `maintenance_tasks` table and stores task details such as task code, equipment name, hospital name, deadline, assigned technician, priority, status, notes, hours worked, parts used, signature, and the server-recorded completion timestamp. Its `status` field uses the strongly typed `MaintenanceStatus` enum and is persisted with `EnumType.STRING`. It also stores `hospitalId`, which is populated by the backend and used as a stable ownership key.
 
-The task keeps the existing API-facing equipment code/name fields and also stores a lazy, required `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. Versioned Flyway migrations backfill legacy rows, enforce non-null equipment and hospital ownership, and add a restrictive equipment foreign key so maintenance history cannot be orphaned by equipment deletion. Technician assignment remains an email string, but scheduling verifies that a supplied account exists and has the technician role, then persists the canonical email stored on that account.
+The task keeps the existing API-facing equipment code/name fields and also stores a lazy, required `ManyToOne` relationship to the real `Equipment` record. The relationship uses `equipment_record_id` so it can coexist with the legacy string field without breaking the frontend contract. Versioned Flyway migrations backfill legacy rows, enforce non-null equipment and hospital ownership, and add a restrictive equipment foreign key so maintenance history cannot be orphaned by equipment deletion. Technician assignment remains an email string, but every assignment path trims and lowercases the lookup value, verifies that the account is active and has the technician role, then persists the canonical email stored on that account.
 
 ### Maintenance request DTOs
 
@@ -42,7 +44,11 @@ JSON shape without gaining write access to those values.
 Its optional report values retain the existing null-means-preserve behavior. The recurrence
 field remains accepted for compatibility but cannot change the hospital-owned schedule.
 
-Both request DTOs and the entity use constants from `MaintenanceValidationLimits` so HTTP
+`MaintenanceAssignmentRequest` contains only the required technician email. It supports
+hospital assignment or reassignment while a task is still `SCHEDULED`, including recurring
+tasks that were intentionally created without an eligible technician.
+
+All request DTOs and the entity use constants from `MaintenanceValidationLimits` so HTTP
 validation and persistence constraints cannot silently drift apart. API-facing `VARCHAR` fields
 are limited to 255 characters, technician notes to 16,000 characters, and the base64/string
 signature representation to 60,000 characters.
@@ -108,6 +114,9 @@ It currently supports:
 - validating scheduling fields and assigned technician accounts
 - enforcing agreement between task ownership and equipment ownership before persistence
 - storing the canonical account email for technician assignments
+- applying the authentication module's lowercase email normalization before technician lookup
+- rejecting locked or disabled technician accounts
+- allowing the owning hospital to assign or reassign a technician while a task is `SCHEDULED`
 - enforcing the documented status lifecycle and non-negative work values
 - preventing edits and deletion after completion
 - persisting technician reports including parts and signatures
@@ -136,11 +145,12 @@ Current endpoints:
 - `GET /api/maintenance`
 - `GET /api/maintenance/{id}`
 - `POST /api/maintenance`
+- `POST /api/maintenance/{id}/assignment`
 - `PUT /api/maintenance/{id}`
 - `DELETE /api/maintenance/{id}`
 - `GET /api/maintenance/export/calendar.ics`
 
-The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The list endpoint is automatically scoped to the authenticated hospital or technician and consistently returns HTTP 200 with a JSON array, including `[]` when no tasks exist.
+The controller forwards the authenticated identity to the service, uses role guards for every operation, and validates positive IDs for item-level operations. The assignment endpoint is restricted to the owning hospital and only changes a task that remains `SCHEDULED`. The list endpoint is automatically scoped to the authenticated hospital or technician and consistently returns HTTP 200 with a JSON array, including `[]` when no tasks exist.
 
 Scheduling and technician-update DTOs use Bean Validation, with business-critical checks also
 retained in the service. `GET /api/maintenance` accepts optional `status`, `equipmentId`, `page`,
@@ -230,6 +240,8 @@ Keeping this path avoids breaking the current frontend service.
 Recommended API behavior:
 
 - `POST /api/maintenance`: hospital schedules maintenance for equipment
+- `POST /api/maintenance/{id}/assignment`: owning hospital assigns or reassigns a
+  technician while the task is still scheduled
 - `GET /api/maintenance`: authenticated users fetch maintenance tasks
 - `GET /api/maintenance/{id}`: authenticated users fetch one task
 - `PUT /api/maintenance/{id}`: technician updates maintenance progress
@@ -257,7 +269,10 @@ Scheduling should validate:
 - priority is valid
 - assigned technician exists if technician assignment is required
 - assigned technician has technician role
+- assigned technician account is active rather than locked or disabled
+- assigned technician lookup uses the same lowercase normalization as registration and login
 - assigned technician is stored using the canonical email from the verified user account
+- assignment changes are accepted only for an owned `SCHEDULED` task
 - equipment ID, maintenance type, assigned technician, description, and image reference do not
   exceed 255 characters
 - surrounding whitespace is removed from the equipment lookup value and stored maintenance type
@@ -297,6 +312,7 @@ Current service-level checks ensure:
 
 - hospitals can list and read only their own maintenance tasks, and can delete only
   their own non-completed tasks
+- hospitals can assign technicians only to their own scheduled tasks
 - technicians can list, read, and update only tasks assigned to their login email
 - hospital ownership is derived from the authenticated user rather than request JSON
 - task ownership must agree with the hospital that owns the linked equipment; inconsistent
@@ -359,6 +375,7 @@ The current frontend field names should be preserved unless frontend changes are
 - [x] Enforce non-null maintenance ownership and a restrictive equipment foreign key.
 - [x] Enforce agreement between maintenance ownership and linked-equipment ownership.
 - [x] Canonicalize technician emails and revalidate recurring-task assignment.
+- [x] Allow hospitals to recover unassigned scheduled work through a locked assignment endpoint.
 - [x] Add ownership-safe status/equipment filtering with opt-in bounded pagination.
 - [x] Align Maintenance request validation limits with persistence constraints.
 
@@ -470,6 +487,24 @@ The endpoint path, roles, response fields, and unparameterized list behavior rem
 Regression coverage is implemented in `MaintenanceServiceTest`,
 `MaintenanceTaskRepositoryTest`, `MaintenanceRequestValidationTest`, and
 `MaintenanceControllerIntegrationTest`.
+
+### Completed on 2026-07-26
+
+1. [x] **Made unassigned scheduled tasks recoverable.** The owning hospital can now use
+   `POST /api/maintenance/{id}/assignment` with an allowlisted assignment DTO. The service
+   loads the hospital-owned row with the existing pessimistic write lock, rechecks that the
+   task is still `SCHEDULED`, validates the technician, and stores the canonical account email.
+   This closes the lifecycle for directly scheduled or recurring tasks created without an
+   eligible technician.
+2. [x] **Hardened technician eligibility consistently.** Scheduling, hospital assignment,
+   and recurring-task generation now trim and lowercase technician email lookup values to
+   match authentication behavior. Only an `ACTIVE` account with the technician role can be
+   assigned. A recurring completion still succeeds when the previous account is missing,
+   locked, disabled, or no longer a technician; the next scheduled task is left unassigned.
+
+The existing endpoints and response JSON remain unchanged. Assignment is an additive,
+hospital-only operation, and concurrent assignment versus technician-start attempts serialize
+on the same maintenance row.
 
 ### Recommended future work
 

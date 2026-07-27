@@ -93,4 +93,17 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
     List<MaintenanceTask> findByEquipmentRecord_IdAndHospitalId(
             @Param("equipmentId") Long equipmentId,
             @Param("hospitalId") Long hospitalId);
+
+    // Analytics aggregation queries
+    @Query("SELECT COUNT(t) FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status = :status")
+    long countByHospitalIdAndStatus(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status);
+
+    @Query("SELECT t FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status = :status AND t.completedAt IS NOT NULL AND t.deadline IS NOT NULL")
+    List<MaintenanceTask> findCompletedTasksWithTimestamps(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status);
+
+    @Query("SELECT AVG(t.hoursWorked) FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status = :status AND t.hoursWorked IS NOT NULL")
+    Double averageHoursWorkedByHospitalIdAndStatus(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status);
+
+    @Query("SELECT COUNT(t) FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status != :status AND t.priority = :priority")
+    long countByHospitalIdAndStatusNotAndPriority(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status, @Param("priority") String priority);
 }

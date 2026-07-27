@@ -11,6 +11,8 @@ import com.medtrack.exception.EmailAlreadyExistsException;
 import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,11 +20,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.LockedException;
+
 import java.time.LocalDateTime;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 
 import com.medtrack.auth.dto.ForgotPasswordRequest;
 import com.medtrack.auth.dto.VerifyOtpRequest;
@@ -60,6 +62,7 @@ public class UserService {
      * Roles must match authorized paths configured in security configurations.
      */
     private static final List<String> VALID_ROLES = List.of("HOSPITAL", "TECHNICIAN", "SUPPLIER");
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     @Value("${app.jwt.expiration-ms:900000}")
     private long jwtExpirationMs;
@@ -324,8 +327,11 @@ public class UserService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         String email = request.getEmail().trim().toLowerCase();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            log.info("Password reset requested for non-existent email: {}", email);
+            return;
+        }
 
         // Invalidate any existing unused OTP tokens for this email
         List<PasswordResetToken> activeTokens = passwordResetTokenRepository.findByEmailAndUsed(email, false);

@@ -2,6 +2,7 @@ package com.medtrack.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medtrack.auth.service.KafkaEventPublisher;
+import com.medtrack.dto.MaintenanceAssignmentRequest;
 import com.medtrack.dto.MaintenanceCreateRequest;
 import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.exception.InvalidStatusTransitionException;
@@ -146,6 +147,66 @@ class MaintenanceControllerIntegrationTest {
                 .andExpect(status().isForbidden());
 
         verify(maintenanceService, never()).scheduleTask(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "hospital@medtrack.com", roles = "HOSPITAL")
+    void hospitalCanAssignTechnicianToScheduledMaintenance() throws Exception {
+        MaintenanceAssignmentRequest assignment = MaintenanceAssignmentRequest.builder()
+                .assignedTechnician("tech@medtrack.com")
+                .build();
+        MaintenanceTask assigned = MaintenanceTask.builder()
+                .id(42L)
+                .taskCode("MNT-42")
+                .equipmentId("EQ-1001")
+                .maintenanceType("Inspection")
+                .deadline(LocalDate.now().plusDays(1))
+                .priority("High")
+                .status(MaintenanceStatus.SCHEDULED)
+                .assignedTechnician("tech@medtrack.com")
+                .build();
+        when(maintenanceService.assignTechnician(
+                eq(42L), any(MaintenanceAssignmentRequest.class), any()))
+                .thenReturn(assigned);
+
+        mockMvc.perform(post("/api/maintenance/42/assignment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(assignment)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignedTechnician").value("tech@medtrack.com"));
+
+        verify(maintenanceService).assignTechnician(
+                eq(42L), any(MaintenanceAssignmentRequest.class), any());
+    }
+
+    @Test
+    @WithMockUser(username = "tech@medtrack.com", roles = "TECHNICIAN")
+    void technicianCannotAssignMaintenance() throws Exception {
+        MaintenanceAssignmentRequest assignment = MaintenanceAssignmentRequest.builder()
+                .assignedTechnician("tech@medtrack.com")
+                .build();
+
+        mockMvc.perform(post("/api/maintenance/42/assignment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(assignment)))
+                .andExpect(status().isForbidden());
+
+        verify(maintenanceService, never()).assignTechnician(any(), any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "hospital@medtrack.com", roles = "HOSPITAL")
+    void blankTechnicianAssignmentReturnsValidationError() throws Exception {
+        mockMvc.perform(post("/api/maintenance/42/assignment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"assignedTechnician":" "}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.assignedTechnician")
+                        .value("Assigned technician is required"));
+
+        verify(maintenanceService, never()).assignTechnician(any(), any(), any());
     }
 
     @Test

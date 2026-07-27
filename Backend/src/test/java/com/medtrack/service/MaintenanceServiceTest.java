@@ -1,7 +1,9 @@
 package com.medtrack.service;
 
+import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.dto.MaintenanceAssignmentRequest;
 import com.medtrack.dto.MaintenanceCreateRequest;
 import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.model.Hospital;
@@ -155,10 +157,61 @@ public class MaintenanceServiceTest {
     }
 
     @Test
+    void assignTechnician_AssignsCanonicalAccountToOwnedScheduledTask() {
+        mockTask.setStatus(MaintenanceStatus.SCHEDULED);
+        mockTask.setAssignedTechnician(null);
+        User technician = User.builder()
+                .email("tech@medtrack.com")
+                .role("technician")
+                .accountStatus(AccountStatus.ACTIVE)
+                .build();
+        when(authentication.getName()).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(taskRepository.findByIdAndHospitalIdForUpdate(50L, mockHospital.getId()))
+                .thenReturn(Optional.of(mockTask));
+        when(userRepository.findByEmail("tech@medtrack.com")).thenReturn(Optional.of(technician));
+        when(taskRepository.save(mockTask)).thenReturn(mockTask);
+
+        MaintenanceTask result = maintenanceService.assignTechnician(
+                50L,
+                MaintenanceAssignmentRequest.builder()
+                        .assignedTechnician(" tech@medtrack.com ")
+                        .build(),
+                authentication);
+
+        assertEquals("tech@medtrack.com", result.getAssignedTechnician());
+        verify(taskRepository).findByIdAndHospitalIdForUpdate(50L, mockHospital.getId());
+        verify(taskRepository).save(mockTask);
+    }
+
+    @Test
+    void assignTechnician_RejectsTaskThatHasAlreadyStarted() {
+        when(authentication.getName()).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(taskRepository.findByIdAndHospitalIdForUpdate(50L, mockHospital.getId()))
+                .thenReturn(Optional.of(mockTask));
+
+        assertThrows(
+                com.medtrack.exception.InvalidStatusTransitionException.class,
+                () -> maintenanceService.assignTechnician(
+                        50L,
+                        MaintenanceAssignmentRequest.builder()
+                                .assignedTechnician("tech@medtrack.com")
+                                .build(),
+                        authentication));
+
+        verify(userRepository, never()).findByEmail("tech@medtrack.com");
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
     void updateTask_EnforcesAutoRecurrenceOnComplete() {
         User technician = User.builder()
                 .email("tech@medtrack.com")
                 .role("technician")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
         when(authentication.getName()).thenReturn("tech@medtrack.com");
         when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
@@ -210,14 +263,15 @@ public class MaintenanceServiceTest {
     @Test
     void scheduleTask_PersistsCanonicalTechnicianEmail() {
         User technician = User.builder()
-                .email("Tech@MedTrack.com")
+                .email("tech@medtrack.com")
                 .role("technician")
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
         when(authentication.getName()).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
         when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
         when(equipmentRepository.findByEquipmentCode("EQ-100")).thenReturn(Optional.of(mockEquipment));
-        when(userRepository.findByEmail("TECH@medtrack.com")).thenReturn(Optional.of(technician));
+        when(userRepository.findByEmail("tech@medtrack.com")).thenReturn(Optional.of(technician));
         when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MaintenanceCreateRequest request = MaintenanceCreateRequest.builder()
@@ -230,7 +284,65 @@ public class MaintenanceServiceTest {
 
         MaintenanceTask result = maintenanceService.scheduleTask(request, authentication);
 
-        assertEquals("Tech@MedTrack.com", result.getAssignedTechnician());
+        assertEquals("tech@medtrack.com", result.getAssignedTechnician());
+        verify(userRepository).findByEmail("tech@medtrack.com");
+    }
+
+    @Test
+    void scheduleTask_RejectsInactiveTechnicianAccount() {
+        User technician = User.builder()
+                .email("tech@medtrack.com")
+                .role("technician")
+                .accountStatus(AccountStatus.DISABLED)
+                .build();
+        when(authentication.getName()).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(hospitalRepository.findByUserId(mockUser.getId())).thenReturn(Optional.of(mockHospital));
+        when(equipmentRepository.findByEquipmentCode("EQ-100")).thenReturn(Optional.of(mockEquipment));
+        when(userRepository.findByEmail("tech@medtrack.com")).thenReturn(Optional.of(technician));
+
+        MaintenanceCreateRequest request = MaintenanceCreateRequest.builder()
+                .equipmentId("EQ-100")
+                .maintenanceType("Preventive")
+                .deadline(LocalDate.now())
+                .assignedTechnician("tech@medtrack.com")
+                .priority("Normal")
+                .build();
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> maintenanceService.scheduleTask(request, authentication));
+
+        assertEquals("Assigned technician account must be active", exception.getMessage());
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void updateTask_LeavesRecurrenceUnassignedWhenTechnicianAccountIsLocked() {
+        mockTask.setSignature("stored-technician-signature");
+        User technician = User.builder()
+                .email("tech@medtrack.com")
+                .role("technician")
+                .accountStatus(AccountStatus.LOCKED)
+                .build();
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianForUpdate(50L, "tech@medtrack.com"))
+                .thenReturn(Optional.of(mockTask));
+        when(userRepository.findByEmail("tech@medtrack.com")).thenReturn(Optional.of(technician));
+        when(taskRepository.save(any(MaintenanceTask.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        MaintenanceTask result = maintenanceService.updateTask(
+                50L,
+                MaintenanceUpdateRequest.builder()
+                        .status(MaintenanceStatus.COMPLETED)
+                        .build(),
+                authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        ArgumentCaptor<MaintenanceTask> taskCaptor = ArgumentCaptor.forClass(MaintenanceTask.class);
+        verify(taskRepository, times(2)).save(taskCaptor.capture());
+        assertNull(taskCaptor.getAllValues().get(1).getAssignedTechnician());
     }
 
     @Test

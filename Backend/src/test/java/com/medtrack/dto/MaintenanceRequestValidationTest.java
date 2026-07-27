@@ -52,4 +52,27 @@ class MaintenanceRequestValidationTest {
         assertTrue(violations.stream().anyMatch(violation ->
                 violation.getPropertyPath().toString().equals("signature")));
     }
+
+    @Test
+    void assignmentRequestRequiresTechnicianWithinPersistenceLimit() {
+        MaintenanceAssignmentRequest blankRequest = MaintenanceAssignmentRequest.builder()
+                .assignedTechnician(" ")
+                .build();
+        MaintenanceAssignmentRequest oversizedRequest = MaintenanceAssignmentRequest.builder()
+                .assignedTechnician("T".repeat(256))
+                .build();
+
+        var blankViolations = validator.validate(blankRequest);
+        var oversizedViolations = validator.validate(oversizedRequest);
+
+        assertEquals(1, blankViolations.size());
+        assertTrue(blankViolations.stream().anyMatch(violation ->
+                violation.getPropertyPath().toString().equals("assignedTechnician")
+                        && violation.getMessage().equals("Assigned technician is required")));
+        assertEquals(1, oversizedViolations.size());
+        assertTrue(oversizedViolations.stream().anyMatch(violation ->
+                violation.getPropertyPath().toString().equals("assignedTechnician")
+                        && violation.getMessage().equals(
+                        "Assigned technician must not exceed 255 characters")));
+    }
 }

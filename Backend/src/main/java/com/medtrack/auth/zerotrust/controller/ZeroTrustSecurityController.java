@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,6 +33,7 @@ public class ZeroTrustSecurityController {
     }
 
     @PutMapping("/policy")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Update Policy", description = "Updates zero-trust rate limiting and threat detection rules.")
     public ResponseEntity<ZeroTrustPolicyResponse> updatePolicy(@Valid @RequestBody ZeroTrustPolicyUpdateRequest request) {
         ZeroTrustPolicyResponse updated = zeroTrustSecurityService.updatePolicy(request);
@@ -48,6 +50,7 @@ public class ZeroTrustSecurityController {
     }
 
     @PostMapping("/record-failed")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Record Failed Attempt", description = "Increments failed authentication attempt counter for an IP address.")
     public ResponseEntity<IpThreatEvaluationResponse> recordFailedAttempt(@RequestParam String ipAddress) {
         IpThreatEvaluationResponse response = zeroTrustSecurityService.recordFailedAttempt(ipAddress);
@@ -55,6 +58,7 @@ public class ZeroTrustSecurityController {
     }
 
     @PostMapping("/unblock")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Unblock IP Address", description = "Manually unblocks a restricted IP address.")
     public ResponseEntity<IpThreatEvaluationResponse> unblockIp(@RequestParam String ipAddress) {
         IpThreatEvaluationResponse response = zeroTrustSecurityService.unblockIp(ipAddress);

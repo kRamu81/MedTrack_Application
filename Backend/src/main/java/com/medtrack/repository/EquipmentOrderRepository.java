@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,8 @@ import java.util.Optional;
 @Repository
 public interface EquipmentOrderRepository extends JpaRepository<EquipmentOrder, Long> {
     Optional<EquipmentOrder> findByOrderCode(String orderCode);
+
+    List<EquipmentOrder> findByHospital(String hospital);
 
     List<EquipmentOrder> findByStatus(String status);
 
@@ -34,4 +37,11 @@ public interface EquipmentOrderRepository extends JpaRepository<EquipmentOrder, 
             @Param("supplierId") Long supplierId,
             @Param("search") String search,
             Pageable pageable);
+
+    // Analytics aggregation queries
+    @Query("SELECT SUM(o.totalCost) FROM EquipmentOrder o WHERE LOWER(o.hospital) = LOWER(:hospitalName) AND LOWER(o.shippingStatus) = LOWER(:shippingStatus)")
+    BigDecimal sumTotalCostByHospitalAndShippingStatus(@Param("hospitalName") String hospitalName, @Param("shippingStatus") String shippingStatus);
+
+    @Query("SELECT o FROM EquipmentOrder o WHERE LOWER(o.hospital) = LOWER(:hospitalName) AND LOWER(o.shippingStatus) = LOWER(:shippingStatus)")
+    List<EquipmentOrder> findByHospitalAndShippingStatus(@Param("hospitalName") String hospitalName, @Param("shippingStatus") String shippingStatus);
 }

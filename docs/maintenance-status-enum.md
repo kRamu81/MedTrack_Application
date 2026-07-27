@@ -61,8 +61,10 @@ exposed because Maintenance list access must always retain hospital or technicia
 ### Maintenance request DTOs
 
 `MaintenanceCreateRequest` does not expose `status`; every scheduled task starts as
-`SCHEDULED` under server control. `MaintenanceUpdateRequest` requires a valid
-`MaintenanceStatus` and carries only technician-owned partial report fields.
+`SCHEDULED` under server control. `MaintenanceAssignmentRequest` carries only the technician
+email and can be applied by the owning hospital only while the task remains `SCHEDULED`.
+`MaintenanceUpdateRequest` requires a valid `MaintenanceStatus` and carries only
+technician-owned partial report fields.
 
 The request DTOs and entity also share Maintenance-specific length constants. Short scheduling
 and report fields are limited to the existing 255-character persistence width, notes to 16,000
@@ -133,6 +135,6 @@ NEEDS_PART -> IN_PROGRESS
 ON_HOLD -> IN_PROGRESS
 ```
 
-Technicians may update report fields without changing a non-completed status, but completed tasks are immutable and cannot be deleted. Optional report fields use partial-update semantics: omitted or null values preserve the stored value, while an explicit empty string remains an update for text fields. Recurrence remains hospital-owned scheduling configuration: a technician payload may contain `recurrencePeriodDays` for compatibility, but it cannot overwrite the stored value used to generate the next task. The transition to `COMPLETED` requires a nonblank effective technician signature: the signature in the current payload when supplied, otherwise the previously stored signature. An explicit blank signature is rejected on completion. A successful transition records a server-controlled `completedAt` timestamp. Negative work hours are rejected, and recurring maintenance is generated only on the first transition to `COMPLETED`. Before copying the former assignment to a recurrence, the service verifies that the account still exists and has the technician role. An ineligible assignment is cleared on the new task without rolling back completion. Hospital deletion uses an ownership-scoped write lock so it cannot race with technician completion of the same task, and all scoped repository access requires task ownership to agree with linked-equipment ownership.
+Technicians may update report fields without changing a non-completed status, but completed tasks are immutable and cannot be deleted. Optional report fields use partial-update semantics: omitted or null values preserve the stored value, while an explicit empty string remains an update for text fields. Recurrence remains hospital-owned scheduling configuration: a technician payload may contain `recurrencePeriodDays` for compatibility, but it cannot overwrite the stored value used to generate the next task. The transition to `COMPLETED` requires a nonblank effective technician signature: the signature in the current payload when supplied, otherwise the previously stored signature. An explicit blank signature is rejected on completion. A successful transition records a server-controlled `completedAt` timestamp. Negative work hours are rejected, and recurring maintenance is generated only on the first transition to `COMPLETED`. Before copying the former assignment to a recurrence, the service normalizes the email lookup and verifies that the account remains active with the technician role. An ineligible assignment is cleared on the new task without rolling back completion. The owning hospital can assign or reassign an eligible technician while that new task remains `SCHEDULED`. Hospital assignment and deletion use ownership-scoped write locks so they cannot race with technician work on the same task, and all scoped repository access requires task ownership to agree with linked-equipment ownership.
 
 Legacy completed rows may have a null completion timestamp. They remain readable, but maintenance SLA reporting excludes them rather than estimating when the work finished.

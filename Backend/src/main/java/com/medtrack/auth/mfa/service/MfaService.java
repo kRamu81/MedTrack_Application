@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -167,20 +169,78 @@ public class MfaService {
     }
 
     /**
-     * Simulates TOTP calculation validation based on Base32 secret key.
+     * Validates a TOTP code using RFC 6238 with HMAC-SHA1.
+     * Checks the current 30-second window and the adjacent windows
+     * to accommodate minor clock drift.
      */
     private boolean validateTotpCode(String secretKey, String code) {
         if (code == null || code.length() != 6 || !code.matches("\\d{6}")) {
             return false;
         }
-        // Accepts code if digits match simulated time step calculation or default test verification (e.g. 123456)
-        if ("123456".equals(code) || "654321".equals(code)) {
-            return true;
+        long currentTimeSeconds = System.currentTimeMillis() / 1000;
+        long counter = currentTimeSeconds / 30;
+        // Check current, previous, and next time windows for clock drift tolerance
+        for (long offset = -1; offset <= 1; offset++) {
+            String expected = generateTotp(secretKey, counter + offset);
+            if (expected.equals(code)) {
+                return true;
+            }
         }
-        long timeStep = System.currentTimeMillis() / 30000;
-        int hash = Math.abs(secretKey.hashCode() + (int) (timeStep % 1000));
-        String expectedCode = String.format("%06d", hash % 1000000);
-        return expectedCode.equals(code);
+        return false;
+    }
+
+    /**
+     * Generates a 6-digit TOTP code per RFC 6238 for a given Base32 secret and counter.
+     */
+    private String generateTotp(String base32Secret, long counter) {
+        try {
+            byte[] keyBytes = base32Decode(base32Secret);
+            byte[] counterBytes = new byte[8];
+            for (int i = 7; i >= 0; i--) {
+                counterBytes[i] = (byte) (counter & 0xFF);
+                counter >>= 8;
+            }
+            Mac hmac = Mac.getInstance("HmacSHA1");
+            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "HmacSHA1");
+            hmac.init(keySpec);
+            byte[] hash = hmac.doFinal(counterBytes);
+            int offset = hash[hash.length - 1] & 0x0F;
+            int binary = ((hash[offset] & 0x7F) << 24)
+                    | ((hash[offset + 1] & 0xFF) << 16)
+                    | ((hash[offset + 2] & 0xFF) << 8)
+                    | (hash[offset + 3] & 0xFF);
+            int otp = binary % 1000000;
+            return String.format("%06d", otp);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Decodes a Base32-encoded string (RFC 4648) to a byte array.
+     */
+    private byte[] base32Decode(String base32) {
+        String cleaned = base32.replaceAll("=", "").toUpperCase();
+        int byteLength = cleaned.length() * 5 / 8;
+        byte[] result = new byte[byteLength];
+        int buffer = 0, bitsLeft = 0, index = 0;
+        for (char c : cleaned.toCharArray()) {
+            int value;
+            if (c >= 'A' && c <= 'Z') {
+                value = c - 'A';
+            } else if (c >= '2' && c <= '7') {
+                value = c - '2' + 26;
+            } else {
+                continue;
+            }
+            buffer = (buffer << 5) | value;
+            bitsLeft += 5;
+            if (bitsLeft >= 8) {
+                result[index++] = (byte) (buffer >> (bitsLeft - 8));
+                bitsLeft -= 8;
+            }
+        }
+        return result;
     }
 
     /**

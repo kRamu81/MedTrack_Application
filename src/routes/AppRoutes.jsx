@@ -2,41 +2,46 @@
 import React, { Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
 
-const LandingPage = React.lazy(() => import("../pages/LandingPage"));
-const Blog = React.lazy(() => import("../pages/Blog"));
-const BlogPost = React.lazy(() => import("../pages/BlogPost"));
-const CareersPage = React.lazy(() => import("../pages/CareersPage"));
-const JobApplicationPage = React.lazy(() => import("../pages/JobApplicationPage"));
-const CertificateGeneratorPage = React.lazy(() => import("../pages/CertificateGeneratorPage"));
-const LoginPage = React.lazy(() => import("../pages/auth/LoginPage"));
-const RegisterPage = React.lazy(() => import("../pages/auth/RegisterPage"));
-const ForgotPasswordPage = React.lazy(() => import("../pages/auth/ForgotPasswordPage"));
-const VerifyOtpPage = React.lazy(() => import("../pages/auth/VerifyOtpPage"));
-const ResetPasswordPage = React.lazy(() => import("../pages/auth/ResetPasswordPage"));
-const Dashboard = React.lazy(() => import("../pages/hospital/Dashboard"));
-const AnalyticsDashboard = React.lazy(() => import("../pages/hospital/AnalyticsDashboard"));
-const EquipmentList = React.lazy(() => import("../pages/hospital/EquipmentList"));
-const MaintenanceSchedule = React.lazy(() => import("../pages/hospital/MaintenanceSchedule"));
-const TaskList = React.lazy(() => import("../pages/technician/TaskList"));
-const UpdateTask = React.lazy(() => import("../pages/technician/UpdateTask"));
-const OrdersList = React.lazy(() => import("../pages/supplier/OrdersList"));
-const OrderStatus = React.lazy(() => import("../pages/supplier/OrderStatus"));
-const AuthoritySecurityPage = React.lazy(() => import("../pages/auth/AuthoritySecurityPage"));
-const MfaSecurityPage = React.lazy(() => import("../pages/auth/MfaSecurityPage"));
-const EnterpriseSsoPage = React.lazy(() => import("../pages/auth/EnterpriseSsoPage"));
-const RbacSecurityPage = React.lazy(() => import("../pages/auth/RbacSecurityPage"));
-const ZeroTrustSecurityPage = React.lazy(() => import("../pages/auth/ZeroTrustSecurityPage"));
-const ComplianceSecurityPage = React.lazy(() => import("../pages/auth/ComplianceSecurityPage"));
-const ThreatDetectionSoarPage = React.lazy(() => import("../pages/auth/ThreatDetectionSoarPage"));
-const SecurityKeyVaultPage = React.lazy(() => import("../pages/auth/SecurityKeyVaultPage"));
-const DlpPrivacyGuardPage = React.lazy(() => import("../pages/auth/DlpPrivacyGuardPage"));
-const PasskeyPasswordlessPage = React.lazy(() => import("../pages/auth/PasskeyPasswordlessPage"));
-const ZeroTrustNetworkPage = React.lazy(() => import("../pages/auth/ZeroTrustNetworkPage"));
-const SiemSecurityAnalyticsPage = React.lazy(() => import("../pages/auth/SiemSecurityAnalyticsPage"));
-const AddEquipmentForm = React.lazy(() => import("../pages/hospital/AddEquipmentForm"));
-const EditEquipmentForm = React.lazy(() => import("../pages/hospital/EditEquipmentForm"));
-const ScheduleMaintenancePage = React.lazy(() => import("../pages/hospital/ScheduleMaintenancePage"));
-const RequestEquipmentPage = React.lazy(() => import("../pages/hospital/RequestEquipmentPage"));
+// Page Imports
+import LandingPage from "../pages/LandingPage";
+import Blog from "../pages/Blog";
+import BlogPost from "../pages/BlogPost";
+import CareersPage from "../pages/CareersPage";
+import JobApplicationPage from "../pages/JobApplicationPage";
+import CertificateGeneratorPage from "../pages/CertificateGeneratorPage";
+import LoginPage from "../pages/auth/LoginPage";
+import RegisterPage from "../pages/auth/RegisterPage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import VerifyOtpPage from "../pages/auth/VerifyOtpPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
+import Dashboard from "../pages/hospital/Dashboard";
+import AnalyticsDashboard from "../pages/hospital/AnalyticsDashboard";
+import EquipmentList from "../pages/hospital/EquipmentList";
+import MaintenanceSchedule from "../pages/hospital/MaintenanceSchedule";
+import TaskList from "../pages/technician/TaskList";
+import UpdateTask from "../pages/technician/UpdateTask";
+import OrdersList from "../pages/supplier/OrdersList";
+import OrderStatus from "../pages/supplier/OrderStatus";
+import AuthoritySecurityPage from "../pages/auth/AuthoritySecurityPage";
+import MfaSecurityPage from "../pages/auth/MfaSecurityPage";
+import EnterpriseSsoPage from "../pages/auth/EnterpriseSsoPage";
+import RbacSecurityPage from "../pages/auth/RbacSecurityPage";
+import ZeroTrustSecurityPage from "../pages/auth/ZeroTrustSecurityPage";
+import ComplianceSecurityPage from "../pages/auth/ComplianceSecurityPage";
+import ThreatDetectionSoarPage from "../pages/auth/ThreatDetectionSoarPage";
+import SecurityKeyVaultPage from "../pages/auth/SecurityKeyVaultPage";
+import DlpPrivacyGuardPage from "../pages/auth/DlpPrivacyGuardPage";
+import PasskeyPasswordlessPage from "../pages/auth/PasskeyPasswordlessPage";
+import ZeroTrustNetworkPage from "../pages/auth/ZeroTrustNetworkPage";
+import ScimProvisioningPage from "../pages/auth/ScimProvisioningPage";
+import SiemSecurityAnalyticsPage from "../pages/auth/SiemSecurityAnalyticsPage";
+import SecurityPosturePage from "../pages/auth/SecurityPosturePage";
+
+// --- Connected Imports ---
+import AddEquipmentForm from "../pages/hospital/AddEquipmentForm";
+import EditEquipmentForm from "../pages/hospital/EditEquipmentForm";
+import ScheduleMaintenancePage from "../pages/hospital/ScheduleMaintenancePage";
+import RequestEquipmentPage from "../pages/hospital/RequestEquipmentPage";
 
 const UnauthorizedPage = ({ onNavigate, message }) => (
   <div className="min-h-screen bg-slate-900 flex items-center justify-center font-sans text-white p-6">
@@ -204,8 +209,12 @@ export default function AppRouter({ currentPage, onNavigate, pageData }) {
     case "siem":
     case "siem-analytics":
     case "siem-security":
-      page = ProtectedRoute(SiemSecurityAnalyticsPage);
-      break;
+      return ProtectedRoute(SiemSecurityAnalyticsPage);
+    case "scim-provisioning":
+    case "scim":
+      return ProtectedRoute(ScimProvisioningPage);
+
+    // --- Fallback ---
     default:
       page = <LandingPage onNavigate={onNavigate} />;
   }

@@ -195,6 +195,10 @@ technician-owned progress updates, completion evidence, and completion-driven re
 - Priority values: Normal / High / Critical
 - Status lifecycle: SCHEDULED → IN_PROGRESS → COMPLETED, with NEEDS_PART and ON_HOLD returning to IN_PROGRESS
 - POST/GET/PUT/DELETE under `/api/maintenance`, plus ownership-safe status/equipment filters and opt-in pagination on the list endpoint
+- Hospital-only `POST /api/maintenance/{id}/assignment` for assigning or reassigning
+  scheduled work, including unassigned recurring tasks
+- Technician assignment is normalized to the authentication email format and requires an
+  active account with the technician role
 - `GET /api/maintenance/export/calendar.ics` for hospital calendar export
 - Focused unit/repository/migration tests for ownership, validation, lifecycle, recurrence, locking, and calendar generation
 

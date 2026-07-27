@@ -141,6 +141,7 @@ Integration tests that manage their own database state disable it.
 `MaintenanceControllerIntegrationTest` verifies:
 
 - hospital scheduling access
+- hospital assignment access and technician assignment denial
 - technician scheduling denial
 - technician update access
 - hospital update denial
@@ -153,15 +154,17 @@ Integration tests that manage their own database state disable it.
 - stable empty-array responses
 - hospital-only calendar export
 
-`MaintenanceServiceTest` continues to verify ownership scoping, scheduling, lifecycle enforcement,
-recurrence, calendar output, locked deletion, and completed-record retention. It also verifies
+`MaintenanceServiceTest` continues to verify ownership scoping, scheduling, locked hospital
+assignment, lifecycle enforcement, recurrence, calendar output, locked deletion, and
+completed-record retention. It also verifies
 that mismatched task/equipment hospital ownership is rejected, supplied technician emails are
-replaced with the canonical account email, and a recurrence is left unassigned when the former
-technician is no longer eligible.
+normalized and replaced with the canonical active account email, and a recurrence is left
+unassigned when the former technician is missing, locked, disabled, or no longer eligible.
 
-`MaintenanceRequestValidationTest` verifies that create and technician-update payloads reject
-text exceeding the explicit Maintenance persistence limits. `MaintenanceServiceTest` also
-verifies normalization of equipment lookup values and stored maintenance types.
+`MaintenanceRequestValidationTest` verifies that create, assignment, and technician-update
+payloads reject missing or oversized values against the explicit Maintenance persistence limits.
+`MaintenanceServiceTest` also verifies normalization of equipment lookup values, technician
+emails, and stored maintenance types.
 
 `MaintenanceTaskRepositoryTest` initializes only the Maintenance JPA repository and verifies
 against H2 that all hospital-, technician-, lock-, and equipment-history queries exclude an
@@ -169,9 +172,9 @@ inconsistent ownership row while retaining a valid row.
 
 It also verifies that completion requires an effective technician signature, accepts a previously stored signature when a partial completion payload omits the field, rejects an explicit blank signature, records `completedAt`, and preserves hospital-owned recurrence configuration during technician updates. Dedicated request DTOs now prevent client binding of completion timestamps and other server-controlled fields. `AnalyticsServiceTest` verifies that SLA compliance uses actual completion timestamps and excludes unverifiable legacy completions.
 
-The backend currently compiles and the focused Maintenance service and migration suites pass.
-The complete Maven suite is not green because full-context tests encounter duplicate Spring
-repository bean names in the unrelated authentication compliance and governance packages.
-Allowing bean replacement reveals that those packages also declare the same JPA entity name.
-Those application-context problems prevent `MaintenanceControllerIntegrationTest` from starting
-and are outside this Maintenance-only change.
+The Maintenance entity/DTO/repository/service/controller dependency slice compiles in isolation,
+and the focused `MaintenanceServiceTest` plus `MaintenanceRequestValidationTest` suites pass
+30 tests after the 2026-07-26 assignment changes. The normal Maven build currently stops during
+main compilation on unrelated Equipment module type and missing-method errors, before focused
+Maintenance repository, migration, or controller integration suites can run. Those existing
+application build problems remain outside this Maintenance-only change.

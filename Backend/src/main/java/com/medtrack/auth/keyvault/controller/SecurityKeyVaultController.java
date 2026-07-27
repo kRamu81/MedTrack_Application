@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class SecurityKeyVaultController {
     }
 
     @PutMapping("/policy")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Update Key Vault Policy", description = "Updates cryptographic algorithm and rotation policies.")
     public ResponseEntity<KeyVaultPolicyResponse> updatePolicy(@Valid @RequestBody KeyVaultPolicyUpdateRequest request) {
         KeyVaultPolicyResponse updated = keyVaultService.updatePolicy(request);
@@ -38,6 +40,7 @@ public class SecurityKeyVaultController {
     }
 
     @PostMapping("/keys")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Generate Cryptographic Key", description = "Generates a new cryptographic key and registers metadata in Key Vault.")
     public ResponseEntity<CryptoKeyResponse> generateCryptoKey(@Valid @RequestBody GenerateKeyRequest request) {
         CryptoKeyResponse created = keyVaultService.generateCryptoKey(request);
@@ -45,6 +48,7 @@ public class SecurityKeyVaultController {
     }
 
     @PostMapping("/keys/{keyId}/rotate")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Rotate Cryptographic Key", description = "Rotates an active key creating a new version.")
     public ResponseEntity<CryptoKeyResponse> rotateKey(@PathVariable String keyId) {
         CryptoKeyResponse rotated = keyVaultService.rotateKey(keyId);
@@ -52,6 +56,7 @@ public class SecurityKeyVaultController {
     }
 
     @PostMapping("/keys/{keyId}/revoke")
+    @PreAuthorize("hasRole('HOSPITAL')")
     @Operation(summary = "Revoke Cryptographic Key", description = "Revokes a key permanently.")
     public ResponseEntity<CryptoKeyResponse> revokeKey(@PathVariable String keyId) {
         CryptoKeyResponse revoked = keyVaultService.revokeKey(keyId);

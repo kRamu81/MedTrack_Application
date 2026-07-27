@@ -13,6 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,7 +70,7 @@ public class MfaServiceTest {
     }
 
     @Test
-    void verifyAndEnableMfa_WithValidCode_ReturnsTrue() {
+    void verifyAndEnableMfa_WithValidCode_ReturnsTrue() throws Exception {
         MfaSecret secret = MfaSecret.builder()
                 .userId(200L)
                 .secretKey("JBSWY3DPEHPK3PXP")
@@ -77,9 +79,12 @@ public class MfaServiceTest {
 
         when(mfaSecretRepository.findByUserId(200L)).thenReturn(Optional.of(secret));
 
+        // Compute the valid TOTP code for the test secret at the current time window
+        String validCode = generateTotp("JBSWY3DPEHPK3PXP", System.currentTimeMillis() / 1000 / 30);
+
         MfaVerifyRequest request = MfaVerifyRequest.builder()
                 .userId(200L)
-                .code("123456")
+                .code(validCode)
                 .build();
 
         boolean verified = mfaService.verifyAndEnableMfa(request);
@@ -87,6 +92,54 @@ public class MfaServiceTest {
         assertTrue(verified);
         assertTrue(secret.isEnabled());
         verify(mfaSecretRepository).save(secret);
+    }
+
+    /**
+     * Generates RFC 6238 TOTP code for test verification.
+     */
+    private String generateTotp(String base32Secret, long counter) throws Exception {
+        byte[] keyBytes = base32Decode(base32Secret);
+        byte[] counterBytes = new byte[8];
+        long c = counter;
+        for (int i = 7; i >= 0; i--) {
+            counterBytes[i] = (byte) (c & 0xFF);
+            c >>= 8;
+        }
+        Mac hmac = Mac.getInstance("HmacSHA1");
+        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "HmacSHA1");
+        hmac.init(keySpec);
+        byte[] hash = hmac.doFinal(counterBytes);
+        int offset = hash[hash.length - 1] & 0x0F;
+        int binary = ((hash[offset] & 0x7F) << 24)
+                | ((hash[offset + 1] & 0xFF) << 16)
+                | ((hash[offset + 2] & 0xFF) << 8)
+                | (hash[offset + 3] & 0xFF);
+        int otp = binary % 1000000;
+        return String.format("%06d", otp);
+    }
+
+    private byte[] base32Decode(String base32) {
+        String cleaned = base32.replaceAll("=", "").toUpperCase();
+        int byteLength = cleaned.length() * 5 / 8;
+        byte[] result = new byte[byteLength];
+        int buffer = 0, bitsLeft = 0, index = 0;
+        for (char c : cleaned.toCharArray()) {
+            int value;
+            if (c >= 'A' && c <= 'Z') {
+                value = c - 'A';
+            } else if (c >= '2' && c <= '7') {
+                value = c - '2' + 26;
+            } else {
+                continue;
+            }
+            buffer = (buffer << 5) | value;
+            bitsLeft += 5;
+            if (bitsLeft >= 8) {
+                result[index++] = (byte) (buffer >> (bitsLeft - 8));
+                bitsLeft -= 8;
+            }
+        }
+        return result;
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.medtrack.controller;
 
+import com.medtrack.dto.MaintenanceAssignmentRequest;
 import com.medtrack.dto.MaintenanceCreateRequest;
 import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.model.MaintenanceTask;
@@ -74,6 +75,24 @@ public class MaintenanceController {
                                                         Authentication authentication) {
         MaintenanceTask createdTask = maintenanceService.scheduleTask(request, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    }
+
+    /**
+     * Assigns or reassigns a technician to a scheduled maintenance task.
+     * Accessible only to the hospital that owns the task.
+     *
+     * @param id the maintenance task identifier
+     * @param request the technician assignment
+     * @return the maintenance task with its canonical technician assignment
+     */
+    @PostMapping("/{id}/assignment")
+    @PreAuthorize("hasRole('HOSPITAL')")
+    public ResponseEntity<MaintenanceTask> assignTechnician(
+            @PathVariable Long id,
+            @Valid @RequestBody MaintenanceAssignmentRequest request,
+            Authentication authentication) {
+        validateId(id);
+        return ResponseEntity.ok(maintenanceService.assignTechnician(id, request, authentication));
     }
 
     /**

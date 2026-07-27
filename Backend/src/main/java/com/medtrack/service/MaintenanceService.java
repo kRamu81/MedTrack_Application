@@ -1,7 +1,9 @@
 package com.medtrack.service;
 
+import com.medtrack.auth.model.AccountStatus;
 import com.medtrack.auth.model.User;
 import com.medtrack.auth.repository.UserRepository;
+import com.medtrack.dto.MaintenanceAssignmentRequest;
 import com.medtrack.dto.MaintenanceCreateRequest;
 import com.medtrack.dto.MaintenanceUpdateRequest;
 import com.medtrack.exception.InvalidStatusTransitionException;
@@ -28,6 +30,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -122,6 +125,32 @@ public class MaintenanceService {
                 .createdAt(LocalDateTime.now())
                 .build();
         validateOwnershipInvariant(task);
+        return taskRepository.save(task);
+    }
+
+    @Transactional
+    public MaintenanceTask assignTechnician(
+            Long id,
+            MaintenanceAssignmentRequest request,
+            Authentication authentication) {
+        if (request == null
+                || request.getAssignedTechnician() == null
+                || request.getAssignedTechnician().isBlank()) {
+            throw new IllegalArgumentException("Assigned technician is required");
+        }
+
+        Long hospitalId = getHospitalForUser(authentication.getName()).getId();
+        MaintenanceTask task = taskRepository.findByIdAndHospitalIdForUpdate(id, hospitalId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Maintenance task not found or access denied"));
+        validateOwnershipInvariant(task);
+
+        if (task.getStatus() != MaintenanceStatus.SCHEDULED) {
+            throw new InvalidStatusTransitionException(
+                    "Technician assignment can only be changed while the task is Scheduled");
+        }
+
+        task.setAssignedTechnician(resolveAssignedTechnician(request.getAssignedTechnician()));
         return taskRepository.save(task);
     }
 
@@ -274,10 +303,14 @@ public class MaintenanceService {
         if (assignedTechnician == null || assignedTechnician.isBlank()) {
             return null;
         }
-        User technician = userRepository.findByEmail(assignedTechnician.trim())
+        String normalizedEmail = assignedTechnician.trim().toLowerCase(Locale.ROOT);
+        User technician = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Assigned technician account does not exist"));
         if (!"technician".equalsIgnoreCase(technician.getRole())) {
             throw new IllegalArgumentException("Assigned user must have the technician role");
+        }
+        if (technician.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalArgumentException("Assigned technician account must be active");
         }
         return technician.getEmail();
     }
