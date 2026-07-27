@@ -18,10 +18,10 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
     Optional<MaintenanceTask> findByTaskCode(String taskCode);
 
     @Query("SELECT task FROM MaintenanceTask task "
-            + "WHERE task.assignedTechnician = :assignedTechnician "
+            + "WHERE task.assignedTechnicianRecord.id = :technicianId "
             + "AND task.equipmentRecord.hospital.id = task.hospitalId")
-    List<MaintenanceTask> findByAssignedTechnician(
-            @Param("assignedTechnician") String assignedTechnician);
+    List<MaintenanceTask> findByAssignedTechnicianId(
+            @Param("technicianId") Long technicianId);
 
     // Ownership-scoped queries prevent cross-hospital and cross-technician record access.
     @Query("SELECT task FROM MaintenanceTask task "
@@ -49,20 +49,20 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
             @Param("hospitalId") Long hospitalId);
 
     @Query("SELECT task FROM MaintenanceTask task "
-            + "WHERE task.id = :id AND task.assignedTechnician = :assignedTechnician "
+            + "WHERE task.id = :id AND task.assignedTechnicianRecord.id = :technicianId "
             + "AND task.equipmentRecord.hospital.id = task.hospitalId")
-    Optional<MaintenanceTask> findByIdAndAssignedTechnician(
+    Optional<MaintenanceTask> findByIdAndAssignedTechnicianId(
             @Param("id") Long id,
-            @Param("assignedTechnician") String assignedTechnician);
+            @Param("technicianId") Long technicianId);
 
     @Query("SELECT task FROM MaintenanceTask task "
-            + "WHERE task.assignedTechnician = :assignedTechnician "
+            + "WHERE task.assignedTechnicianRecord.id = :technicianId "
             + "AND task.equipmentRecord.hospital.id = task.hospitalId "
             + "AND (:status IS NULL OR task.status = :status) "
             + "AND (:equipmentId IS NULL OR task.equipmentId = :equipmentId) "
             + "ORDER BY task.deadline ASC, task.id ASC")
-    List<MaintenanceTask> findByAssignedTechnicianWithFilters(
-            @Param("assignedTechnician") String assignedTechnician,
+    List<MaintenanceTask> findByAssignedTechnicianIdWithFilters(
+            @Param("technicianId") Long technicianId,
             @Param("status") MaintenanceStatus status,
             @Param("equipmentId") String equipmentId,
             Pageable pageable);
@@ -70,11 +70,11 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
     // Serialize updates to one assigned task so completion cannot create duplicate recurrences.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT task FROM MaintenanceTask task "
-            + "WHERE task.id = :id AND task.assignedTechnician = :assignedTechnician "
+            + "WHERE task.id = :id AND task.assignedTechnicianRecord.id = :technicianId "
             + "AND task.equipmentRecord.hospital.id = task.hospitalId")
-    Optional<MaintenanceTask> findByIdAndAssignedTechnicianForUpdate(
+    Optional<MaintenanceTask> findByIdAndAssignedTechnicianIdForUpdate(
             @Param("id") Long id,
-            @Param("assignedTechnician") String assignedTechnician);
+            @Param("technicianId") Long technicianId);
 
     // Serialize hospital deletion with technician completion of the same task.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -95,15 +95,31 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
             @Param("hospitalId") Long hospitalId);
 
     // Analytics aggregation queries
-    @Query("SELECT COUNT(t) FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status = :status")
+    @Query("SELECT COUNT(t) FROM MaintenanceTask t "
+            + "WHERE t.hospitalId = :hospitalId "
+            + "AND t.equipmentRecord.hospital.id = :hospitalId "
+            + "AND t.status = :status")
     long countByHospitalIdAndStatus(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status);
 
-    @Query("SELECT t FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status = :status AND t.completedAt IS NOT NULL AND t.deadline IS NOT NULL")
+    @Query("SELECT t FROM MaintenanceTask t "
+            + "WHERE t.hospitalId = :hospitalId "
+            + "AND t.equipmentRecord.hospital.id = :hospitalId "
+            + "AND t.status = :status "
+            + "AND t.completedAt IS NOT NULL "
+            + "AND t.deadline IS NOT NULL")
     List<MaintenanceTask> findCompletedTasksWithTimestamps(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status);
 
-    @Query("SELECT AVG(t.hoursWorked) FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status = :status AND t.hoursWorked IS NOT NULL")
+    @Query("SELECT AVG(t.hoursWorked) FROM MaintenanceTask t "
+            + "WHERE t.hospitalId = :hospitalId "
+            + "AND t.equipmentRecord.hospital.id = :hospitalId "
+            + "AND t.status = :status "
+            + "AND t.hoursWorked IS NOT NULL")
     Double averageHoursWorkedByHospitalIdAndStatus(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status);
 
-    @Query("SELECT COUNT(t) FROM MaintenanceTask t WHERE t.hospitalId = :hospitalId AND t.status != :status AND t.priority = :priority")
+    @Query("SELECT COUNT(t) FROM MaintenanceTask t "
+            + "WHERE t.hospitalId = :hospitalId "
+            + "AND t.equipmentRecord.hospital.id = :hospitalId "
+            + "AND t.status != :status "
+            + "AND t.priority = :priority")
     long countByHospitalIdAndStatusNotAndPriority(@Param("hospitalId") Long hospitalId, @Param("status") MaintenanceStatus status, @Param("priority") String priority);
 }

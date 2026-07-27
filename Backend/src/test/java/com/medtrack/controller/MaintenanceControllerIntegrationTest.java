@@ -173,7 +173,8 @@ class MaintenanceControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(assignment)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.assignedTechnician").value("tech@medtrack.com"));
+                .andExpect(jsonPath("$.assignedTechnician").value("tech@medtrack.com"))
+                .andExpect(jsonPath("$.assignedTechnicianRecord").doesNotExist());
 
         verify(maintenanceService).assignTechnician(
                 eq(42L), any(MaintenanceAssignmentRequest.class), any());

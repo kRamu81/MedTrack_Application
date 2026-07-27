@@ -30,6 +30,19 @@ public class EquipmentController {
         return ResponseEntity.ok(equipmentService.getAllEquipment(principal.getName()));
     }
 
+    @GetMapping("/department")
+    public ResponseEntity<List<Equipment>> getEquipmentByDepartment(
+            @RequestParam String department,
+            Principal principal) {
+
+        return ResponseEntity.ok(
+                equipmentService.getEquipmentByDepartment(
+                        department,
+                        principal.getName()
+                )
+        );
+    }
+
     /**
      * Retrieves a specific equipment record by its ID.
      *

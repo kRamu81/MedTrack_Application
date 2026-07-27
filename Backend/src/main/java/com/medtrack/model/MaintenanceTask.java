@@ -1,6 +1,7 @@
 package com.medtrack.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.medtrack.auth.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -71,6 +72,15 @@ public class MaintenanceTask {
     @Size(max = SHORT_TEXT_MAX_LENGTH, message = "Assigned technician must not exceed 255 characters")
     @Column(length = SHORT_TEXT_MAX_LENGTH)
     private String assignedTechnician;
+
+    // Stable authorization identity. The email field above remains the API-facing value.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_technician_record_id")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User assignedTechnicianRecord;
+
     @Size(max = SHORT_TEXT_MAX_LENGTH, message = "Description must not exceed 255 characters")
     @Column(length = SHORT_TEXT_MAX_LENGTH)
     private String description;

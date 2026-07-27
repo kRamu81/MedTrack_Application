@@ -69,7 +69,8 @@ public class MaintenanceService {
             return taskRepository.findByHospitalId(getHospitalForUser(authentication.getName()).getId());
         }
         if (hasRole(authentication, "TECHNICIAN")) {
-            return taskRepository.findByAssignedTechnician(authentication.getName());
+            return taskRepository.findByAssignedTechnicianId(
+                    getAuthenticatedTechnician(authentication).getId());
         }
         throw new AccessDeniedException("This role cannot access maintenance tasks");
     }
@@ -90,8 +91,11 @@ public class MaintenanceService {
                     hospitalId, status, normalizedEquipmentId, pageable);
         }
         if (hasRole(authentication, "TECHNICIAN")) {
-            return taskRepository.findByAssignedTechnicianWithFilters(
-                    authentication.getName(), status, normalizedEquipmentId, pageable);
+            return taskRepository.findByAssignedTechnicianIdWithFilters(
+                    getAuthenticatedTechnician(authentication).getId(),
+                    status,
+                    normalizedEquipmentId,
+                    pageable);
         }
         throw new AccessDeniedException("This role cannot access maintenance tasks");
     }
@@ -105,7 +109,7 @@ public class MaintenanceService {
         Hospital hospital = getHospitalForUser(authentication.getName());
         validateSchedulingRequest(request);
         Equipment equipment = resolveOwnedEquipment(request.getEquipmentId().trim(), hospital.getId());
-        String assignedTechnician = resolveAssignedTechnician(request.getAssignedTechnician());
+        User assignedTechnician = resolveEligibleTechnician(request.getAssignedTechnician());
 
         MaintenanceTask task = MaintenanceTask.builder()
                 .taskCode("MNT-" + UUID.randomUUID())
@@ -116,7 +120,8 @@ public class MaintenanceService {
                 .hospitalId(hospital.getId())
                 .maintenanceType(request.getMaintenanceType().trim())
                 .deadline(request.getDeadline())
-                .assignedTechnician(assignedTechnician)
+                .assignedTechnician(assignedTechnician != null ? assignedTechnician.getEmail() : null)
+                .assignedTechnicianRecord(assignedTechnician)
                 .description(request.getDescription())
                 .priority(request.getPriority())
                 .image(request.getImage())
@@ -150,14 +155,18 @@ public class MaintenanceService {
                     "Technician assignment can only be changed while the task is Scheduled");
         }
 
-        task.setAssignedTechnician(resolveAssignedTechnician(request.getAssignedTechnician()));
+        User assignedTechnician = resolveEligibleTechnician(request.getAssignedTechnician());
+        task.setAssignedTechnician(assignedTechnician.getEmail());
+        task.setAssignedTechnicianRecord(assignedTechnician);
         return taskRepository.save(task);
     }
 
     @Transactional
     public MaintenanceTask updateTask(Long id, MaintenanceUpdateRequest request, Authentication authentication) {
-        // A technician can update only a task explicitly assigned to their login email.
-        MaintenanceTask task = taskRepository.findByIdAndAssignedTechnicianForUpdate(id, authentication.getName())
+        // A technician can update only a task linked to their stable authenticated user ID.
+        User technician = getAuthenticatedTechnician(authentication);
+        MaintenanceTask task = taskRepository.findByIdAndAssignedTechnicianIdForUpdate(
+                        id, technician.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Maintenance task not found or not assigned to you"));
         validateOwnershipInvariant(task);
 
@@ -194,7 +203,7 @@ public class MaintenanceService {
                 && savedTask.getRecurrencePeriodDays() != null
                 && savedTask.getRecurrencePeriodDays() > 0) {
 
-            String recurringTechnician = resolveRecurringTechnician(savedTask.getAssignedTechnician());
+            User recurringTechnician = resolveRecurringTechnician(savedTask);
             MaintenanceTask nextTask = MaintenanceTask.builder()
                     .taskCode("MNT-" + UUID.randomUUID())
                     .equipmentId(savedTask.getEquipmentId())
@@ -204,7 +213,8 @@ public class MaintenanceService {
                     .hospitalId(savedTask.getHospitalId())
                     .maintenanceType(savedTask.getMaintenanceType() != null ? savedTask.getMaintenanceType() : "Recurring Preventive Maintenance")
                     .deadline(java.time.LocalDate.now().plusDays(savedTask.getRecurrencePeriodDays()))
-                    .assignedTechnician(recurringTechnician)
+                    .assignedTechnician(recurringTechnician != null ? recurringTechnician.getEmail() : null)
+                    .assignedTechnicianRecord(recurringTechnician)
                     .description("Auto-scheduled recurring maintenance task based on completion of task: " + savedTask.getTaskCode())
                     .priority(savedTask.getPriority())
                     .status(MaintenanceStatus.SCHEDULED)
@@ -299,25 +309,40 @@ public class MaintenanceService {
         }
     }
 
-    private String resolveAssignedTechnician(String assignedTechnician) {
+    private User resolveEligibleTechnician(String assignedTechnician) {
         if (assignedTechnician == null || assignedTechnician.isBlank()) {
             return null;
         }
         String normalizedEmail = assignedTechnician.trim().toLowerCase(Locale.ROOT);
         User technician = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Assigned technician account does not exist"));
+        validateTechnicianEligibility(technician);
+        return technician;
+    }
+
+    private User getAuthenticatedTechnician(Authentication authentication) {
+        String normalizedEmail = authentication.getName().trim().toLowerCase(Locale.ROOT);
+        return userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Technician account not found"));
+    }
+
+    private void validateTechnicianEligibility(User technician) {
         if (!"technician".equalsIgnoreCase(technician.getRole())) {
             throw new IllegalArgumentException("Assigned user must have the technician role");
         }
         if (technician.getAccountStatus() != AccountStatus.ACTIVE) {
             throw new IllegalArgumentException("Assigned technician account must be active");
         }
-        return technician.getEmail();
     }
 
-    private String resolveRecurringTechnician(String assignedTechnician) {
+    private User resolveRecurringTechnician(MaintenanceTask completedTask) {
         try {
-            return resolveAssignedTechnician(assignedTechnician);
+            User assignedTechnician = completedTask.getAssignedTechnicianRecord();
+            if (assignedTechnician != null) {
+                validateTechnicianEligibility(assignedTechnician);
+                return assignedTechnician;
+            }
+            return resolveEligibleTechnician(completedTask.getAssignedTechnician());
         } catch (IllegalArgumentException exception) {
             // Completion evidence must still be committed when the previous technician
             // account is no longer eligible. The hospital can assign the new task later.
@@ -468,7 +493,8 @@ public class MaintenanceService {
                     .orElseThrow(() -> new ResourceNotFoundException("Maintenance task not found or access denied"));
         }
         if (hasRole(authentication, "TECHNICIAN")) {
-            return taskRepository.findByIdAndAssignedTechnician(id, authentication.getName())
+            return taskRepository.findByIdAndAssignedTechnicianId(
+                            id, getAuthenticatedTechnician(authentication).getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Maintenance task not found or not assigned to you"));
         }
         throw new AccessDeniedException("This role cannot access maintenance tasks");

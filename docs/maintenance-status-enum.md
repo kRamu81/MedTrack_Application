@@ -115,12 +115,16 @@ The migrations backfill the required `equipment_record_id` relationship and miss
 equipment foreign key. Migration fails when equipment or ownership cannot be restored, so
 operators must resolve invalid rows instead of silently deploying incomplete data.
 
+Version `4` adds a nullable relationship from an assignment to `users.id`, backfills it using
+trimmed case-insensitive email matching, and retains the existing assignment email used by the
+API. Technician authorization uses the stable user ID. If the user is deleted, `ON DELETE SET
+NULL` clears the relationship without erasing the historical email.
+
 Flyway is enabled with `FLYWAY_ENABLED=true`. It remains disabled by default because the current local H2 workflow still lets Hibernate create a new development schema. Deployment and verification steps are recorded in `docs/maintenance-backend-migration.md`.
 
 ## Remaining Work
 
 - Decide whether to add a `CANCELLED` status.
-- Consider replacing email-based technician assignment with a direct user relationship.
 
 Invalid JSON status values are covered by the maintenance controller integration tests. Migration persistence and unmatched-row behavior are covered by `MaintenanceMigrationIntegrationTest`.
 
@@ -135,6 +139,10 @@ NEEDS_PART -> IN_PROGRESS
 ON_HOLD -> IN_PROGRESS
 ```
 
-Technicians may update report fields without changing a non-completed status, but completed tasks are immutable and cannot be deleted. Optional report fields use partial-update semantics: omitted or null values preserve the stored value, while an explicit empty string remains an update for text fields. Recurrence remains hospital-owned scheduling configuration: a technician payload may contain `recurrencePeriodDays` for compatibility, but it cannot overwrite the stored value used to generate the next task. The transition to `COMPLETED` requires a nonblank effective technician signature: the signature in the current payload when supplied, otherwise the previously stored signature. An explicit blank signature is rejected on completion. A successful transition records a server-controlled `completedAt` timestamp. Negative work hours are rejected, and recurring maintenance is generated only on the first transition to `COMPLETED`. Before copying the former assignment to a recurrence, the service normalizes the email lookup and verifies that the account remains active with the technician role. An ineligible assignment is cleared on the new task without rolling back completion. The owning hospital can assign or reassign an eligible technician while that new task remains `SCHEDULED`. Hospital assignment and deletion use ownership-scoped write locks so they cannot race with technician work on the same task, and all scoped repository access requires task ownership to agree with linked-equipment ownership.
+Technicians may update report fields without changing a non-completed status, but completed tasks are immutable and cannot be deleted. Optional report fields use partial-update semantics: omitted or null values preserve the stored value, while an explicit empty string remains an update for text fields. Recurrence remains hospital-owned scheduling configuration: a technician payload may contain `recurrencePeriodDays` for compatibility, but it cannot overwrite the stored value used to generate the next task. The transition to `COMPLETED` requires a nonblank effective technician signature: the signature in the current payload when supplied, otherwise the previously stored signature. An explicit blank signature is rejected on completion. A successful transition records a server-controlled `completedAt` timestamp. Negative work hours are rejected, and recurring maintenance is generated only on the first transition to `COMPLETED`. Technician reads and locked updates use the stable assigned user ID rather than comparing email text. Before copying the assignment to a recurrence, the service verifies that the linked account remains active with the technician role. An ineligible assignment is cleared on the new task without rolling back completion. The owning hospital can assign or reassign an eligible technician while that new task remains `SCHEDULED`. Hospital assignment and deletion use ownership-scoped write locks so they cannot race with technician work on the same task, and all scoped repository access requires task ownership to agree with linked-equipment ownership.
+
+The ownership rule also applies to Maintenance analytics. Status counts, completed-task SLA
+inputs, average work hours, and critical-pending counts exclude rows whose scalar hospital owner
+does not match the hospital that owns the linked equipment.
 
 Legacy completed rows may have a null completion timestamp. They remain readable, but maintenance SLA reporting excludes them rather than estimating when the work finished.

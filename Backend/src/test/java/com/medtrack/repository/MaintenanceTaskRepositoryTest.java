@@ -1,5 +1,7 @@
 package com.medtrack.repository;
 
+import com.medtrack.auth.model.AccountStatus;
+import com.medtrack.auth.model.User;
 import com.medtrack.model.Equipment;
 import com.medtrack.model.Hospital;
 import com.medtrack.model.MaintenanceStatus;
@@ -27,9 +29,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringJUnitConfig(MaintenanceTaskRepositoryTest.RepositoryTestConfiguration.class)
@@ -47,44 +52,80 @@ class MaintenanceTaskRepositoryTest {
         Hospital equipmentHospital = persistHospital("Equipment Hospital");
         Hospital taskHospital = persistHospital("Task Hospital");
         Equipment equipment = persistEquipment(equipmentHospital);
+        User inconsistentTechnician = persistTechnician("tech");
+        User validTechnician = persistTechnician("valid-tech");
         MaintenanceTask inconsistentTask = persistTask(
-                "MNT-INCONSISTENT", equipment, taskHospital, "tech@medtrack.com");
+                "MNT-INCONSISTENT", equipment, taskHospital, inconsistentTechnician);
         MaintenanceTask validTask = persistTask(
-                "MNT-VALID", equipment, equipmentHospital, "valid-tech@medtrack.com");
+                "MNT-VALID", equipment, equipmentHospital, validTechnician);
+        MaintenanceTask inconsistentCompletedTask = persistTask(
+                "MNT-INCONSISTENT-COMPLETED", equipment, taskHospital, inconsistentTechnician);
+        inconsistentCompletedTask.setStatus(MaintenanceStatus.COMPLETED);
+        inconsistentCompletedTask.setCompletedAt(LocalDateTime.now());
+        MaintenanceTask validCompletedTask = persistTask(
+                "MNT-VALID-COMPLETED", equipment, equipmentHospital, validTechnician);
+        validCompletedTask.setStatus(MaintenanceStatus.COMPLETED);
+        validCompletedTask.setCompletedAt(LocalDateTime.now());
         entityManager.flush();
         entityManager.clear();
 
         assertTrue(taskRepository.findByHospitalId(taskHospital.getId()).isEmpty());
-        assertTrue(taskRepository.findByAssignedTechnician("tech@medtrack.com").isEmpty());
+        assertTrue(taskRepository.findByAssignedTechnicianId(inconsistentTechnician.getId()).isEmpty());
         assertTrue(taskRepository.findByIdAndHospitalId(
                 inconsistentTask.getId(), taskHospital.getId()).isEmpty());
-        assertTrue(taskRepository.findByIdAndAssignedTechnician(
-                inconsistentTask.getId(), "tech@medtrack.com").isEmpty());
+        assertTrue(taskRepository.findByIdAndAssignedTechnicianId(
+                inconsistentTask.getId(), inconsistentTechnician.getId()).isEmpty());
         assertTrue(taskRepository.findByIdAndHospitalIdForUpdate(
                 inconsistentTask.getId(), taskHospital.getId()).isEmpty());
-        assertTrue(taskRepository.findByIdAndAssignedTechnicianForUpdate(
-                inconsistentTask.getId(), "tech@medtrack.com").isEmpty());
+        assertTrue(taskRepository.findByIdAndAssignedTechnicianIdForUpdate(
+                inconsistentTask.getId(), inconsistentTechnician.getId()).isEmpty());
         assertTrue(taskRepository.findByEquipmentRecord_IdAndHospitalId(
                 equipment.getId(), taskHospital.getId()).isEmpty());
         assertTrue(taskRepository.findByHospitalIdWithFilters(
                 taskHospital.getId(), MaintenanceStatus.SCHEDULED,
                 equipment.getEquipmentCode(), Pageable.unpaged()).isEmpty());
-        assertTrue(taskRepository.findByAssignedTechnicianWithFilters(
-                "tech@medtrack.com", MaintenanceStatus.SCHEDULED,
+        assertTrue(taskRepository.findByAssignedTechnicianIdWithFilters(
+                inconsistentTechnician.getId(), MaintenanceStatus.SCHEDULED,
                 equipment.getEquipmentCode(), Pageable.unpaged()).isEmpty());
+        assertEquals(0, taskRepository.countByHospitalIdAndStatus(
+                taskHospital.getId(), MaintenanceStatus.SCHEDULED));
+        assertTrue(taskRepository.findCompletedTasksWithTimestamps(
+                taskHospital.getId(), MaintenanceStatus.COMPLETED).isEmpty());
+        assertNull(taskRepository.averageHoursWorkedByHospitalIdAndStatus(
+                taskHospital.getId(), MaintenanceStatus.SCHEDULED));
+        assertEquals(0, taskRepository.countByHospitalIdAndStatusNotAndPriority(
+                taskHospital.getId(), MaintenanceStatus.COMPLETED, "Critical"));
 
         assertFalse(taskRepository.findByHospitalId(equipmentHospital.getId()).isEmpty());
-        assertFalse(taskRepository.findByAssignedTechnician("valid-tech@medtrack.com").isEmpty());
+        assertFalse(taskRepository.findByAssignedTechnicianId(validTechnician.getId()).isEmpty());
         assertTrue(taskRepository.findByIdAndHospitalId(
                 validTask.getId(), equipmentHospital.getId()).isPresent());
-        assertTrue(taskRepository.findByIdAndAssignedTechnician(
-                validTask.getId(), "valid-tech@medtrack.com").isPresent());
+        assertTrue(taskRepository.findByIdAndAssignedTechnicianId(
+                validTask.getId(), validTechnician.getId()).isPresent());
         assertFalse(taskRepository.findByHospitalIdWithFilters(
                 equipmentHospital.getId(), MaintenanceStatus.SCHEDULED,
                 equipment.getEquipmentCode(), Pageable.unpaged()).isEmpty());
-        assertFalse(taskRepository.findByAssignedTechnicianWithFilters(
-                "valid-tech@medtrack.com", MaintenanceStatus.SCHEDULED,
+        assertFalse(taskRepository.findByAssignedTechnicianIdWithFilters(
+                validTechnician.getId(), MaintenanceStatus.SCHEDULED,
                 equipment.getEquipmentCode(), Pageable.unpaged()).isEmpty());
+        assertEquals(1, taskRepository.countByHospitalIdAndStatus(
+                equipmentHospital.getId(), MaintenanceStatus.SCHEDULED));
+        assertEquals(1, taskRepository.findCompletedTasksWithTimestamps(
+                equipmentHospital.getId(), MaintenanceStatus.COMPLETED).size());
+        assertEquals(2.0, taskRepository.averageHoursWorkedByHospitalIdAndStatus(
+                equipmentHospital.getId(), MaintenanceStatus.SCHEDULED));
+        assertEquals(1, taskRepository.countByHospitalIdAndStatusNotAndPriority(
+                equipmentHospital.getId(), MaintenanceStatus.COMPLETED, "Critical"));
+
+        User renamedTechnician = entityManager.find(User.class, validTechnician.getId());
+        renamedTechnician.setEmail("renamed-tech@medtrack.com");
+        entityManager.flush();
+        entityManager.clear();
+
+        assertFalse(taskRepository.findByAssignedTechnicianId(
+                validTechnician.getId()).isEmpty());
+        assertTrue(taskRepository.findByAssignedTechnicianId(
+                inconsistentTechnician.getId()).isEmpty());
     }
 
     private Hospital persistHospital(String name) {
@@ -107,11 +148,26 @@ class MaintenanceTaskRepositoryTest {
         return equipment;
     }
 
+    private User persistTechnician(String emailPrefix) {
+        User technician = User.builder()
+                .name("Test Technician")
+                .username(emailPrefix)
+                .email(emailPrefix + "@medtrack.com")
+                .password("encoded-password")
+                .role("technician")
+                .accountStatus(AccountStatus.ACTIVE)
+                .phone("0000000000")
+                .organization("MedTrack")
+                .build();
+        entityManager.persist(technician);
+        return technician;
+    }
+
     private MaintenanceTask persistTask(
             String taskCode,
             Equipment equipment,
             Hospital hospital,
-            String assignedTechnician) {
+            User assignedTechnician) {
         MaintenanceTask task = MaintenanceTask.builder()
                 .taskCode(taskCode)
                 .equipmentId(equipment.getEquipmentCode())
@@ -121,9 +177,11 @@ class MaintenanceTaskRepositoryTest {
                 .hospitalId(hospital.getId())
                 .maintenanceType("Inspection")
                 .deadline(LocalDate.now().plusDays(1))
-                .assignedTechnician(assignedTechnician)
-                .priority("Normal")
+                .assignedTechnician(assignedTechnician.getEmail())
+                .assignedTechnicianRecord(assignedTechnician)
+                .priority("Critical")
                 .status(MaintenanceStatus.SCHEDULED)
+                .hoursWorked(2.0)
                 .build();
         entityManager.persist(task);
         return task;

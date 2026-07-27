@@ -25,7 +25,8 @@ class MaintenanceMigrationIntegrationTest {
         try (Connection connection = DriverManager.getConnection(url, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet result = statement.executeQuery("""
-                     SELECT status, equipment_record_id, hospital_id, completed_at
+                     SELECT status, equipment_record_id, hospital_id, completed_at,
+                            assigned_technician_record_id
                      FROM maintenance_tasks
                      WHERE id = 100
                      """)) {
@@ -34,6 +35,7 @@ class MaintenanceMigrationIntegrationTest {
             assertEquals(10L, result.getLong("equipment_record_id"));
             assertEquals(7L, result.getLong("hospital_id"));
             assertNull(result.getTimestamp("completed_at"));
+            assertEquals(20L, result.getLong("assigned_technician_record_id"));
         }
     }
 
@@ -67,6 +69,26 @@ class MaintenanceMigrationIntegrationTest {
         assertThrows(Exception.class, () -> migrate(url));
     }
 
+    @Test
+    void technicianRelationshipUsesSetNullWhilePreservingHistoricalEmail() throws Exception {
+        String url = createLegacyDatabase(true);
+        migrate(url);
+
+        try (Connection connection = DriverManager.getConnection(url, "sa", "");
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DELETE FROM users WHERE id = 20");
+            try (ResultSet result = statement.executeQuery("""
+                    SELECT assigned_technician, assigned_technician_record_id
+                    FROM maintenance_tasks
+                    WHERE id = 100
+                    """)) {
+                result.next();
+                assertEquals(" Tech@MedTrack.com ", result.getString("assigned_technician"));
+                assertNull(result.getObject("assigned_technician_record_id"));
+            }
+        }
+    }
+
     private String createLegacyDatabase(boolean matchingEquipment) throws Exception {
         String url = "jdbc:h2:mem:maintenance-migration-" + UUID.randomUUID()
                 + ";MODE=MySQL;DB_CLOSE_DELAY=-1";
@@ -80,11 +102,18 @@ class MaintenanceMigrationIntegrationTest {
                     )
                     """);
             statement.execute("""
+                    CREATE TABLE users (
+                        id BIGINT PRIMARY KEY,
+                        email VARCHAR(255) UNIQUE
+                    )
+                    """);
+            statement.execute("""
                     CREATE TABLE maintenance_tasks (
                         id BIGINT PRIMARY KEY,
                         equipment_id VARCHAR(255),
                         hospital_id BIGINT,
-                        status VARCHAR(255)
+                        status VARCHAR(255),
+                        assigned_technician VARCHAR(255)
                     )
                     """);
             statement.execute("""
@@ -92,8 +121,14 @@ class MaintenanceMigrationIntegrationTest {
                     VALUES (10, 'EQ-1001', 7)
                     """);
             statement.execute("""
-                    INSERT INTO maintenance_tasks (id, equipment_id, hospital_id, status)
-                    VALUES (100, '%s', NULL, 'In Progress')
+                    INSERT INTO users (id, email)
+                    VALUES (20, 'tech@medtrack.com')
+                    """);
+            statement.execute("""
+                    INSERT INTO maintenance_tasks (
+                        id, equipment_id, hospital_id, status, assigned_technician
+                    )
+                    VALUES (100, '%s', NULL, 'In Progress', ' Tech@MedTrack.com ')
                     """.formatted(matchingEquipment ? "EQ-1001" : "EQ-MISSING"));
         }
         return url;
