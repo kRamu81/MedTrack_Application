@@ -119,4 +119,11 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long>,
 
     @Query(value = "SELECT * FROM equipment WHERE id = :id AND deleted = TRUE", nativeQuery = true)
     Optional<Equipment> findByIdAndDeletedTrue(@Param("id") Long id);
+
+    /**
+     * Fetches equipment by ID and hospital ID without the deleted filter.
+     * Used for validating equipment eligibility during recurrence generation.
+     */
+    @Query(value = "SELECT * FROM equipment WHERE id = :id AND hospital_id = :hospitalId", nativeQuery = true)
+    Optional<Equipment> findByIdAndHospitalIdIgnoreDeleted(@Param("id") Long id, @Param("hospitalId") Long hospitalId);
 }

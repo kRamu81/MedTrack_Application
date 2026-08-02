@@ -6,8 +6,9 @@ import com.medtrack.auth.repository.UserRepository;
 import com.medtrack.dto.MaintenanceAssignmentRequest;
 import com.medtrack.dto.MaintenanceCreateRequest;
 import com.medtrack.dto.MaintenanceUpdateRequest;
-import com.medtrack.model.Hospital;
 import com.medtrack.model.Equipment;
+import com.medtrack.model.EquipmentStatus;
+import com.medtrack.model.Hospital;
 import com.medtrack.model.MaintenanceStatus;
 import com.medtrack.model.MaintenanceTask;
 import com.medtrack.repository.HospitalRepository;
@@ -31,12 +32,14 @@ import com.medtrack.exception.ResourceNotFoundException;
 import jakarta.persistence.LockModeType;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -749,5 +752,171 @@ public class MaintenanceServiceTest {
 
         verify(taskRepository, never()).save(any());
         verify(taskRepository, never()).delete(any());
+    }
+
+    // --- Recurrence eligibility revalidation tests (issue #694) ---
+
+    @Test
+    void updateTask_SkipsRecurrenceWhenEquipmentIsArchived() {
+        mockTask.setStatus(MaintenanceStatus.IN_PROGRESS);
+        mockTask.setRecurrencePeriodDays(30);
+
+        // Equipment is archived (deleted = true)
+        Equipment archivedEquipment = Equipment.builder()
+                .id(100L)
+                .equipmentCode("EQ-100")
+                .name("MRI Scanner")
+                .department("Radiology")
+                .hospital(mockHospital)
+                .status(EquipmentStatus.ACTIVE)
+                .deleted(true)
+                .deletedAt(LocalDateTime.now())
+                .deletedBy("admin@medtrack.com")
+                .build();
+        mockTask.setEquipmentRecord(archivedEquipment);
+
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianIdForUpdate(50L, mockTechnician.getId()))
+                .thenReturn(Optional.of(mockTask));
+        when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // Mock the new repository method to return the archived equipment
+        when(equipmentRepository.findByIdAndHospitalIdIgnoreDeleted(100L, 10L))
+                .thenReturn(Optional.of(archivedEquipment));
+
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .recurrencePeriodDays(30)
+                .build();
+
+        MaintenanceTask result = maintenanceService.updateTask(50L, request, authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        // Save should only be called once (for completion), not twice (no recurrence created)
+        verify(taskRepository, times(1)).save(any(MaintenanceTask.class));
+    }
+
+    @Test
+    void updateTask_SkipsRecurrenceWhenEquipmentIsRetired() {
+        mockTask.setStatus(MaintenanceStatus.IN_PROGRESS);
+        mockTask.setRecurrencePeriodDays(30);
+
+        Equipment retiredEquipment = Equipment.builder()
+                .id(100L)
+                .equipmentCode("EQ-100")
+                .name("MRI Scanner")
+                .department("Radiology")
+                .hospital(mockHospital)
+                .status(EquipmentStatus.RETIRED)
+                .build();
+        mockTask.setEquipmentRecord(retiredEquipment);
+
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianIdForUpdate(50L, mockTechnician.getId()))
+                .thenReturn(Optional.of(mockTask));
+        when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(equipmentRepository.findByIdAndHospitalIdIgnoreDeleted(100L, 10L))
+                .thenReturn(Optional.of(retiredEquipment));
+
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .recurrencePeriodDays(30)
+                .build();
+
+        MaintenanceTask result = maintenanceService.updateTask(50L, request, authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        verify(taskRepository, times(1)).save(any(MaintenanceTask.class));
+    }
+
+    @Test
+    void updateTask_SkipsRecurrenceWhenEquipmentIsDisposed() {
+        mockTask.setStatus(MaintenanceStatus.IN_PROGRESS);
+        mockTask.setRecurrencePeriodDays(30);
+
+        Equipment disposedEquipment = Equipment.builder()
+                .id(100L)
+                .equipmentCode("EQ-100")
+                .name("MRI Scanner")
+                .department("Radiology")
+                .hospital(mockHospital)
+                .status(EquipmentStatus.DISPOSED)
+                .build();
+        mockTask.setEquipmentRecord(disposedEquipment);
+
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianIdForUpdate(50L, mockTechnician.getId()))
+                .thenReturn(Optional.of(mockTask));
+        when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(equipmentRepository.findByIdAndHospitalIdIgnoreDeleted(100L, 10L))
+                .thenReturn(Optional.of(disposedEquipment));
+
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .recurrencePeriodDays(30)
+                .build();
+
+        MaintenanceTask result = maintenanceService.updateTask(50L, request, authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        verify(taskRepository, times(1)).save(any(MaintenanceTask.class));
+    }
+
+    @Test
+    void updateTask_CreatesRecurrenceWhenEquipmentIsActive() {
+        mockTask.setStatus(MaintenanceStatus.IN_PROGRESS);
+        mockTask.setRecurrencePeriodDays(30);
+
+        Equipment activeEquipment = Equipment.builder()
+                .id(100L)
+                .equipmentCode("EQ-100")
+                .name("MRI Scanner")
+                .department("Radiology")
+                .hospital(mockHospital)
+                .status(EquipmentStatus.ACTIVE)
+                .build();
+        mockTask.setEquipmentRecord(activeEquipment);
+
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianIdForUpdate(50L, mockTechnician.getId()))
+                .thenReturn(Optional.of(mockTask));
+        when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(equipmentRepository.findByIdAndHospitalIdIgnoreDeleted(100L, 10L))
+                .thenReturn(Optional.of(activeEquipment));
+
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .recurrencePeriodDays(30)
+                .build();
+
+        MaintenanceTask result = maintenanceService.updateTask(50L, request, authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        // Save should be called twice (completion + recurrence)
+        verify(taskRepository, times(2)).save(any(MaintenanceTask.class));
+    }
+
+    @Test
+    void updateTask_SkipsRecurrenceWhenEquipmentNotFound() {
+        mockTask.setStatus(MaintenanceStatus.IN_PROGRESS);
+        mockTask.setRecurrencePeriodDays(30);
+        mockTask.setEquipmentRecord(null); // No equipment record attached
+
+        when(authentication.getName()).thenReturn("tech@medtrack.com");
+        when(taskRepository.findByIdAndAssignedTechnicianIdForUpdate(50L, mockTechnician.getId()))
+                .thenReturn(Optional.of(mockTask));
+        when(taskRepository.save(any(MaintenanceTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // Equipment not found in repository
+        when(equipmentRepository.findByIdAndHospitalIdIgnoreDeleted(anyLong(), anyLong()))
+                .thenReturn(Optional.empty());
+
+        MaintenanceUpdateRequest request = MaintenanceUpdateRequest.builder()
+                .status(MaintenanceStatus.COMPLETED)
+                .recurrencePeriodDays(30)
+                .build();
+
+        MaintenanceTask result = maintenanceService.updateTask(50L, request, authentication);
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.getStatus());
+        verify(taskRepository, times(1)).save(any(MaintenanceTask.class));
     }
 }

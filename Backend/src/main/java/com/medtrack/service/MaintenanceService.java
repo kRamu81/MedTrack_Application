@@ -204,27 +204,45 @@ public class MaintenanceService {
                 && savedTask.getRecurrencePeriodDays() != null
                 && savedTask.getRecurrencePeriodDays() > 0) {
 
-            User recurringTechnician = resolveRecurringTechnician(savedTask);
-            MaintenanceTask nextTask = MaintenanceTask.builder()
-                    .taskCode("MNT-" + UUID.randomUUID())
-                    .equipmentId(savedTask.getEquipmentId())
-                    .equipment(savedTask.getEquipment())
-                    .equipmentRecord(savedTask.getEquipmentRecord())
-                    .hospital(savedTask.getHospital())
-                    .hospitalId(savedTask.getHospitalId())
-                    .maintenanceType(savedTask.getMaintenanceType() != null ? savedTask.getMaintenanceType() : "Recurring Preventive Maintenance")
-                    .deadline(java.time.LocalDate.now().plusDays(savedTask.getRecurrencePeriodDays()))
-                    .assignedTechnician(recurringTechnician != null ? recurringTechnician.getEmail() : null)
-                    .assignedTechnicianRecord(recurringTechnician)
-                    .description("Auto-scheduled recurring maintenance task based on completion of task: " + savedTask.getTaskCode())
-                    .priority(savedTask.getPriority())
-                    .status(MaintenanceStatus.SCHEDULED)
-                    .recurrencePeriodDays(savedTask.getRecurrencePeriodDays())
-                    .createdAt(LocalDateTime.now())
-                    .build();
+            // Revalidate equipment eligibility before creating recurring task.
+            // Equipment must: belong to same hospital, not be archived, not be retired, not be disposed.
+            boolean equipmentEligible = false;
+            if (savedTask.getEquipmentRecord() != null && savedTask.getEquipmentRecord().getId() != null) {
+                Optional<Equipment> equipmentOpt = equipmentRepository
+                        .findByIdAndHospitalIdIgnoreDeleted(savedTask.getEquipmentRecord().getId(), savedTask.getHospitalId());
+                if (equipmentOpt.isPresent()) {
+                    Equipment equipment = equipmentOpt.get();
+                    if (!Boolean.TRUE.equals(equipment.getDeleted())
+                            && equipment.getStatus() != EquipmentStatus.RETIRED
+                            && equipment.getStatus() != EquipmentStatus.DISPOSED) {
+                        equipmentEligible = true;
+                    }
+                }
+            }
 
-            validateOwnershipInvariant(nextTask);
-            taskRepository.save(nextTask);
+            if (equipmentEligible) {
+                User recurringTechnician = resolveRecurringTechnician(savedTask);
+                MaintenanceTask nextTask = MaintenanceTask.builder()
+                        .taskCode("MNT-" + UUID.randomUUID())
+                        .equipmentId(savedTask.getEquipmentId())
+                        .equipment(savedTask.getEquipment())
+                        .equipmentRecord(savedTask.getEquipmentRecord())
+                        .hospital(savedTask.getHospital())
+                        .hospitalId(savedTask.getHospitalId())
+                        .maintenanceType(savedTask.getMaintenanceType() != null ? savedTask.getMaintenanceType() : "Recurring Preventive Maintenance")
+                        .deadline(java.time.LocalDate.now().plusDays(savedTask.getRecurrencePeriodDays()))
+                        .assignedTechnician(recurringTechnician != null ? recurringTechnician.getEmail() : null)
+                        .assignedTechnicianRecord(recurringTechnician)
+                        .description("Auto-scheduled recurring maintenance task based on completion of task: " + savedTask.getTaskCode())
+                        .priority(savedTask.getPriority())
+                        .status(MaintenanceStatus.SCHEDULED)
+                        .recurrencePeriodDays(savedTask.getRecurrencePeriodDays())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                validateOwnershipInvariant(nextTask);
+                taskRepository.save(nextTask);
+            }
         }
 
         return savedTask;
