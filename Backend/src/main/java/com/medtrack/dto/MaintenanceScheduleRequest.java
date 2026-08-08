@@ -1,17 +1,25 @@
-Long equipmentId;
+package com.medtrack.dto;
 
-String technician;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
-String maintenanceType;
-
-String priority;
-
-LocalDate scheduledDate;
-
-Integer estimatedDurationHours;
-
-Integer reminderDays;
-
-String notes;
-
-String recurrence;
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class MaintenanceScheduleRequest {
+    private Long equipmentId;
+    private String title;
+    private String description;
+    private String assignedTechnician;
+    private String maintenanceType;
+    private String priority;
+    private LocalDate scheduledDate;
+    private Integer estimatedDurationHours;
+    private Integer reminderDays;
+    private String notes;
+    private String recurrence;
+}
